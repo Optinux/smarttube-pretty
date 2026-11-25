@@ -29,6 +29,8 @@ import androidx.leanback.widget.VerticalGridView;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.liskovsoft.sharedutils.helpers.Helpers;
+import com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper;
+import com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper.M3Palette;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.adapter.VideoGroupObjectAdapter;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.marqueetextview.MarqueeTextView;
@@ -290,11 +292,15 @@ public class ViewUtil {
     }
 
     /**
-     * Resolves a theme color attribute safely with a fallback color resource.
+     * Resolves a theme color attribute safely with Material You / custom accent override and fallback color resource.
      */
     public static int getThemeColor(Context context, int attrResId, int fallbackColorResId) {
         if (context == null) {
             return Color.TRANSPARENT;
+        }
+        Integer dynamicColor = resolveDynamicThemeColor(context, attrResId);
+        if (dynamicColor != null) {
+            return dynamicColor;
         }
         TypedValue outValue = new TypedValue();
         if (context.getTheme().resolveAttribute(attrResId, outValue, true)) {
@@ -304,6 +310,39 @@ public class ViewUtil {
             return outValue.data;
         }
         return ContextCompat.getColor(context, fallbackColorResId);
+    }
+
+    private static Integer resolveDynamicThemeColor(Context context, int attrResId) {
+        M3Palette palette = ThemePaletteHelper.getActivePalette(context);
+        if (palette == null) {
+            return null;
+        }
+        if (attrResId == R.attr.m3Primary) return palette.primary;
+        if (attrResId == R.attr.m3OnPrimary) return palette.onPrimary;
+        if (attrResId == R.attr.m3PrimaryContainer || attrResId == R.attr.brandAccentColor
+                || attrResId == R.attr.defaultSearchBrightColor) return palette.primaryContainer;
+        if (attrResId == R.attr.m3OnPrimaryContainer) return palette.onPrimaryContainer;
+        if (attrResId == R.attr.m3SecondaryContainer || attrResId == R.attr.cardSelectedBackground) return palette.secondaryContainer;
+        if (attrResId == R.attr.m3OnSecondaryContainer) return palette.onSecondaryContainer;
+        if (attrResId == R.attr.m3Outline) return palette.outline;
+        if (attrResId == R.attr.m3OrbFocusedBackground) return palette.orbFocusedBackground;
+        if (attrResId == R.attr.playbackProgressPrimaryColor) return palette.progressPrimary;
+        if (attrResId == R.attr.playbackControlsIconHighlightColor) return palette.primary;
+
+        if (!palette.overrideSurfaces) {
+            return null;
+        }
+        if (attrResId == R.attr.m3Surface || attrResId == R.attr.shelfBackground) return palette.surface;
+        if (attrResId == R.attr.m3SurfaceContainerLow || attrResId == R.attr.brandColor
+                || attrResId == R.attr.defaultBrandColor) return palette.surfaceContainerLow;
+        if (attrResId == R.attr.m3SurfaceContainer || attrResId == R.attr.cardDefaultBackground) return palette.surfaceContainer;
+        if (attrResId == R.attr.m3SurfaceContainerHigh || attrResId == R.attr.defaultSearchColor
+                || attrResId == R.attr.m3OrbBackground) return palette.surfaceContainerHigh;
+        if (attrResId == R.attr.m3SurfaceContainerHighest) return palette.surfaceContainerHighest;
+        if (attrResId == R.attr.m3OnSurface || attrResId == R.attr.m3OrbIconColor) return palette.onSurface;
+        if (attrResId == R.attr.m3OnSurfaceVariant) return palette.onSurfaceVariant;
+        if (attrResId == R.attr.m3OutlineVariant) return palette.outlineVariant;
+        return null;
     }
 
     /**

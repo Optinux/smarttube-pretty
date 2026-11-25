@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Live M3 Preview Banner -->
+        <LinearLayout
+            android:id="@+id/accent_preview_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="14dp"
+            android:layout_marginBottom="14dp">
+
+            <View
+                android:id="@+id/accent_preview_swatch"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="14dp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/accent_preview_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/accent_color"
+                    android:textColor="@color/dialog_text_color"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/accent_preview_hex"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:textColor="#A4ACBE"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/accent_preview_pill"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:paddingStart="12dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="6dp"
+                android:text="M3"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Quick Swatches Grid -->
+        <LinearLayout
+            android:id="@+id/accent_swatches_row1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/accent_swatches_row2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:layout_marginBottom="14dp" />
+
+        <!-- Hue Slider -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:layout_width="86dp"
+                android:layout_height="wrap_content"
+                android:text="@string/accent_color_hue"
+                android:textColor="@color/dialog_text_color"
+                android:textSize="13sp" />
+
+            <SeekBar
+                android:id="@+id/accent_seek_hue"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:max="360" />
+
+            <TextView
+                android:id="@+id/accent_val_hue"
+                android:layout_width="44dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:textColor="#A4ACBE"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Saturation Slider -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:layout_width="86dp"
+                android:layout_height="wrap_content"
+                android:text="@string/accent_color_saturation"
+                android:textColor="@color/dialog_text_color"
+                android:textSize="13sp" />
+
+            <SeekBar
+                android:id="@+id/accent_seek_sat"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:max="100" />
+
+            <TextView
+                android:id="@+id/accent_val_sat"
+                android:layout_width="44dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:textColor="#A4ACBE"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Lightness Slider -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="86dp"
+                android:layout_height="wrap_content"
+                android:text="@string/accent_color_lightness"
+                android:textColor="@color/dialog_text_color"
+                android:textSize="13sp" />
+
+            <SeekBar
+                android:id="@+id/accent_seek_light"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:max="70" />
+
+            <TextView
+                android:id="@+id/accent_val_light"
+                android:layout_width="44dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:textColor="#A4ACBE"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Hex Input -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="86dp"
+                android:layout_height="wrap_content"
+                android:text="@string/accent_color_hex"
+                android:textColor="@color/dialog_text_color"
+                android:textSize="13sp" />
+
+            <EditText
+                android:id="@+id/accent_hex_input"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:autofillHints=""
+                android:fontFamily="monospace"
+                android:hint="#FF897D"
+                android:imeOptions="actionDone"
+                android:inputType="textNoSuggestions"
+                android:maxLength="9"
+                android:singleLine="true"
+                android:textColor="@color/dialog_text_color"
+                android:textColorHint="#7E879B"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

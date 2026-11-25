@@ -2,6 +2,7 @@ package com.liskovsoft.smartyoutubetv2.tv.ui.common;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Handler;
@@ -17,6 +18,8 @@ import com.bumptech.glide.request.transition.Transition;
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
+import com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper;
+import com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper.M3Palette;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
@@ -42,7 +45,12 @@ public class UriBackgroundManager {
     private void prepareBackgroundManager() {
         mBackgroundManager = BackgroundManager.getInstance(mActivity);
         mBackgroundManager.attach(mActivity.getWindow());
-        mDefaultBackground = ContextCompat.getDrawable(mActivity, Helpers.getThemeAttr(mActivity, R.attr.shelfBackground));
+        M3Palette palette = ThemePaletteHelper.getActivePalette(mActivity);
+        if (palette != null && palette.overrideSurfaces) {
+            mDefaultBackground = new ColorDrawable(palette.surface);
+        } else {
+            mDefaultBackground = ContextCompat.getDrawable(mActivity, Helpers.getThemeAttr(mActivity, R.attr.shelfBackground));
+        }
         mBackgroundTask = new UpdateBackgroundTask();
         mMetrics = new DisplayMetrics();
         mActivity.getWindowManager().getDefaultDisplay().getMetrics(mMetrics);

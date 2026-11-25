@@ -1045,22 +1045,13 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
     }
 
     private static int getDefaultProgressColor(Context context) {
-        TypedValue outValue = new TypedValue();
-        if (context.getTheme()
-                .resolveAttribute(R.attr.playbackProgressPrimaryColor, outValue, true)) {
-            return context.getResources().getColor(outValue.resourceId);
-        }
-        return context.getResources().getColor(R.color.lb_playback_progress_color_no_theme);
+        return ViewUtil.getThemeColor(
+                context, R.attr.playbackProgressPrimaryColor, R.color.lb_playback_progress_color_no_theme);
     }
 
     private static int getDefaultSecondaryProgressColor(Context context) {
-        TypedValue outValue = new TypedValue();
-        if (context.getTheme()
-                .resolveAttribute(R.attr.playbackProgressSecondaryColor, outValue, true)) {
-            return context.getResources().getColor(outValue.resourceId);
-        }
-        return context.getResources().getColor(
-                R.color.lb_playback_progress_secondary_color_no_theme);
+        return ViewUtil.getThemeColor(
+                context, R.attr.playbackProgressSecondaryColor, R.color.lb_playback_progress_secondary_color_no_theme);
     }
 
     @Override

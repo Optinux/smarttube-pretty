@@ -15,7 +15,10 @@ import com.liskovsoft.smartyoutubetv2.common.prefs.GeneralData;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData.ColorScheme;
 import com.liskovsoft.smartyoutubetv2.common.prefs.PlayerData;
+import com.liskovsoft.smartyoutubetv2.common.utils.AccentColorPickerDialog;
 import com.liskovsoft.smartyoutubetv2.common.utils.ClickbaitRemover;
+import com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper;
+import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +53,7 @@ public class MainUISettingsPresenter extends BasePresenter<Void> {
 
         appendTopButtonsCategory(settingsPresenter);
         appendColorScheme(settingsPresenter);
+        appendAccentColor(settingsPresenter);
         if (Build.VERSION.SDK_INT > 19) {
             appendCardTextScrollSpeed(settingsPresenter);
         }
@@ -108,6 +112,75 @@ public class MainUISettingsPresenter extends BasePresenter<Void> {
         }
 
         return styleOptions;
+    }
+
+    private void appendAccentColor(AppDialogPresenter settingsPresenter) {
+        List<OptionItem> options = new ArrayList<>();
+        int currentAccent = mMainUIData.getAccentColor();
+
+        options.add(UiOptionItem.from(
+                getContext().getString(R.string.accent_color_default),
+                option -> {
+                    mMainUIData.setAccentColor(0);
+                    mRestartApp = true;
+                },
+                currentAccent == 0));
+
+        int[][] presets = {
+                {R.string.accent_color_crimson, 0xFFFF4E45},
+                {R.string.accent_color_coral, 0xFFFF897D},
+                {R.string.accent_color_orange, 0xFFFFB74D},
+                {R.string.accent_color_amber, 0xFFFFD54F},
+                {R.string.accent_color_sage, 0xFFAED581},
+                {R.string.accent_color_emerald, 0xFF66BB6A},
+                {R.string.accent_color_teal, 0xFF56D6E8},
+                {R.string.accent_color_sky, 0xFF64B5F6},
+                {R.string.accent_color_cobalt, 0xFF9ECAFF},
+                {R.string.accent_color_indigo, 0xFF9FA8DA},
+                {R.string.accent_color_lavender, 0xFFD0BCFF},
+                {R.string.accent_color_pink, 0xFFF48FB1},
+                {R.string.accent_color_mono, 0xFFE2E2E8}
+        };
+
+        boolean matchedPreset = false;
+        for (int[] preset : presets) {
+            int color = preset[1];
+            boolean selected = currentAccent != 0 && currentAccent == color;
+            if (selected) {
+                matchedPreset = true;
+            }
+            CharSequence label = android.text.TextUtils.concat(
+                    Utils.color("●  ", color),
+                    getContext().getString(preset[0]));
+            options.add(UiOptionItem.from(
+                    label,
+                    option -> {
+                        mMainUIData.setAccentColor(color);
+                        mRestartApp = true;
+                    },
+                    selected));
+        }
+
+        boolean isCustomSelected = currentAccent != 0 && !matchedPreset;
+        CharSequence customLabel = isCustomSelected
+                ? android.text.TextUtils.concat(
+                        Utils.color("●  ", currentAccent),
+                        getContext().getString(R.string.accent_color_custom),
+                        " (" + ThemePaletteHelper.formatHex(currentAccent) + ")")
+                : getContext().getString(R.string.accent_color_custom);
+
+        options.add(UiOptionItem.from(
+                customLabel,
+                option -> {
+                    settingsPresenter.closeDialog();
+                    Utils.postDelayed(() -> AccentColorPickerDialog.show(getContext(), currentAccent, newColor -> {
+                        mMainUIData.setAccentColor(newColor);
+                        MessageHelpers.showLongMessage(getContext(), R.string.msg_restart_app);
+                    }), 150);
+                },
+                isCustomSelected));
+
+        settingsPresenter.appendRadioCategory(getContext().getString(R.string.accent_color), options);
     }
 
     private void appendCardPreviews(AppDialogPresenter settingsPresenter) {

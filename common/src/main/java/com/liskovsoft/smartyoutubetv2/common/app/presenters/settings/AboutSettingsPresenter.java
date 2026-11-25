@@ -44,21 +44,24 @@ public class AboutSettingsPresenter extends BasePresenter<Void> {
 
         String country = LocaleUtility.getCurrentLocale(getContext()).getCountry();
 
-        appendUpdateCheckButton(settingsPresenter);
+        // Auto-update disabled: upstream repo changed and CI builds don't support in-app updates
+        //appendUpdateCheckButton(settingsPresenter);
 
-        appendAutoUpdateSwitch(settingsPresenter);
+        //appendAutoUpdateSwitch(settingsPresenter);
 
-        appendUpdateChangelogButton(settingsPresenter);
+        //appendUpdateChangelogButton(settingsPresenter);
 
-        appendUpdateSource(settingsPresenter);
+        //appendUpdateSource(settingsPresenter);
 
         appendInstallBridge(settingsPresenter);
 
         if (!Helpers.equalsAny(country, "RU", "UA")) {
             appendDonation(settingsPresenter);
             appendFeedback(settingsPresenter);
-            appendLinks(settingsPresenter);
         }
+
+        appendLinks(settingsPresenter);
+        appendCredits(settingsPresenter);
 
         settingsPresenter.showDialog(mainTitle);
     }
@@ -113,18 +116,40 @@ public class AboutSettingsPresenter extends BasePresenter<Void> {
     }
 
     private void appendLinks(AppDialogPresenter settingsPresenter) {
-        OptionItem releasesOption = UiOptionItem.from(getContext().getString(R.string.releases),
-                option -> Utils.openLink(getContext(), Utils.toQrCodeLink(getContext().getString(R.string.releases_url))));
+        OptionItem authorOption = UiOptionItem.from(getContext().getString(R.string.about_author),
+                option -> Utils.openLink(getContext(), Utils.toQrCodeLink(getContext().getString(R.string.author_url))));
 
         OptionItem sourcesOption = UiOptionItem.from(getContext().getString(R.string.sources),
                 option -> Utils.openLink(getContext(), Utils.toQrCodeLink(getContext().getString(R.string.sources_url))));
 
-        //OptionItem webSiteOption = UiOptionItem.from(getContext().getString(R.string.web_site),
-        //        option -> Utils.openLink(getContext(), Utils.toQrCodeLink(getContext().getString(R.string.web_site_url))));
+        OptionItem releasesOption = UiOptionItem.from(getContext().getString(R.string.releases),
+                option -> Utils.openLink(getContext(), Utils.toQrCodeLink(getContext().getString(R.string.releases_url))));
 
-        settingsPresenter.appendSingleButton(releasesOption);
+        OptionItem ciBuildsOption = UiOptionItem.from(getContext().getString(R.string.about_ci_builds),
+                option -> Utils.openLink(getContext(), Utils.toQrCodeLink(getContext().getString(R.string.ci_builds_url))));
+
+        settingsPresenter.appendSingleButton(authorOption);
         settingsPresenter.appendSingleButton(sourcesOption);
-        //settingsPresenter.appendSingleButton(webSiteOption);
+        settingsPresenter.appendSingleButton(releasesOption);
+        settingsPresenter.appendSingleButton(ciBuildsOption);
+    }
+
+    private void appendCredits(AppDialogPresenter settingsPresenter) {
+        List<OptionItem> creditsOptions = new ArrayList<>();
+
+        creditsOptions.add(UiOptionItem.from(
+                getContext().getString(R.string.about_upstream_project),
+                option -> Utils.openLink(getContext(), Utils.toQrCodeLink(getContext().getString(R.string.upstream_sources_url)))));
+
+        creditsOptions.add(UiOptionItem.from(
+                getContext().getString(R.string.about_upstream_releases),
+                option -> Utils.openLink(getContext(), Utils.toQrCodeLink(getContext().getString(R.string.upstream_releases_url)))));
+
+        creditsOptions.add(UiOptionItem.from(
+                getContext().getString(R.string.about_upstream_website),
+                option -> Utils.openLink(getContext(), Utils.toQrCodeLink(getContext().getString(R.string.web_site_url)))));
+
+        settingsPresenter.appendStringsCategory(getContext().getString(R.string.about_credits), creditsOptions);
     }
 
     private void appendDonation(AppDialogPresenter settingsPresenter) {
@@ -139,7 +164,7 @@ public class AboutSettingsPresenter extends BasePresenter<Void> {
         }
 
         if (!donateOptions.isEmpty()) {
-            settingsPresenter.appendStringsCategory(getContext().getString(R.string.donation), donateOptions);
+            settingsPresenter.appendStringsCategory(getContext().getString(R.string.about_upstream_donation), donateOptions);
         }
     }
 
@@ -178,7 +203,7 @@ public class AboutSettingsPresenter extends BasePresenter<Void> {
         }
 
         if (!feedbackOptions.isEmpty()) {
-            settingsPresenter.appendStringsCategory(getContext().getString(R.string.feedback), feedbackOptions);
+            settingsPresenter.appendStringsCategory(getContext().getString(R.string.about_upstream_feedback), feedbackOptions);
         }
     }
 

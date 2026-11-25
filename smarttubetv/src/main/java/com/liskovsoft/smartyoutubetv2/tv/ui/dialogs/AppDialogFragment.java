@@ -3,13 +3,16 @@ package com.liskovsoft.smartyoutubetv2.tv.ui.dialogs;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.widget.CompoundButtonCompat;
 import androidx.leanback.preference.LeanbackPreferenceFragment;
 import androidx.leanback.preference.LeanbackSettingsFragment;
 import androidx.leanback.widget.VerticalGridView;
@@ -323,7 +326,24 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
         if (titleContainer != null) {
             titleContainer.setBackgroundColor(ViewUtil.getThemeColor(
                     context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high));
+            if (titleContainer instanceof ViewGroup) {
+                ViewGroup titleGroup = (ViewGroup) titleContainer;
+                int dividerColor = ViewUtil.getThemeColor(
+                        context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+                for (int i = 0; i < titleGroup.getChildCount(); i++) {
+                    View child = titleGroup.getChildAt(i);
+                    if (child.getId() != R.id.decor_title && child.getLayoutParams() != null && child.getLayoutParams().height <= 4) {
+                        child.setBackgroundColor(dividerColor);
+                    }
+                }
+            }
         }
+
+        int primaryColor = ViewUtil.getThemeColor(context, R.attr.m3Primary, R.color.m3_grey_primary);
+        int onSurfaceVariant = ViewUtil.getThemeColor(context, R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant);
+        ColorStateList buttonTint = new ColorStateList(
+                new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+                new int[]{primaryColor, onSurfaceVariant});
 
         View listView = fragmentView.findViewById(android.R.id.list);
         if (!(listView instanceof VerticalGridView)) {
@@ -356,8 +376,20 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
                             0,
                             strokeWidthPx,
                             itemCornerRadius));
+                    tintCompoundButtons(child, buttonTint);
                 }
             });
+        }
+    }
+
+    public static void tintCompoundButtons(View view, ColorStateList tint) {
+        if (view instanceof CompoundButton) {
+            CompoundButtonCompat.setButtonTintList((CompoundButton) view, tint);
+        } else if (view instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) view;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                tintCompoundButtons(vg.getChildAt(i), tint);
+            }
         }
     }
     

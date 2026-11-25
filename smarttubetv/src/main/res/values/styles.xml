@@ -732,4 +732,14 @@
         <item name="m3SurfaceContainerHigh">@color/m3_oled_blue_surface_container_high</item>
     </style>
     <!-- End Color scheme: Dark Blue (OLED) -->
+
+    <!-- ============================================================ -->
+    <!-- Color scheme: Material You (Dynamic Palette via ThemePaletteHelper) -->
+    <!-- ============================================================ -->
+    <style name="App.Theme.MaterialYou.Browse" parent="App.Theme.DarkGrey.Browse" />
+    <style name="App.Theme.MaterialYou.Player" parent="App.Theme.DarkGrey.Player" />
+    <style name="App.Theme.MaterialYou.Preferences" parent="App.Theme.DarkGrey.Preferences" />
+    <style name="App.Theme.MaterialYou.OLED.Browse" parent="App.Theme.DarkGrey.OLED.Browse" />
+    <style name="App.Theme.MaterialYou.OLED.Player" parent="App.Theme.DarkGrey.OLED.Player" />
+    <!-- End Color scheme: Material You -->
 </resources>

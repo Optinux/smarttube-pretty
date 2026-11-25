@@ -506,13 +506,7 @@ public abstract class BaseMenuPresenter extends BasePresenter<Void> {
     }
 
     protected void appendUpdateCheckButton() {
-        if (!mIsUpdateCheckEnabled) {
-            return;
-        }
-
-        getDialogPresenter().appendSingleButton(UiOptionItem.from(
-                getContext().getString(R.string.check_for_updates),
-                option -> AppUpdatePresenter.instance(getContext()).start(true)));
+        // Auto-update disabled: upstream repo changed and CI builds don't support in-app updates
     }
 
     protected void appendToggleExcludeFromContentBlockButton() {

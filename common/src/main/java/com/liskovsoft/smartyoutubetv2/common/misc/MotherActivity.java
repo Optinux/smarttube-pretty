@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -254,6 +255,15 @@ public class MotherActivity extends FragmentActivity {
         int rootThemeResId = MainUIData.instance(this).getColorScheme().browseThemeResId;
         if (rootThemeResId > 0) {
             setTheme(rootThemeResId);
+        }
+        applyDynamicWindowBackground();
+    }
+
+    protected void applyDynamicWindowBackground() {
+        com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper.M3Palette palette =
+                com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper.getActivePalette(this);
+        if (palette != null && palette.overrideSurfaces && getWindow() != null) {
+            getWindow().setBackgroundDrawable(new ColorDrawable(palette.surface));
         }
     }
 

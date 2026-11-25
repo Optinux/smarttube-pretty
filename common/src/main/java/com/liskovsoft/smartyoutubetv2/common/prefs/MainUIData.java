@@ -118,6 +118,7 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
     private final Runnable mPersistStateInt = this::persistStateInt;
     private boolean mIsUnlocalizedTitlesEnabled;
     private long mUiTweaks;
+    private int mAccentColor;
 
     private MainUIData(Context context) {
         mContext = context;
@@ -211,7 +212,34 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
 
     public void setColorScheme(ColorScheme scheme) {
         mColorSchemeIndex = mColorSchemes.indexOf(scheme);
+        com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper.invalidateCache();
         persistState();
+        persistNow();
+    }
+
+    public int getAccentColor() {
+        return mAccentColor;
+    }
+
+    public void setAccentColor(int accentColor) {
+        mAccentColor = accentColor;
+        com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper.invalidateCache();
+        persistState();
+        persistNow();
+    }
+
+    public boolean hasCustomAccentColor() {
+        return mAccentColor != 0;
+    }
+
+    public boolean isMaterialYouScheme() {
+        ColorScheme scheme = getColorScheme();
+        return scheme != null && scheme.isMaterialYou;
+    }
+
+    public boolean isOledScheme() {
+        ColorScheme scheme = getColorScheme();
+        return scheme != null && scheme.isOled;
     }
 
     public int getChannelCategorySorting() {
@@ -396,19 +424,25 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
                 "App.Theme.DarkGrey.OLED.Player",
                 "App.Theme.DarkGrey.OLED.Browse",
                 "App.Theme.DarkGrey.Preferences",
-                mContext));
+                mContext,
+                false,
+                true));
         mColorSchemes.add(new ColorScheme(
                 R.string.color_scheme_teal_oled,
                 "App.Theme.Leanback.OLED.Player",
                 "App.Theme.Leanback.OLED.Browse",
                 null,
-                mContext));
+                mContext,
+                false,
+                true));
         mColorSchemes.add(new ColorScheme(
                 R.string.color_scheme_dark_grey_monochrome,
                 "App.Theme.DarkGrey2.OLED.Player",
                 "App.Theme.DarkGrey2.OLED.Browse",
                 "App.Theme.DarkGrey.Preferences",
-                mContext));
+                mContext,
+                false,
+                true));
         mColorSchemes.add(new ColorScheme(
                 R.string.color_scheme_dark_blue,
                 "App.Theme.Leanback.Blue.Player",
@@ -420,7 +454,25 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
                 "App.Theme.Leanback.Blue.OLED.Player",
                 "App.Theme.Leanback.Blue.OLED.Browse",
                 "App.Theme.Leanback.Blue.Preferences",
-                mContext));
+                mContext,
+                false,
+                true));
+        mColorSchemes.add(new ColorScheme(
+                R.string.color_scheme_material_you,
+                "App.Theme.MaterialYou.Player",
+                "App.Theme.MaterialYou.Browse",
+                "App.Theme.MaterialYou.Preferences",
+                mContext,
+                true,
+                false));
+        mColorSchemes.add(new ColorScheme(
+                R.string.color_scheme_material_you_oled,
+                "App.Theme.MaterialYou.OLED.Player",
+                "App.Theme.MaterialYou.OLED.Browse",
+                "App.Theme.MaterialYou.Preferences",
+                mContext,
+                true,
+                true));
     }
 
     private void restoreState() {
@@ -452,6 +504,8 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
         mCardPreviewType = Helpers.parseInt(split, 21, CARD_PREVIEW_DISABLED);
         mIsUnlocalizedTitlesEnabled = Helpers.parseBoolean(split, 22, false);
         mUiTweaks = Helpers.parseLong(split, 23, UI_TWEAK_DEFAULT);
+        mAccentColor = Helpers.parseInt(split, 24, 0);
+        com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper.invalidateCache();
 
         int idx = -1;
         for (Long menuItem : MENU_ITEM_DEFAULT_ORDER) {
@@ -499,7 +553,7 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
                 mIsUploadsOldLookEnabled, mIsUploadsAutoLoadEnabled, mCardTextScrollSpeed, mMenuItems, mTopButtons,
                 null, mThumbQuality, mIsCardMultilineSubtitleEnabled, Helpers.mergeList(mMenuItemsOrdered),
                 mIsChannelsFilterEnabled, mIsChannelSearchBarEnabled, mIsPinnedChannelRowsEnabled, mCardPreviewType,
-                mIsUnlocalizedTitlesEnabled, mUiTweaks));
+                mIsUnlocalizedTitlesEnabled, mUiTweaks, mAccentColor));
     }
 
     public static class ColorScheme {
@@ -507,16 +561,30 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
         public final int playerThemeResId;
         public final int browseThemeResId;
         public final int settingsThemeResId;
+        public final boolean isMaterialYou;
+        public final boolean isOled;
 
         public ColorScheme(int nameResId,
                            String playerTheme,
                            String browseTheme,
                            String settingsTheme,
                            Context context) {
+            this(nameResId, playerTheme, browseTheme, settingsTheme, context, false, false);
+        }
+
+        public ColorScheme(int nameResId,
+                           String playerTheme,
+                           String browseTheme,
+                           String settingsTheme,
+                           Context context,
+                           boolean isMaterialYou,
+                           boolean isOled) {
             this.nameResId = nameResId;
             this.playerThemeResId = Helpers.getResourceId(playerTheme, "style", context);
             this.browseThemeResId = Helpers.getResourceId(browseTheme, "style", context);
             this.settingsThemeResId = Helpers.getResourceId(settingsTheme, "style", context);
+            this.isMaterialYou = isMaterialYou;
+            this.isOled = isOled;
         }
     }
 

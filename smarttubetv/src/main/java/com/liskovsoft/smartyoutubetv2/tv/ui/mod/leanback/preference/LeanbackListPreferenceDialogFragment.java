@@ -18,6 +18,7 @@ package com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.preference;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -25,10 +26,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Checkable;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.collection.ArraySet;
+import androidx.core.widget.CompoundButtonCompat;
 import androidx.leanback.widget.VerticalGridView;
 import androidx.preference.DialogPreference;
 import androidx.preference.ListPreference;
@@ -257,7 +260,9 @@ public class LeanbackListPreferenceDialogFragment extends LeanbackPreferenceDial
             final LayoutInflater inflater = LayoutInflater.from(parent.getContext());
             final View view = inflater.inflate(androidx.leanback.preference.R.layout.leanback_list_preference_item_single,
                     parent, false);
-            return new ViewHolder(view, this);
+            ViewHolder holder = new ViewHolder(view, this);
+            applyDynamicButtonTint(parent.getContext(), holder.getWidgetView());
+            return holder;
         }
 
         @Override
@@ -312,7 +317,9 @@ public class LeanbackListPreferenceDialogFragment extends LeanbackPreferenceDial
             final LayoutInflater inflater = LayoutInflater.from(parent.getContext());
             final View view = inflater.inflate(androidx.leanback.preference.R.layout.leanback_list_preference_item_multi, parent,
                     false);
-            return new ViewHolder(view, this);
+            ViewHolder holder = new ViewHolder(view, this);
+            applyDynamicButtonTint(parent.getContext(), holder.getWidgetView());
+            return holder;
         }
 
         @Override
@@ -357,6 +364,24 @@ public class LeanbackListPreferenceDialogFragment extends LeanbackPreferenceDial
 
             notifyDataSetChanged();
         }
+    }
+
+    private static void applyDynamicButtonTint(Context context, Checkable widgetView) {
+        if (context == null || !(widgetView instanceof CompoundButton)) {
+            return;
+        }
+        int primary = ViewUtil.getThemeColor(
+                context,
+                com.liskovsoft.smartyoutubetv2.tv.R.attr.m3Primary,
+                com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_primary);
+        int onSurfaceVariant = ViewUtil.getThemeColor(
+                context,
+                com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OnSurfaceVariant,
+                com.liskovsoft.smartyoutubetv2.tv.R.color.m3_on_surface_variant);
+        ColorStateList tint = new ColorStateList(
+                new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+                new int[]{primary, onSurfaceVariant});
+        CompoundButtonCompat.setButtonTintList((CompoundButton) widgetView, tint);
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
