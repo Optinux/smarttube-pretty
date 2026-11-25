@@ -1,8 +1,11 @@
 package com.liskovsoft.smartyoutubetv2.tv.presenter;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +13,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.ColorUtils;
+import androidx.core.widget.ImageViewCompat;
 import androidx.leanback.widget.HeaderItem;
 import androidx.leanback.widget.ListRow;
 import androidx.leanback.widget.PageRow;
@@ -26,28 +31,51 @@ import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class IconHeaderItemPresenter extends RowHeaderPresenter {
     private static final String TAG = IconHeaderItemPresenter.class.getSimpleName();
-    private float mUnselectedAlpha;
     private final int mResId;
     private final String mIconUrl;
     private Drawable mDefaultIcon;
+    private int mSecondaryContainerColor;
+    private int mOnSecondaryContainerColor;
+    private int mOnSurfaceVariantColor;
+    private int mOutlineColor;
+    private int mPrimaryColor;
+    private float mPillCornerRadius;
+    private int mFocusStrokeWidthPx;
+    private boolean mThemeResolved;
 
     public IconHeaderItemPresenter(int resId, String iconUrl) {
         mResId = resId;
         mIconUrl = iconUrl;
     }
 
+    private void ensureThemeTokens(Context context) {
+        if (mThemeResolved || context == null) {
+            return;
+        }
+        mSecondaryContainerColor = ViewUtil.getThemeColor(context, R.attr.m3SecondaryContainer, R.color.m3_grey_secondary_container);
+        mOnSecondaryContainerColor = ViewUtil.getThemeColor(context, R.attr.m3OnSecondaryContainer, R.color.m3_grey_on_secondary_container);
+        mOnSurfaceVariantColor = ViewUtil.getThemeColor(context, R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant);
+        mOutlineColor = ViewUtil.getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
+        mPrimaryColor = ViewUtil.getThemeColor(context, R.attr.m3Primary, R.color.m3_grey_primary);
+        mPillCornerRadius = context.getResources().getDimension(R.dimen.m3_pill_corner_radius);
+        mFocusStrokeWidthPx = Math.max(1, Math.round(1.5f * context.getResources().getDisplayMetrics().density));
+        mThemeResolved = true;
+    }
+
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup) {
-        mUnselectedAlpha = viewGroup.getResources()
-                .getFraction(R.fraction.lb_browse_header_unselect_alpha, 1, 1);
-        LayoutInflater inflater = (LayoutInflater) viewGroup.getContext()
+        Context context = viewGroup.getContext();
+        ensureThemeTokens(context);
+        LayoutInflater inflater = (LayoutInflater) context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        mDefaultIcon = new ColorDrawable(ContextCompat.getColor(viewGroup.getContext(), R.color.lb_grey));
+        mDefaultIcon = new ColorDrawable(ContextCompat.getColor(context, R.color.lb_grey));
 
-        View view = inflater.inflate(R.layout.icon_header_item, null);
-        view.setAlpha(mUnselectedAlpha); // Initialize icons to be at half-opacity.
+        View view = inflater.inflate(R.layout.icon_header_item, viewGroup, false);
+        view.setBackground(ViewUtil.createRoundedDrawable(Color.TRANSPARENT, Color.TRANSPARENT, 0, mPillCornerRadius));
 
-        return new ViewHolder(view);
+        ViewHolder holder = new ViewHolder(view);
+        applySelectLevel(holder);
+        return holder;
     }
 
     @Override
@@ -66,6 +94,8 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
         ImageView iconView = rootView.findViewById(R.id.header_icon);
         if (iconView != null) {
             if (mIconUrl != null) {
+                ImageViewCompat.setImageTintList(iconView, null);
+                iconView.clearColorFilter();
                 Glide.with(rootView.getContext())
                         .load(mIconUrl)
                         .apply(ViewUtil.glideOptions().error(mDefaultIcon))
@@ -83,6 +113,10 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
         if (label != null) {
             label.setText(headerItem.getName());
         }
+
+        if (viewHolder instanceof RowHeaderPresenter.ViewHolder) {
+            applySelectLevel((RowHeaderPresenter.ViewHolder) viewHolder);
+        }
     }
 
     @Override
@@ -94,8 +128,50 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
     // mUnselectAlpha, and also assumes the xml inflation will return a RowHeaderView.
     @Override
     protected void onSelectLevelChanged(RowHeaderPresenter.ViewHolder holder) {
-        holder.view.setAlpha(mUnselectedAlpha + holder.getSelectLevel() *
-                (1.0f - mUnselectedAlpha));
+        applySelectLevel(holder);
+    }
+
+    private void applySelectLevel(RowHeaderPresenter.ViewHolder holder) {
+        if (holder == null || holder.view == null) {
+            return;
+        }
+        ensureThemeTokens(holder.view.getContext());
+
+        float level = Math.max(0f, Math.min(1f, holder.getSelectLevel()));
+        holder.view.setAlpha(1.0f);
+
+        Drawable bg = holder.view.getBackground();
+        if (bg instanceof GradientDrawable) {
+            GradientDrawable pill = (GradientDrawable) bg;
+            int fillAlpha = Math.round(Color.alpha(mSecondaryContainerColor) * level);
+            pill.setColor(ColorUtils.setAlphaComponent(mSecondaryContainerColor, fillAlpha));
+
+            float strokeT = Math.max(0f, (level - 0.5f) * 2f);
+            if (strokeT > 0.01f) {
+                int strokeAlpha = Math.round(Color.alpha(mOutlineColor) * strokeT * 0.7f);
+                pill.setStroke(mFocusStrokeWidthPx, ColorUtils.setAlphaComponent(mOutlineColor, strokeAlpha));
+            } else {
+                pill.setStroke(0, Color.TRANSPARENT);
+            }
+        }
+
+        float contentAlpha = 0.78f + 0.22f * level;
+        TextView label = holder.view.findViewById(R.id.header_label);
+        if (label != null) {
+            label.setTextColor(ColorUtils.blendARGB(mOnSurfaceVariantColor, mOnSecondaryContainerColor, level));
+            label.setAlpha(contentAlpha);
+        }
+
+        ImageView iconView = holder.view.findViewById(R.id.header_icon);
+        if (iconView != null) {
+            iconView.setAlpha(contentAlpha);
+            if (mIconUrl == null && mResId > 0) {
+                int iconTint = ColorUtils.blendARGB(mOnSurfaceVariantColor, mPrimaryColor, level);
+                ImageViewCompat.setImageTintList(iconView, ColorStateList.valueOf(iconTint));
+            } else {
+                ImageViewCompat.setImageTintList(iconView, null);
+            }
+        }
     }
 
     private final RequestListener<Drawable> mErrorListener = new RequestListener<Drawable>() {

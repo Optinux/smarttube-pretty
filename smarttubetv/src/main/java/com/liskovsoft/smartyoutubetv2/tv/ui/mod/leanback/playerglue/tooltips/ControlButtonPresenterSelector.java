@@ -131,11 +131,20 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
                     TooltipCompatHandler.setTooltipText(vh.mFocusableView, action.getLabel1());
                 }
             }
+
+            View.OnFocusChangeListener currentListener = vh.mFocusableView.getOnFocusChangeListener();
+            if (!(currentListener instanceof FocusScaleListener)) {
+                vh.mFocusableView.setOnFocusChangeListener(
+                        new FocusScaleListener(vh.view, currentListener));
+            }
         }
 
         @Override
         public void onUnbindViewHolder(ViewHolder viewHolder) {
             ActionViewHolder vh = (ActionViewHolder) viewHolder;
+            vh.view.animate().cancel();
+            vh.view.setScaleX(1.0f);
+            vh.view.setScaleY(1.0f);
             vh.mIcon.setImageDrawable(null);
             if (vh.mLabel != null) {
                 vh.mLabel.setText(null);
@@ -152,6 +161,31 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
         public void setOnLongClickListener(ViewHolder viewHolder,
                                        View.OnLongClickListener listener) {
             ((ActionViewHolder) viewHolder).mFocusableView.setOnLongClickListener(listener);
+        }
+
+        private static class FocusScaleListener implements View.OnFocusChangeListener {
+            private static final float FOCUSED_SCALE = 1.12f;
+            private static final long ANIMATION_DURATION_MS = 140L;
+            private final View mTargetView;
+            private final View.OnFocusChangeListener mDelegate;
+
+            FocusScaleListener(View targetView, View.OnFocusChangeListener delegate) {
+                mTargetView = targetView;
+                mDelegate = delegate;
+            }
+
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (mDelegate != null) {
+                    mDelegate.onFocusChange(v, hasFocus);
+                }
+                float targetScale = hasFocus ? FOCUSED_SCALE : 1.0f;
+                mTargetView.animate()
+                        .scaleX(targetScale)
+                        .scaleY(targetScale)
+                        .setDuration(ANIMATION_DURATION_MS)
+                        .start();
+            }
         }
     }
 }

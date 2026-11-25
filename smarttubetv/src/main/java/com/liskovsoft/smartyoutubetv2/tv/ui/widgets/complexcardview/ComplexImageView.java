@@ -109,7 +109,8 @@ public class ComplexImageView extends RelativeLayout {
             return;
         }
 
-        mBadgeText.setBackgroundColor(color);
+        float pillRadius = getResources().getDimension(R.dimen.m3_badge_corner_radius);
+        mBadgeText.setBackground(ViewUtil.createRoundedDrawable(color, 0, 0, pillRadius));
     }
 
     /**

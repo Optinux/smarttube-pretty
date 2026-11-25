@@ -18,7 +18,6 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
-import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
@@ -37,8 +36,15 @@ public class VideoCardPresenter extends LongClickPresenter {
     private static final String TAG = VideoCardPresenter.class.getSimpleName();
     private int mDefaultBackgroundColor = -1;
     private int mDefaultTextColor = -1;
+    private int mDefaultSubtitleColor = -1;
     private int mSelectedBackgroundColor = -1;
     private int mSelectedTextColor = -1;
+    private int mSelectedSubtitleColor = -1;
+    private int mOutlineColor = -1;
+    private int mHairlineColor = -1;
+    private float mCornerRadius;
+    private int mFocusStrokePx;
+    private int mHairlineStrokePx;
     private int mCardPreviewType;
     private int mThumbQuality;
     private int mWidth;
@@ -49,13 +55,25 @@ public class VideoCardPresenter extends LongClickPresenter {
         Context context = parent.getContext();
 
         mDefaultBackgroundColor =
-            ContextCompat.getColor(context, Helpers.getThemeAttr(context, R.attr.cardDefaultBackground));
-        mDefaultTextColor =
-                ContextCompat.getColor(context, R.color.card_default_text);
+                ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainer, R.color.card_default_background);
         mSelectedBackgroundColor =
-                ContextCompat.getColor(context, Helpers.getThemeAttr(context, R.attr.cardSelectedBackground));
+                ViewUtil.getThemeColor(context, R.attr.m3SecondaryContainer, R.color.card_selected_background_white);
+        mDefaultTextColor =
+                ViewUtil.getThemeColor(context, R.attr.m3OnSurface, R.color.card_default_text);
+        mDefaultSubtitleColor =
+                ViewUtil.getThemeColor(context, R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant);
         mSelectedTextColor =
-                ContextCompat.getColor(context, R.color.card_selected_text_grey);
+                ViewUtil.getThemeColor(context, R.attr.m3OnSecondaryContainer, R.color.card_selected_text_grey);
+        mSelectedSubtitleColor =
+                ViewUtil.getThemeColor(context, R.attr.m3OnPrimaryContainer, R.color.m3_on_surface_variant);
+        mOutlineColor =
+                ViewUtil.getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
+        mHairlineColor =
+                ViewUtil.getThemeColor(context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+
+        mCornerRadius = context.getResources().getDimension(R.dimen.lb_rounded_rect_corner_radius);
+        mFocusStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
+        mHairlineStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
 
         mCardPreviewType = getCardPreviewType(context);
         mThumbQuality = getThumbQuality(context);
@@ -84,22 +102,19 @@ public class VideoCardPresenter extends LongClickPresenter {
         cardView.enableBadge(isBadgeEnabled());
         cardView.enableTitle(isTitleEnabled());
         cardView.enableContent(isContentEnabled());
-        cardView.setBackgroundColor(mDefaultBackgroundColor); // background is temporarily visible during animations
-        //if (VERSION.SDK_INT >= 23 && MainUIData.instance(context).isUiTweakEnabled(MainUIData.UI_TWEAK_ROUNDED_CORNERS)) {
-        //    cardView.setForeground(ContextCompat.getDrawable(context, R.drawable.lb_card_outline));
-        //}
+        ViewUtil.applyRoundedOutline(cardView, mCornerRadius);
         updateCardBackgroundColor(cardView, false);
         return new ViewHolder(cardView);
     }
 
     private void updateCardBackgroundColor(ComplexImageCardView view, boolean selected) {
         int backgroundColor = selected ? mSelectedBackgroundColor : mDefaultBackgroundColor;
-        int textColor = selected ? mSelectedTextColor : mDefaultTextColor;
+        int titleColor = selected ? mSelectedTextColor : mDefaultTextColor;
+        int subtitleColor = selected ? mSelectedSubtitleColor : mDefaultSubtitleColor;
 
-        // Both background colors should be set because the view's
-        // background is temporarily visible during animations.
-        // NOTE: has visual bug with rounded corners
-        //view.setBackgroundColor(backgroundColor);
+        view.setBackground(ViewUtil.createRoundedDrawable(backgroundColor, 0, 0, mCornerRadius));
+        ViewUtil.updateCardFocusForeground(
+                view, selected, mOutlineColor, mHairlineColor, mFocusStrokePx, mHairlineStrokePx, mCornerRadius);
 
         View infoField = view.findViewById(R.id.info_field);
         if (infoField != null) {
@@ -108,11 +123,11 @@ public class VideoCardPresenter extends LongClickPresenter {
 
         TextView titleText = view.findViewById(R.id.title_text);
         if (titleText != null) {
-            titleText.setTextColor(textColor);
+            titleText.setTextColor(titleColor);
         }
         TextView contentText = view.findViewById(R.id.content_text);
         if (contentText != null) {
-            contentText.setTextColor(textColor);
+            contentText.setTextColor(subtitleColor);
         }
     }
 
@@ -135,8 +150,12 @@ public class VideoCardPresenter extends LongClickPresenter {
                 video.isShorts ? context.getString(R.string.header_shorts).toUpperCase() :
                 video.badge
         );
-        cardView.setBadgeColor(video.hasNewContent || video.isLive || video.isUpcoming ?
-                ContextCompat.getColor(context, R.color.dark_red) : ContextCompat.getColor(context, R.color.black));
+        int badgeColorRes =
+                video.hasNewContent ? R.color.m3_badge_new_bg :
+                video.isLive || video.isUpcoming ? R.color.m3_badge_live_bg :
+                video.isShorts ? R.color.m3_badge_shorts_bg :
+                R.color.m3_badge_default_bg;
+        cardView.setBadgeColor(ContextCompat.getColor(context, badgeColorRes));
 
         if (mCardPreviewType != MainUIData.CARD_PREVIEW_DISABLED) {
             cardView.setPreview(video);

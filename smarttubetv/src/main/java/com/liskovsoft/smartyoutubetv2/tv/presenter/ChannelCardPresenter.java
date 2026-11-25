@@ -3,21 +3,20 @@ package com.liskovsoft.smartyoutubetv2.tv.presenter;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
-import android.os.Build.VERSION;
 import android.util.Pair;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
-import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
@@ -27,12 +26,20 @@ import com.liskovsoft.smartyoutubetv2.tv.ui.browse.video.GridFragmentHelper;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class ChannelCardPresenter extends LongClickPresenter {
-    private static final String TAG = VideoCardPresenter.class.getSimpleName();
+    private static final String TAG = ChannelCardPresenter.class.getSimpleName();
     private int mDefaultBackgroundColor;
     private int mDefaultTextColor;
     private int mSelectedBackgroundColor;
-    private int mNewContentBackgroundColor;
     private int mSelectedTextColor;
+    private int mNewContentBackgroundColor;
+    private int mNewContentTextColor;
+    private int mPrimaryColor;
+    private int mOutlineColor;
+    private int mHairlineColor;
+    private float mCornerRadius;
+    private int mFocusStrokePx;
+    private int mNewStrokePx;
+    private int mHairlineStrokePx;
     private int mWidth;
     private int mHeight;
 
@@ -41,28 +48,51 @@ public class ChannelCardPresenter extends LongClickPresenter {
         Context context = parent.getContext();
 
         mDefaultBackgroundColor =
-                ContextCompat.getColor(context, Helpers.getThemeAttr(context, R.attr.cardDefaultBackground));
-        mDefaultTextColor =
-                ContextCompat.getColor(context, R.color.card_default_text);
-        mNewContentBackgroundColor =
-                ContextCompat.getColor(context, R.color.dark_red);
+                ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainer, R.color.card_default_background);
         mSelectedBackgroundColor =
-                ContextCompat.getColor(context, Helpers.getThemeAttr(context, R.attr.cardSelectedBackground));
+                ViewUtil.getThemeColor(context, R.attr.m3SecondaryContainer, R.color.card_selected_background_white);
+        mNewContentBackgroundColor =
+                ViewUtil.getThemeColor(context, R.attr.m3PrimaryContainer, R.color.m3_grey_primary_container);
+        mDefaultTextColor =
+                ViewUtil.getThemeColor(context, R.attr.m3OnSurface, R.color.m3_on_surface);
         mSelectedTextColor =
-                ContextCompat.getColor(context, R.color.card_selected_text_grey);
+                ViewUtil.getThemeColor(context, R.attr.m3OnSecondaryContainer, R.color.m3_on_surface);
+        mNewContentTextColor =
+                ViewUtil.getThemeColor(context, R.attr.m3OnPrimaryContainer, R.color.m3_on_surface);
+        mPrimaryColor =
+                ViewUtil.getThemeColor(context, R.attr.m3Primary, R.color.m3_grey_primary);
+        mOutlineColor =
+                ViewUtil.getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
+        mHairlineColor =
+                ViewUtil.getThemeColor(context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+
+        mCornerRadius = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 14f, context.getResources().getDisplayMetrics());
+        mFocusStrokePx = Math.round(TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 2f, context.getResources().getDisplayMetrics()));
+        mNewStrokePx = Math.round(TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 1.5f, context.getResources().getDisplayMetrics()));
+        mHairlineStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
 
         updateDimensions(context);
 
         @SuppressLint("InflateParams")
-        View container = LayoutInflater.from(context).inflate(R.layout.channel_card, null);
-        container.setBackgroundColor(mDefaultBackgroundColor);
-        //if (VERSION.SDK_INT >= 23 && MainUIData.instance(context).isUiTweakEnabled(MainUIData.UI_TWEAK_ROUNDED_CORNERS)) {
-        //    container.setForeground(ContextCompat.getDrawable(context, R.drawable.lb_card_outline));
-        //}
+        FrameLayout container = (FrameLayout) LayoutInflater.from(context).inflate(R.layout.channel_card, null);
+        ViewUtil.applyRoundedOutline(container, mCornerRadius);
+
+        ImageView imageView = container.findViewById(R.id.channel_image);
+        float avatarRadius = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 14f, context.getResources().getDisplayMetrics());
+        ViewUtil.applyRoundedOutline(imageView, avatarRadius);
+
+        View newDot = container.findViewById(R.id.channel_new_indicator);
+        if (newDot != null) {
+            float dotRadius = context.getResources().getDimension(R.dimen.m3_pill_corner_radius);
+            newDot.setBackground(ViewUtil.createRoundedDrawable(mPrimaryColor, 0, 0, dotRadius));
+        }
 
         TextView textView = container.findViewById(R.id.channel_title);
-        textView.setBackgroundColor(mDefaultBackgroundColor);
-        textView.setTextColor(mDefaultTextColor);
+        updateCardStyle(container, textView, false, false);
 
         boolean autoScrollEnabled = isCardTextAutoScrollEnabled(context);
         if (autoScrollEnabled) {
@@ -70,12 +100,8 @@ public class ChannelCardPresenter extends LongClickPresenter {
         }
 
         container.setOnFocusChangeListener((v, hasFocus) -> {
-            int backgroundColor = hasFocus ? mSelectedBackgroundColor :
-                    textView.getTag(R.id.channel_new_content) != null ? mNewContentBackgroundColor : mDefaultBackgroundColor;
-            int textColor = hasFocus ? mSelectedTextColor : mDefaultTextColor;
-            
-            textView.setBackgroundColor(backgroundColor);
-            textView.setTextColor(textColor);
+            boolean hasNew = textView.getTag(R.id.channel_new_content) != null;
+            updateCardStyle(container, textView, hasFocus, hasNew);
 
             if (!autoScrollEnabled) {
                 return;
@@ -91,6 +117,22 @@ public class ChannelCardPresenter extends LongClickPresenter {
         return new ViewHolder(container);
     }
 
+    private void updateCardStyle(FrameLayout container, TextView textView, boolean hasFocus, boolean hasNew) {
+        int backgroundColor = hasFocus
+                ? mSelectedBackgroundColor
+                : (hasNew ? mNewContentBackgroundColor : mDefaultBackgroundColor);
+        int textColor = hasFocus
+                ? mSelectedTextColor
+                : (hasNew ? mNewContentTextColor : mDefaultTextColor);
+        int unfocusedStrokeColor = hasNew ? mPrimaryColor : mHairlineColor;
+        int unfocusedStrokeWidth = hasNew ? mNewStrokePx : mHairlineStrokePx;
+
+        container.setBackground(ViewUtil.createRoundedDrawable(backgroundColor, 0, 0, mCornerRadius));
+        ViewUtil.updateCardFocusForeground(
+                container, hasFocus, mOutlineColor, unfocusedStrokeColor, mFocusStrokePx, unfocusedStrokeWidth, mCornerRadius);
+        textView.setTextColor(textColor);
+    }
+
     @Override
     public void onBindViewHolder(ViewHolder viewHolder, Object item) {
         super.onBindViewHolder(viewHolder, item);
@@ -104,9 +146,13 @@ public class ChannelCardPresenter extends LongClickPresenter {
         textView.setText(video.getTitle());
 
         // We should setup props each time because object may be reused by the underlying RecyclerView
-        textView.setBackgroundColor(video.hasNewContent ? mNewContentBackgroundColor : mDefaultBackgroundColor);
         textView.setTag(R.id.channel_new_content, video.hasNewContent ? true : null);
+        updateCardStyle((FrameLayout) viewHolder.view, textView, viewHolder.view.hasFocus(), video.hasNewContent);
 
+        View newDot = viewHolder.view.findViewById(R.id.channel_new_indicator);
+        if (newDot != null) {
+            newDot.setVisibility(video.hasNewContent ? View.VISIBLE : View.GONE);
+        }
 
         ImageView imageView = viewHolder.view.findViewById(R.id.channel_image);
         imageView.setVisibility(View.VISIBLE);

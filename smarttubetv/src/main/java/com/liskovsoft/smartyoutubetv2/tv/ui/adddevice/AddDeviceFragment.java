@@ -1,5 +1,6 @@
 package com.liskovsoft.smartyoutubetv2.tv.ui.adddevice;
 
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -10,6 +11,7 @@ import androidx.leanback.widget.GuidedAction;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.AddDevicePresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.views.AddDeviceView;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.util.List;
 
@@ -29,7 +31,28 @@ public class AddDeviceFragment extends GuidedStepSupportFragment implements AddD
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
+        styleGuidanceViews();
         mAddDevicePresenter.onViewInitialized();
+    }
+
+    private void styleGuidanceViews() {
+        if (getContext() == null || getGuidanceStylist() == null) {
+            return;
+        }
+
+        TextView titleView = getGuidanceStylist().getTitleView();
+        if (titleView != null) {
+            titleView.setTextColor(ViewUtil.getThemeColor(
+                    getContext(), R.attr.m3OnSurface, R.color.m3_on_surface));
+            titleView.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        }
+
+        TextView descriptionView = getGuidanceStylist().getDescriptionView();
+        if (descriptionView != null) {
+            descriptionView.setTextColor(ViewUtil.getThemeColor(
+                    getContext(), R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant));
+            descriptionView.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
+        }
     }
 
     @Override

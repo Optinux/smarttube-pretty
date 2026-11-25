@@ -17,6 +17,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.ui.CommentsRece
 import com.liskovsoft.smartyoutubetv2.common.app.models.playback.ui.CommentsReceiver.Callback;
 import com.liskovsoft.smartyoutubetv2.common.prefs.PlayerTweaksData;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.ui.dialogs.AppDialogFragment;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.preference.LeanbackPreferenceDialogFragment;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.chat.ChatItemMessage;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
@@ -160,11 +161,14 @@ public class CommentsPreferenceDialogFragment extends LeanbackPreferenceDialogFr
             adapter.setFocusedMessage(mFocusedMessage);
         }
 
+        View parentView = getParentFragment() != null ? getParentFragment().getView() : null;
         if (mIsTransparent) {
             // Enable transparent shadow outline on parent (R.id.settings_preference_fragment_container)
-            ViewUtil.enableTransparentDialog(getActivity(), getParentFragment().getView());
+            ViewUtil.enableTransparentDialog(getActivity(), parentView);
             // Enable transparency on child fragment itself (isn't attached to parent yet)
             ViewUtil.enableTransparentDialog(getActivity(), view);
+        } else {
+            AppDialogFragment.applyM3SideSheetStyling(getActivity(), parentView, view);
         }
 
         if (PlayerTweaksData.instance(getActivity()).isCommentsPlacedLeft()) {

@@ -5,9 +5,9 @@
             <gradient
                 android:angle="90"
                 android:centerY="0.2"
-                android:startColor="#D2000000"
-                android:centerColor="#D2000000"
-                android:endColor="#D2000000"
+                android:startColor="@color/m3_scrim_suggestions"
+                android:centerColor="@color/m3_scrim_suggestions"
+                android:endColor="@color/m3_scrim_suggestions"
                 android:type="linear" />
         </shape>
     </item>

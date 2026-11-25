@@ -10,10 +10,8 @@ import androidx.preference.ListPreference;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.Adapter;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.preference.LeanbackListPreferenceDialogFragment;
-import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class RadioListPreferenceDialogFragment extends LeanbackListPreferenceDialogFragment {
-    private boolean mIsTransparent;
 
     @Override
     public Adapter<ViewHolder> onCreateAdapter() {
@@ -40,10 +38,6 @@ public class RadioListPreferenceDialogFragment extends LeanbackListPreferenceDia
         View view = super.onCreateView(inflater, container, savedInstanceState);
 
         if (view != null) {
-            if (mIsTransparent) {
-                ViewUtil.enableTransparentDialog(getActivity(), view);
-            }
-
             VerticalGridView verticalGridView = view.findViewById(android.R.id.list);
             if (verticalGridView != null) {
                 verticalGridView.scrollToPosition(findSelectedPosition());
@@ -51,10 +45,6 @@ public class RadioListPreferenceDialogFragment extends LeanbackListPreferenceDia
         }
 
         return view;
-    }
-
-    public void enableTransparent(boolean enable) {
-        mIsTransparent = enable;
     }
 
     private int findSelectedPosition() {

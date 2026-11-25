@@ -45,9 +45,9 @@
             android:nextFocusLeft="@id/title_orb"
             android:nextFocusRight="@id/language_orb"
             app:searchOrbIcon="@drawable/browse_title_account"
-            app:searchOrbColor="@color/orb_color"
-            app:searchOrbBrightColor="@color/orb_bright_color"
-            app:searchOrbIconColor="@color/orb_icon_color"
+            app:searchOrbColor="@color/m3_grey_surface_container_high"
+            app:searchOrbBrightColor="@color/m3_grey_primary_container"
+            app:searchOrbIconColor="@color/m3_on_surface"
             android:visibility="gone" />
 
         <androidx.leanback.widget.SearchOrbView
@@ -59,9 +59,9 @@
             android:nextFocusLeft="@id/account_orb"
             android:nextFocusRight="@id/exit_pip"
             app:searchOrbIcon="@drawable/search_bar_language_orb"
-            app:searchOrbColor="@color/orb_color"
-            app:searchOrbBrightColor="@color/orb_bright_color"
-            app:searchOrbIconColor="@color/orb_icon_color"
+            app:searchOrbColor="@color/m3_grey_surface_container_high"
+            app:searchOrbBrightColor="@color/m3_grey_primary_container"
+            app:searchOrbIconColor="@color/m3_on_surface"
             android:visibility="gone" />
 
         <androidx.leanback.widget.SearchOrbView
@@ -72,9 +72,9 @@
             android:layout_marginStart="@dimen/search_bar_right_items_margin"
             android:nextFocusLeft="@id/language_orb"
             app:searchOrbIcon="@drawable/browse_title_pip"
-            app:searchOrbColor="@color/orb_color"
-            app:searchOrbBrightColor="@color/orb_bright_color"
-            app:searchOrbIconColor="@color/orb_icon_color"
+            app:searchOrbColor="@color/m3_grey_surface_container_high"
+            app:searchOrbBrightColor="@color/m3_grey_primary_container"
+            app:searchOrbIconColor="@color/m3_on_surface"
             android:visibility="gone" />
 
         <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.marqueetextviewcompat.TitleMarqueeTextViewCompat
@@ -83,8 +83,10 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/search_bar_right_items_margin"
             android:layout_gravity="center_vertical"
+            android:fontFamily="sans-serif-medium"
             android:maxWidth="@dimen/pip_title_max_width"
             android:textSize="@dimen/pip_title_size"
+            android:textColor="@color/m3_on_surface"
             style="?attr/browseTitleTextStyle"
             android:ellipsize="marquee"
             android:visibility="gone" />

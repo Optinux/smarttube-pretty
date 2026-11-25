@@ -4,6 +4,7 @@ import android.content.Context;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Pair;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,13 +38,39 @@ public class SearchFieldPresenter extends Presenter {
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent) {
-        updateDimensions(parent.getContext());
+        Context context = parent.getContext();
+        updateDimensions(context);
 
-        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+        LayoutInflater inflater = LayoutInflater.from(context);
         View contentView = inflater.inflate(R.layout.search_field, parent, false);
 
         EditText editField = contentView.findViewById(R.id.simple_edit_value);
         ViewUtil.setDimensions(editField, mWidth, -1); // don't do auto height
+
+        int bgUnfocused = ViewUtil.getThemeColor(
+                context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high);
+        int bgFocused = ViewUtil.getThemeColor(
+                context, R.attr.m3SurfaceContainerHighest, R.color.m3_grey_surface_container_highest);
+        int strokeUnfocused = ViewUtil.getThemeColor(
+                context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+        int strokeFocused = ViewUtil.getThemeColor(
+                context, R.attr.m3Outline, R.color.m3_grey_outline);
+        int textColor = ViewUtil.getThemeColor(
+                context, R.attr.m3OnSurface, R.color.m3_on_surface);
+        int hintColor = ViewUtil.getThemeColor(
+                context, R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant);
+
+        float pillRadius = context.getResources().getDimension(R.dimen.m3_pill_corner_radius);
+        int hairlineStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
+        int focusStrokePx = Math.round(TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 2f, context.getResources().getDisplayMetrics()));
+
+        editField.setBackground(ViewUtil.createFocusSelectorDrawable(
+                bgUnfocused, bgFocused, strokeUnfocused, strokeFocused, hairlineStrokePx, focusStrokePx, pillRadius));
+        editField.setTextColor(textColor);
+        editField.setHintTextColor(hintColor);
+        ViewUtil.applyRoundedOutline(editField, pillRadius);
+
         contentView.setOnFocusChangeListener((v, hasFocus) -> {
             Log.d(TAG, "On edit field focused");
             if (hasFocus) {

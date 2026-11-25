@@ -1,5 +1,9 @@
 package com.liskovsoft.smartyoutubetv2.tv.ui.browse.dialog;
 
+import android.content.Context;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
@@ -16,6 +20,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.errors.ErrorFragmentData
 import com.liskovsoft.smartyoutubetv2.common.app.models.errors.SignInError;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.fragments.ErrorSupportFragment;
+import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class ErrorDialogFragment extends ErrorSupportFragment implements BrowseSupportFragment.MainFragmentAdapterProvider {
     private static final boolean TRANSLUCENT = true;
@@ -60,28 +65,71 @@ public class ErrorDialogFragment extends ErrorSupportFragment implements BrowseS
             return;
         }
 
-        if (mDialogData instanceof CategoryEmptyError || mDialogData instanceof SignInError) {
-            setImageDrawable(ContextCompat.getDrawable(getActivity(), R.drawable.lb_ic_sad_cloud));
+        Context context = getActivity();
+
+        boolean isSadCloud = mDialogData instanceof CategoryEmptyError || mDialogData instanceof SignInError;
+        if (isSadCloud) {
+            setImageDrawable(ContextCompat.getDrawable(context, R.drawable.lb_ic_sad_cloud));
         }
 
         setMessage(mDialogData.getMessage());
 
         TextView mTextView = (TextView) Helpers.getField(this, "mTextView");
         ImageView mImageView = (ImageView) Helpers.getField(this, "mImageView");
-        if (mTextView != null && mImageView != null) {
-            mTextView.setMaxLines(mImageView.getVisibility() == View.GONE ? EXPANDED_MAX_LINES : NORMAL_MAX_LINES);
+        if (mTextView != null) {
+            if (mImageView != null) {
+                mTextView.setMaxLines(mImageView.getVisibility() == View.GONE ? EXPANDED_MAX_LINES : NORMAL_MAX_LINES);
+            }
+            mTextView.setTextColor(ViewUtil.getThemeColor(
+                    context, R.attr.m3OnSurface, R.color.m3_on_surface));
+            mTextView.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
         }
 
+        if (mImageView != null) {
+            if (isSadCloud) {
+                mImageView.setColorFilter(ViewUtil.getThemeColor(
+                        context, R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant));
+            } else {
+                mImageView.clearColorFilter();
+            }
+        }
+
+        Button mButton = (Button) Helpers.getField(this, "mButton");
         if (mDialogData.getActionText() != null) {
             setButtonText(mDialogData.getActionText());
             setButtonClickListener(v -> mDialogData.onAction());
-        } else {
-            Button mButton = (Button) Helpers.getField(this, "mButton");
-
-            if (mButton != null) {
-                mButton.setVisibility(View.GONE);
-            }
+            styleActionButton(context, mButton);
+        } else if (mButton != null) {
+            mButton.setVisibility(View.GONE);
         }
+    }
+
+    private void styleActionButton(Context context, Button button) {
+        if (context == null || button == null) {
+            return;
+        }
+
+        float density = context.getResources().getDisplayMetrics().density;
+        int fill = ViewUtil.getThemeColor(
+                context, R.attr.m3PrimaryContainer, R.color.m3_grey_primary_container);
+        int textColor = ViewUtil.getThemeColor(
+                context, R.attr.m3OnPrimaryContainer, R.color.m3_grey_on_primary_container);
+        int outline = ViewUtil.getThemeColor(
+                context, R.attr.m3Outline, R.color.m3_grey_outline);
+        float pillRadius = context.getResources().getDimension(R.dimen.m3_pill_corner_radius);
+        int strokeWidthPx = Math.max(1, Math.round(2f * density));
+
+        int padH = Math.round(24 * density);
+        int padV = Math.round(12 * density);
+        button.setPaddingRelative(padH, padV, padH, padV);
+        button.setTextColor(textColor);
+        button.setAllCaps(false);
+        button.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        if (VERSION.SDK_INT >= 21) {
+            button.setStateListAnimator(null);
+        }
+        button.setBackground(ViewUtil.createFocusSelectorDrawable(
+                fill, fill, Color.TRANSPARENT, outline, 0, strokeWidthPx, pillRadius));
     }
 
     @Override

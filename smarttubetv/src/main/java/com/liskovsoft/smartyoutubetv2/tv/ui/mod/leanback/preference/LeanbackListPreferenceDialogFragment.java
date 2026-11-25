@@ -36,8 +36,10 @@ import androidx.preference.MultiSelectListPreference;
 import androidx.recyclerview.widget.RecyclerView;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.PlaybackPresenter;
 import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
+import com.liskovsoft.smartyoutubetv2.tv.ui.dialogs.AppDialogFragment;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.clickable.LinkifyCompat;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.clickable.LinkifyCompat.LinkifyClickHandler;
+import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -65,6 +67,7 @@ public class LeanbackListPreferenceDialogFragment extends LeanbackPreferenceDial
     private int mDialogLayoutRes;
     protected Set<String> mInitialSelections;
     protected String mInitialSelection;
+    protected boolean mIsTransparent;
 
     public static LeanbackListPreferenceDialogFragment newInstanceSingle(String key) {
         final Bundle args = new Bundle(1);
@@ -210,7 +213,19 @@ public class LeanbackListPreferenceDialogFragment extends LeanbackPreferenceDial
             parent.removeView(verticalGridView);
         }
 
+        View parentView = getParentFragment() != null ? getParentFragment().getView() : null;
+        if (mIsTransparent) {
+            ViewUtil.enableTransparentDialog(getActivity(), parentView);
+            ViewUtil.enableTransparentDialog(getActivity(), view);
+        } else {
+            AppDialogFragment.applyM3SideSheetStyling(getActivity(), parentView, view);
+        }
+
         return view;
+    }
+
+    public void enableTransparent(boolean enable) {
+        mIsTransparent = enable;
     }
 
     public RecyclerView.Adapter<ViewHolder> onCreateAdapter() {

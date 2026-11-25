@@ -12,11 +12,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:autofillHints=""
+        android:background="@null"
+        android:fontFamily="sans-serif"
         android:hint="@string/channel_filter_hint"
         android:imeOptions="actionDone"
         android:inputType="textPersonName"
-        android:textColor="@color/dialog_text_color"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:singleLine="true"
+        android:textSize="14sp"
+        android:textColor="@color/m3_on_surface"
         android:textCursorDrawable="@null"
-        android:backgroundTint="@color/dialog_text_color"
-        android:textColorHint="@color/white_50" />
+        android:textColorHint="@color/m3_on_surface_variant" />
 </LinearLayout>

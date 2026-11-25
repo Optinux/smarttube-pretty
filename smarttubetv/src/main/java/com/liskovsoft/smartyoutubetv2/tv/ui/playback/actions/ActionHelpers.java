@@ -12,19 +12,18 @@ import android.graphics.drawable.Drawable;
 import android.util.TypedValue;
 import androidx.core.content.ContextCompat;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class ActionHelpers {
     public static int getIconHighlightColor(Context context) {
-        TypedValue outValue = new TypedValue();
-        if (context.getTheme().resolveAttribute(R.attr.playbackControlsIconHighlightColor,
-                outValue, true)) {
-            return outValue.data;
-        }
-        return ContextCompat.getColor(context, R.color.lb_playback_icon_highlight_no_theme);
+        return ViewUtil.getThemeColor(
+                context,
+                R.attr.playbackControlsIconHighlightColor,
+                R.color.lb_playback_icon_highlight_no_theme);
     }
 
     public static int getIconGrayedOutColor(Context context) {
-        return ContextCompat.getColor(context, R.color.gray);
+        return ContextCompat.getColor(context, R.color.m3_on_surface_muted);
     }
 
     public static BitmapDrawable createDrawable(Context context, BitmapDrawable bitmapDrawable, int bitmapColor) {
@@ -34,6 +33,9 @@ public class ActionHelpers {
     }
 
     public static Bitmap createBitmap(Bitmap bitmap, int color) {
+        if (bitmap == null) {
+            return null;
+        }
         Bitmap dst = bitmap.copy(bitmap.getConfig(), true);
         Canvas canvas = new Canvas(dst);
         Paint paint = new Paint();

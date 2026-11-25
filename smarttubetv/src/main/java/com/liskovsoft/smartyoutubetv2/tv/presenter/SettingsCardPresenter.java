@@ -2,15 +2,16 @@ package com.liskovsoft.smartyoutubetv2.tv.presenter;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.os.Build.VERSION;
+import android.graphics.PorterDuff;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.core.content.ContextCompat;
 import androidx.leanback.widget.Presenter;
-import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.SettingsItem;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.tv.R;
@@ -21,39 +22,46 @@ public class SettingsCardPresenter extends Presenter {
     private int mDefaultTextColor;
     private int mSelectedBackgroundColor;
     private int mSelectedTextColor;
+    private int mOutlineColor;
+    private int mHairlineColor;
+    private float mCornerRadius;
+    private int mFocusStrokePx;
+    private int mHairlineStrokePx;
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent) {
         Context context = parent.getContext();
 
         mDefaultBackgroundColor =
-                ContextCompat.getColor(context, Helpers.getThemeAttr(context, R.attr.cardDefaultBackground));
-        mDefaultTextColor =
-                ContextCompat.getColor(context, R.color.card_default_text);
+                ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainer, R.color.card_default_background);
         mSelectedBackgroundColor =
-                ContextCompat.getColor(context, R.color.card_selected_background_white);
+                ViewUtil.getThemeColor(context, R.attr.m3PrimaryContainer, R.color.card_selected_background_white);
+        mDefaultTextColor =
+                ViewUtil.getThemeColor(context, R.attr.m3OnSurface, R.color.m3_on_surface);
         mSelectedTextColor =
-                ContextCompat.getColor(context, R.color.card_selected_text_grey);
+                ViewUtil.getThemeColor(context, R.attr.m3OnPrimaryContainer, R.color.m3_on_surface);
+        mOutlineColor =
+                ViewUtil.getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
+        mHairlineColor =
+                ViewUtil.getThemeColor(context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+
+        mCornerRadius = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 18f, context.getResources().getDisplayMetrics());
+        mFocusStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
+        mHairlineStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
 
         @SuppressLint("InflateParams")
-        View container = LayoutInflater.from(context).inflate(R.layout.settings_card, null);
-        container.setBackgroundColor(mDefaultBackgroundColor);
-        //if (VERSION.SDK_INT >= 23 && MainUIData.instance(context).isUiTweakEnabled(MainUIData.UI_TWEAK_ROUNDED_CORNERS)) {
-        //    container.setForeground(ContextCompat.getDrawable(context, R.drawable.lb_card_outline));
-        //}
+        FrameLayout container = (FrameLayout) LayoutInflater.from(context).inflate(R.layout.settings_card, null);
+        ViewUtil.applyRoundedOutline(container, mCornerRadius);
 
         TextView textView = container.findViewById(R.id.settings_title);
-        textView.setBackgroundColor(mDefaultBackgroundColor);
-        textView.setTextColor(mDefaultTextColor);
+        ImageView imageView = container.findViewById(R.id.settings_image);
+        updateCardStyle(container, textView, imageView, false);
 
         ViewUtil.setTextScrollSpeed(textView, getCardTextScrollSpeed(context));
 
         container.setOnFocusChangeListener((v, hasFocus) -> {
-            int backgroundColor = hasFocus ? mSelectedBackgroundColor : mDefaultBackgroundColor;
-            int textColor = hasFocus ? mSelectedTextColor : mDefaultTextColor;
-            
-            textView.setBackgroundColor(backgroundColor);
-            textView.setTextColor(textColor);
+            updateCardStyle(container, textView, imageView, hasFocus);
 
             if (hasFocus) {
                 ViewUtil.enableMarquee(textView);
@@ -63,6 +71,19 @@ public class SettingsCardPresenter extends Presenter {
         });
 
         return new ViewHolder(container);
+    }
+
+    private void updateCardStyle(FrameLayout container, TextView textView, ImageView imageView, boolean hasFocus) {
+        int backgroundColor = hasFocus ? mSelectedBackgroundColor : mDefaultBackgroundColor;
+        int contentColor = hasFocus ? mSelectedTextColor : mDefaultTextColor;
+
+        container.setBackground(ViewUtil.createRoundedDrawable(backgroundColor, 0, 0, mCornerRadius));
+        ViewUtil.updateCardFocusForeground(
+                container, hasFocus, mOutlineColor, mHairlineColor, mFocusStrokePx, mHairlineStrokePx, mCornerRadius);
+        textView.setTextColor(contentColor);
+        if (imageView != null) {
+            imageView.setColorFilter(contentColor, PorterDuff.Mode.SRC_IN);
+        }
     }
 
     @Override
@@ -77,6 +98,7 @@ public class SettingsCardPresenter extends Presenter {
             Context context = viewHolder.view.getContext();
             ImageView imageView = viewHolder.view.findViewById(R.id.settings_image);
             imageView.setImageDrawable(ContextCompat.getDrawable(context, settingsItem.imageResId));
+            imageView.setColorFilter(viewHolder.view.hasFocus() ? mSelectedTextColor : mDefaultTextColor, PorterDuff.Mode.SRC_IN);
             imageView.setVisibility(View.VISIBLE);
         }
     }

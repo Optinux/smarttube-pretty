@@ -21,11 +21,13 @@ import static androidx.leanback.widget.FocusHighlight.ZOOM_FACTOR_XSMALL;
 
 import android.animation.TimeAnimator;
 import android.content.res.Resources;
+import android.os.Build;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewParent;
-import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
+import android.view.animation.PathInterpolator;
 
 import androidx.leanback.R;
 import androidx.leanback.app.HeadersFragment;
@@ -66,8 +68,15 @@ public class FocusHighlightHelper {
         private float mFocusLevelStart;
         private float mFocusLevelDelta;
         private final TimeAnimator mAnimator = new TimeAnimator();
-        private final Interpolator mInterpolator = new AccelerateDecelerateInterpolator();
+        private final Interpolator mInterpolator = createInterpolator();
         private final ColorOverlayDimmer mDimmer;
+
+        private static Interpolator createInterpolator() {
+            if (Build.VERSION.SDK_INT >= 21) {
+                return new PathInterpolator(0.2f, 0.0f, 0.0f, 1.0f);
+            }
+            return new DecelerateInterpolator(1.5f);
+        }
 
         void animateFocus(boolean select, boolean immediate) {
             endAnimation();

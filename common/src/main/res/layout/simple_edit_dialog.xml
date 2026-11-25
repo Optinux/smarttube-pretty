@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/simple_edit_config"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_gravity="center"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="10sp">
+    android:padding="20dp">
 
     <EditText
         android:id="@+id/simple_edit_value"
@@ -14,11 +15,16 @@
         android:layout_height="wrap_content"
         android:autofillHints=""
         android:ems="10"
+        android:fontFamily="sans-serif"
+        android:textSize="16sp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
         android:hint="@string/simple_edit_value_hint"
         android:imeOptions="actionNext"
         android:inputType="textUri|textPersonName"
         android:textColor="@color/dialog_text_color"
         android:textCursorDrawable="@null"
         android:backgroundTint="@color/dialog_text_color"
-        android:textColorHint="@color/white_20" />
+        tools:targetApi="21"
+        android:textColorHint="#A4ACBE" />
 </LinearLayout>

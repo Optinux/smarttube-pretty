@@ -9,12 +9,10 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView.Adapter;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.preference.LeanbackListPreferenceDialogFragment;
-import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.util.Set;
 
 public class StringListPreferenceDialogFragment extends LeanbackListPreferenceDialogFragment {
-    private boolean mIsTransparent;
 
     public static StringListPreferenceDialogFragment newInstanceStringList(String key) {
         final Bundle args = new Bundle(1);
@@ -30,22 +28,6 @@ public class StringListPreferenceDialogFragment extends LeanbackListPreferenceDi
     @Override
     public Adapter<ViewHolder> onCreateAdapter() {
         return new AdapterMultiStrings(mEntries, mEntryValues, mInitialSelections);
-    }
-
-    @Nullable
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = super.onCreateView(inflater, container, savedInstanceState);
-
-        if (mIsTransparent && view != null) {
-            ViewUtil.enableTransparentDialog(getActivity(), view);
-        }
-
-        return view;
-    }
-
-    public void enableTransparent(boolean enable) {
-        mIsTransparent = enable;
     }
 
     public class AdapterMultiStrings extends AdapterMulti {

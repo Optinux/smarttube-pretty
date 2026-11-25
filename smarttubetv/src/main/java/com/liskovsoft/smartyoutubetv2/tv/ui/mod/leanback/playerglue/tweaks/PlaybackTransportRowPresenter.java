@@ -27,6 +27,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.ColorInt;
+import androidx.core.content.ContextCompat;
 import androidx.leanback.R;
 import androidx.leanback.widget.AbstractDetailsDescriptionPresenter;
 import androidx.leanback.widget.Action;
@@ -50,6 +51,7 @@ import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.tweaks.Contr
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.tweaks.ControlBarPresenter.OnControlSelectedListener;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.seekpreview.ThumbsBar;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.widget.OnActionLongClickedListener;
+import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
@@ -432,6 +434,9 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
             PlaybackTransportRowPresenter.this.mPlaybackControlsPresenter.setSharedFocusEnabled(tweaksData.isSyncRowButtonIndexEnabled());
             PlaybackTransportRowPresenter.this.mSecondaryControlsPresenter.setSharedFocusEnabled(tweaksData.isSyncRowButtonIndexEnabled());
             mImageView = (ImageView) rootView.findViewById(R.id.image);
+            float thumbCornerRadius = rootView.getResources().getDimensionPixelSize(
+                    com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_card_small_corner_radius);
+            ViewUtil.applyRoundedOutline(mImageView, thumbCornerRadius);
             mDescriptionDock = (ViewGroup) rootView.findViewById(R.id.description_dock);
             mCurrentTime = (TextView) rootView.findViewById(R.id.current_time);
             mTotalTime = (TextView) rootView.findViewById(R.id.total_time);
@@ -561,6 +566,29 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
             }
             mThumbsBar = (ThumbsBar) rootView.findViewById(R.id.thumbs_row);
             mThumbsBarTitle = (TextView) rootView.findViewById(com.liskovsoft.smartyoutubetv2.tv.R.id.thumbs_row_title);
+            if (mThumbsBarTitle != null) {
+                Context context = rootView.getContext();
+                float density = context.getResources().getDisplayMetrics().density;
+                int hPad = (int) (14 * density);
+                int vPad = (int) (4 * density);
+                mThumbsBarTitle.setPadding(hPad, vPad, hPad, vPad);
+                int surfaceHigh = ViewUtil.getThemeColor(
+                        context,
+                        com.liskovsoft.smartyoutubetv2.tv.R.attr.m3SurfaceContainerHigh,
+                        com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_surface_container_high);
+                int pillBg = Color.argb(
+                        230, Color.red(surfaceHigh), Color.green(surfaceHigh), Color.blue(surfaceHigh));
+                int outlineVariant = ViewUtil.getThemeColor(
+                        context,
+                        com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OutlineVariant,
+                        com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_outline_variant);
+                int pillRadius = context.getResources().getDimensionPixelSize(
+                        com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_pill_corner_radius);
+                mThumbsBarTitle.setBackground(ViewUtil.createRoundedDrawable(
+                        pillBg, outlineVariant, (int) Math.max(1, density), pillRadius));
+                mThumbsBarTitle.setTextColor(ContextCompat.getColor(
+                        context, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_on_surface));
+            }
             mThumbsBarWrapper = (ViewGroup) rootView.findViewById(com.liskovsoft.smartyoutubetv2.tv.R.id.thumbs_row_wrapper);
         }
 

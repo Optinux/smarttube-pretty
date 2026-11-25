@@ -1,11 +1,18 @@
 package com.liskovsoft.smartyoutubetv2.tv.util;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Outline;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.os.Build.VERSION;
 import android.text.Layout;
 import android.text.TextUtils.TruncateAt;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -280,5 +287,105 @@ public class ViewUtil {
         // 3. Add fixed internal padding to create a "safe zone" for both Latin and Japanese text
         int paddingExtra = (int) (4 * textView.getResources().getDisplayMetrics().density);
         textView.setPadding(textView.getPaddingLeft(), paddingExtra, textView.getPaddingRight(), paddingExtra);
+    }
+
+    /**
+     * Resolves a theme color attribute safely with a fallback color resource.
+     */
+    public static int getThemeColor(Context context, int attrResId, int fallbackColorResId) {
+        if (context == null) {
+            return Color.TRANSPARENT;
+        }
+        TypedValue outValue = new TypedValue();
+        if (context.getTheme().resolveAttribute(attrResId, outValue, true)) {
+            if (outValue.resourceId != 0) {
+                return ContextCompat.getColor(context, outValue.resourceId);
+            }
+            return outValue.data;
+        }
+        return ContextCompat.getColor(context, fallbackColorResId);
+    }
+
+    /**
+     * Creates a rounded Material 3 surface/pill drawable with optional stroke.
+     */
+    public static GradientDrawable createRoundedDrawable(int fillColor, int strokeColor, int strokeWidthPx, float cornerRadiusPx) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setShape(GradientDrawable.RECTANGLE);
+        drawable.setColor(fillColor);
+        if (cornerRadiusPx > 0) {
+            drawable.setCornerRadius(cornerRadiusPx);
+        }
+        if (strokeWidthPx > 0) {
+            drawable.setStroke(strokeWidthPx, strokeColor);
+        }
+        return drawable;
+    }
+
+    /**
+     * Creates a focus/selected state-list rounded drawable for M3 Expressive TV items.
+     */
+    public static Drawable createFocusSelectorDrawable(
+            int defaultFillColor,
+            int focusedFillColor,
+            int defaultStrokeColor,
+            int focusedStrokeColor,
+            int defaultStrokeWidthPx,
+            int focusedStrokeWidthPx,
+            float cornerRadiusPx) {
+        StateListDrawable states = new StateListDrawable();
+        Drawable focused = createRoundedDrawable(focusedFillColor, focusedStrokeColor, focusedStrokeWidthPx, cornerRadiusPx);
+        Drawable normal = createRoundedDrawable(defaultFillColor, defaultStrokeColor, defaultStrokeWidthPx, cornerRadiusPx);
+        states.addState(new int[]{android.R.attr.state_focused}, focused);
+        states.addState(new int[]{android.R.attr.state_selected}, focused);
+        states.addState(new int[]{android.R.attr.state_activated}, focused);
+        states.addState(new int[]{}, normal);
+        return states;
+    }
+
+    /**
+     * Applies rounded outline clipping on API 21+ without breaking older APIs.
+     */
+    public static void applyRoundedOutline(View view, float cornerRadiusPx) {
+        if (view == null || VERSION.SDK_INT < 21) {
+            return;
+        }
+        view.setOutlineProvider(new ViewOutlineProvider() {
+            @Override
+            public void getOutline(View v, Outline outline) {
+                outline.setRoundRect(0, 0, v.getWidth(), v.getHeight(), cornerRadiusPx);
+            }
+        });
+        view.setClipToOutline(true);
+    }
+
+    /**
+     * Updates a FrameLayout-based card's M3 Expressive focus ring foreground.
+     */
+    public static void updateCardFocusForeground(FrameLayout cardView, boolean focused, int outlineColor, int hairlineColor, int focusStrokePx, int hairlineStrokePx, float cornerRadiusPx) {
+        if (cardView == null) {
+            return;
+        }
+        if (focused) {
+            cardView.setForeground(createRoundedDrawable(Color.TRANSPARENT, outlineColor, focusStrokePx, cornerRadiusPx));
+        } else if (hairlineStrokePx > 0) {
+            cardView.setForeground(createRoundedDrawable(Color.TRANSPARENT, hairlineColor, hairlineStrokePx, cornerRadiusPx));
+        } else {
+            cardView.setForeground(null);
+        }
+    }
+
+    /**
+     * Creates a ColorStateList switching between focused/selected and default text/icon colors.
+     */
+    public static ColorStateList createFocusColorStateList(int defaultColor, int focusedColor) {
+        int[][] states = new int[][]{
+                new int[]{android.R.attr.state_focused},
+                new int[]{android.R.attr.state_selected},
+                new int[]{android.R.attr.state_activated},
+                new int[]{}
+        };
+        int[] colors = new int[]{focusedColor, focusedColor, focusedColor, defaultColor};
+        return new ColorStateList(states, colors);
     }
 }

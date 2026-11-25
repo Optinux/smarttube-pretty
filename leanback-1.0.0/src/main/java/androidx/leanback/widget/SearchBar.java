@@ -130,10 +130,10 @@ public class SearchBar extends RelativeLayout {
     boolean mAutoStartRecognition = false;
     private Drawable mBarBackground;
 
-    private final int mTextColor;
-    private final int mTextColorSpeechMode;
-    private final int mTextHintColor;
-    private final int mTextHintColorSpeechMode;
+    private int mTextColor;
+    private int mTextColorSpeechMode;
+    private int mTextHintColor;
+    private int mTextHintColorSpeechMode;
     private int mBackgroundAlpha;
     private int mBackgroundSpeechAlpha;
     private int mBarHeight;
@@ -196,6 +196,10 @@ public class SearchBar extends RelativeLayout {
         mBarBackground = items.getBackground();
 
         mSearchTextEditor = (SearchEditText)findViewById(R.id.lb_search_text_editor);
+        mTextColor = mSearchTextEditor.getCurrentTextColor();
+        mTextColorSpeechMode = mTextColor;
+        mTextHintColor = mSearchTextEditor.getCurrentHintTextColor();
+        mTextHintColorSpeechMode = mTextHintColor;
         mBadgeView = (ImageView)findViewById(R.id.lb_search_bar_badge);
         if (null != mBadgeDrawable) {
             mBadgeView.setImageDrawable(mBadgeDrawable);
@@ -763,8 +767,12 @@ public class SearchBar extends RelativeLayout {
     }
 
     void updateUi(boolean hasFocus) {
+        View items = findViewById(R.id.lb_search_bar_items);
+        Drawable background = items != null ? items.getBackground() : mBarBackground;
         if (hasFocus) {
-            mBarBackground.setAlpha(mBackgroundSpeechAlpha);
+            if (background != null) {
+                background.setAlpha(255);
+            }
             if (isVoiceMode()) {
                 mSearchTextEditor.setTextColor(mTextHintColorSpeechMode);
                 mSearchTextEditor.setHintTextColor(mTextHintColorSpeechMode);
@@ -773,7 +781,9 @@ public class SearchBar extends RelativeLayout {
                 mSearchTextEditor.setHintTextColor(mTextHintColorSpeechMode);
             }
         } else {
-            mBarBackground.setAlpha(mBackgroundAlpha);
+            if (background != null) {
+                background.setAlpha(235);
+            }
             mSearchTextEditor.setTextColor(mTextColor);
             mSearchTextEditor.setHintTextColor(mTextHintColor);
         }

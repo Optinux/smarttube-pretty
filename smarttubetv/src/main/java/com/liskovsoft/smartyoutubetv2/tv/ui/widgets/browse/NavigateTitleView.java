@@ -220,6 +220,23 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
         mGlobalDate.showTime(false);
         mGlobalDate.showDate(true);
 
+        int orbBg = ViewUtil.getThemeColor(getContext(), R.attr.m3OrbBackground, R.color.m3_grey_surface_container_high);
+        int orbFocusedBg = ViewUtil.getThemeColor(getContext(), R.attr.m3OrbFocusedBackground, R.color.m3_grey_primary_container);
+        int orbIconColor = ViewUtil.getThemeColor(getContext(), R.attr.m3OrbIconColor, R.color.m3_on_surface);
+        Colors orbColors = new Colors(orbBg, orbFocusedBg, orbIconColor);
+        if (mSearchOrbView != null) {
+            mSearchOrbView.setOrbColors(orbColors);
+        }
+        mAccountView.setOrbColors(orbColors);
+        mLanguageView.setOrbColors(orbColors);
+        mExitPip.setOrbColors(orbColors);
+
+        int onSurface = ViewUtil.getThemeColor(getContext(), R.attr.m3OnSurface, R.color.m3_on_surface);
+        int onSurfaceVariant = ViewUtil.getThemeColor(getContext(), R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant);
+        mPipTitle.setTextColor(onSurface);
+        mGlobalClock.setTextColor(onSurface);
+        mGlobalDate.setTextColor(onSurfaceVariant);
+
         updateButtonsVisibility();
     }
 
@@ -292,7 +309,8 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
             TooltipCompatHandler.setTooltipText(mAccountView, accountName);
         } else {
             Colors orbColors = mAccountView.getOrbColors();
-            mAccountView.setOrbColors(new Colors(orbColors.color, orbColors.brightColor, ContextCompat.getColor(getContext(), R.color.orb_icon_color)));
+            int iconColor = ViewUtil.getThemeColor(getContext(), R.attr.m3OrbIconColor, R.color.m3_on_surface);
+            mAccountView.setOrbColors(new Colors(orbColors.color, orbColors.brightColor, iconColor));
             mAccountView.setOrbIcon(ContextCompat.getDrawable(getContext(), R.drawable.browse_title_account));
             TooltipCompatHandler.setTooltipText(mAccountView, getContext().getString(R.string.dialog_account_none));
         }

@@ -2,41 +2,48 @@
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:app="http://schemas.android.com/apk/res-auto"
+              xmlns:tools="http://schemas.android.com/tools"
               android:id="@+id/main_frame"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
-              android:background="@color/lb_preference_decor_list_background"
+              android:background="?attr/m3SurfaceContainer"
               android:elevation="@dimen/lb_preference_decor_elevation"
               android:orientation="vertical"
               android:transitionGroup="false"
->
+              tools:targetApi="21">
 
     <FrameLayout
         android:id="@+id/decor_title_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/defaultBrandColor"
-        android:elevation="@dimen/lb_preference_decor_title_container_elevation"
-        android:transitionGroup="false"
-        >
+        android:background="?attr/m3SurfaceContainerHigh"
+        android:elevation="0dp"
+        android:transitionGroup="false">
+
         <!-- Change TextView to TitleMarqueeTextViewCompat if you need scrolled header in dialogs -->
         <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.marqueetextviewcompat.TitleMarqueeTextViewCompat
             android:id="@+id/decor_title"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/lb_preference_decor_title_text_height"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/lb_preference_decor_title_text_height"
             android:layout_marginTop="@dimen/lb_preference_decor_title_margin_top"
             android:layout_marginStart="@dimen/lb_preference_decor_title_margin_start"
             android:layout_marginEnd="@dimen/lb_preference_decor_title_margin_end"
-            android:fontFamily="sans-serif"
-            android:textStyle="bold"
+            android:paddingTop="4dp"
+            android:paddingBottom="8dp"
+            android:fontFamily="sans-serif-medium"
             android:gravity="center_vertical"
-            android:textSize="@dimen/lb_preference_decor_title_text_size"
-            android:textColor="?android:attr/textColorPrimary"
-
+            android:textSize="20sp"
+            android:textColor="@color/m3_on_surface"
             android:singleLine="false"
             android:maxLines="2"
-            android:ellipsize="end"
-            />
+            android:ellipsize="end" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_gravity="bottom"
+            android:background="?attr/m3OutlineVariant" />
     </FrameLayout>
 
     <!--<TextView-->
@@ -54,19 +61,23 @@
         android:id="@+id/messagesList"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:paddingTop="8dp"
+        android:paddingBottom="16dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:clipToPadding="false"
         app:textAutoLink="web"
         app:showIncomingTime="false"
         app:isMessageFocusable="true"
-        app:incomingBubblePaddingLeft="10sp"
-        app:incomingBubblePaddingRight="10sp"
-        app:incomingBubblePaddingTop="0sp"
-        app:incomingBubblePaddingBottom="0sp"
-        app:incomingAvatarWidth="30dp"
-        app:incomingAvatarHeight="30dp"
+        app:incomingBubblePaddingLeft="14sp"
+        app:incomingBubblePaddingRight="14sp"
+        app:incomingBubblePaddingTop="8sp"
+        app:incomingBubblePaddingBottom="8sp"
+        app:incomingAvatarWidth="32dp"
+        app:incomingAvatarHeight="32dp"
         app:incomingDefaultBubbleColor="@color/comments_bg"
         app:incomingDefaultBubbleSelectedColor="@color/comments_bg_pressed"
         app:incomingDefaultBubblePressedColor="@color/comments_bg_pressed"
-        app:incomingTextColor="@color/white"
-        />
+        app:incomingTextColor="@color/m3_on_surface" />
 
 </LinearLayout>

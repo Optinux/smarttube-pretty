@@ -3,6 +3,7 @@ package com.liskovsoft.smartyoutubetv2.tv.ui.dialogs;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.leanback.preference.LeanbackPreferenceFragment;
 import androidx.leanback.preference.LeanbackSettingsFragment;
+import androidx.leanback.widget.VerticalGridView;
 import androidx.preference.ListPreference;
 import androidx.preference.MultiSelectListPreference;
 import androidx.preference.Preference;
@@ -293,6 +295,71 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
     public void onFinish() {
         mPresenter.onFinish();
     }
+
+    /**
+     * Applies Material 3 Expressive Side-Sheet surface colors, rounded container outline,
+     * list padding/spacing, and rounded pill focus selectors when not in transparent mode.
+     */
+    public static void applyM3SideSheetStyling(Context context, @Nullable View parentRootView, @Nullable View fragmentView) {
+        if (context == null || fragmentView == null) {
+            return;
+        }
+
+        if (parentRootView != null) {
+            View mainContainer = parentRootView.findViewById(R.id.settings_preference_fragment_container);
+            if (mainContainer != null) {
+                float cornerRadiusPx = context.getResources().getDimension(R.dimen.m3_dialog_corner_radius);
+                ViewUtil.applyRoundedOutline(mainContainer, cornerRadiusPx);
+            }
+        }
+
+        View mainFrame = fragmentView.findViewById(R.id.main_frame);
+        if (mainFrame != null) {
+            mainFrame.setBackgroundColor(ViewUtil.getThemeColor(
+                    context, R.attr.m3SurfaceContainer, R.color.m3_grey_surface_container));
+        }
+
+        View titleContainer = fragmentView.findViewById(R.id.decor_title_container);
+        if (titleContainer != null) {
+            titleContainer.setBackgroundColor(ViewUtil.getThemeColor(
+                    context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high));
+        }
+
+        View listView = fragmentView.findViewById(android.R.id.list);
+        if (!(listView instanceof VerticalGridView)) {
+            listView = fragmentView.findViewById(R.id.list);
+        }
+        if (listView instanceof VerticalGridView) {
+            VerticalGridView gridView = (VerticalGridView) listView;
+            float density = context.getResources().getDisplayMetrics().density;
+            int padH = Math.round(12 * density);
+            int padTop = Math.round(8 * density);
+            int padBottom = Math.round(16 * density);
+            gridView.setPaddingRelative(padH, padTop, padH, padBottom);
+            gridView.setClipToPadding(false);
+            gridView.setVerticalSpacing(Math.round(4 * density));
+
+            float itemCornerRadius = 14f * density;
+            int strokeWidthPx = Math.max(1, Math.round(1.5f * density));
+            int focusedFill = ViewUtil.getThemeColor(
+                    context, R.attr.m3SecondaryContainer, R.color.m3_grey_secondary_container);
+            int focusedStroke = ViewUtil.getThemeColor(
+                    context, R.attr.m3Outline, R.color.m3_grey_outline);
+
+            gridView.setOnChildLaidOutListener((parent, child, position, id) -> {
+                if (child != null) {
+                    child.setBackground(ViewUtil.createFocusSelectorDrawable(
+                            Color.TRANSPARENT,
+                            focusedFill,
+                            Color.TRANSPARENT,
+                            focusedStroke,
+                            0,
+                            strokeWidthPx,
+                            itemCornerRadius));
+                }
+            });
+        }
+    }
     
     public static class AppPreferenceFragment extends LeanbackPreferenceFragment {
         private static final String TAG = AppPreferenceFragment.class.getSimpleName();
@@ -318,11 +385,16 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             View view = super.onCreateView(inflater, container, savedInstanceState);
 
-            if (mIsTransparent && view != null) {
-                // Enable transparent shadow outline on parent (R.id.settings_preference_fragment_container)
-                ViewUtil.enableTransparentDialog(getActivity(), getParentFragment().getView());
-                // Enable transparency on child fragment itself (isn't attached to parent yet)
-                ViewUtil.enableTransparentDialog(getActivity(), view);
+            if (view != null) {
+                View parentView = getParentFragment() != null ? getParentFragment().getView() : null;
+                if (mIsTransparent) {
+                    // Enable transparent shadow outline on parent (R.id.settings_preference_fragment_container)
+                    ViewUtil.enableTransparentDialog(getActivity(), parentView);
+                    // Enable transparency on child fragment itself (isn't attached to parent yet)
+                    ViewUtil.enableTransparentDialog(getActivity(), view);
+                } else {
+                    applyM3SideSheetStyling(getActivity(), parentView, view);
+                }
             }
 
             return view;

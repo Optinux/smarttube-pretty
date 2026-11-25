@@ -20,6 +20,7 @@ import androidx.leanback.widget.ListRowPresenter;
 import androidx.leanback.widget.PageRow;
 import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.PresenterSelector;
+import androidx.leanback.widget.SearchOrbView;
 import androidx.leanback.widget.TitleHelper;
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.BrowseSection;
@@ -38,6 +39,7 @@ import com.liskovsoft.smartyoutubetv2.tv.presenter.IconHeaderItemPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.ui.browse.dialog.ErrorDialogFragment;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.headers.ExtendedHeadersSupportFragment;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.misc.ProgressBarManager;
+import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -188,19 +190,19 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
         setHeadersState(HEADERS_ENABLED);
         setHeadersTransitionOnBackEnabled(true);
 
-        int brandColorRes = Helpers.getThemeAttr(getContext(), R.attr.brandColor);
-        int brandAccentColorRes = Helpers.getThemeAttr(getContext(), R.attr.brandAccentColor);
-
         updateBadge();
 
         // This title replaces badge in case one is null
         //setTitle(getString(R.string.browse_title));
 
         // Set fastLane (or headers) background color
-        setBrandColor(ContextCompat.getColor(getContext(), brandColorRes));
+        setBrandColor(ViewUtil.getThemeColor(getContext(), R.attr.m3SurfaceContainerLow, R.color.m3_grey_surface_container_low));
 
-        // Set search icon color.
-        setSearchAffordanceColor(ContextCompat.getColor(getContext(), brandAccentColorRes));
+        // Set search orb M3 Expressive colors
+        int orbBg = ViewUtil.getThemeColor(getContext(), R.attr.m3OrbBackground, R.color.m3_grey_surface_container_high);
+        int orbFocusedBg = ViewUtil.getThemeColor(getContext(), R.attr.m3OrbFocusedBackground, R.color.m3_grey_primary_container);
+        int orbIconColor = ViewUtil.getThemeColor(getContext(), R.attr.m3OrbIconColor, R.color.m3_on_surface);
+        setSearchAffordanceColors(new SearchOrbView.Colors(orbBg, orbFocusedBg, orbIconColor));
 
         setHeaderPresenterSelector(new PresenterSelector() {
             private final Map<Integer, Presenter> mPresenterMap = new HashMap<>();

@@ -14,12 +14,27 @@ import android.widget.TextView;
 
 import androidx.leanback.widget.BaseCardView;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class IconCardView extends BaseCardView {
     RelativeLayout mLayout;
+    RelativeLayout mHeaderLayout;
+    View mDetailLayout;
     ImageView mIcon;
     TextView mTitle;
     TextView mValue;
+
+    private int mSurfaceContainer;
+    private int mSurfaceContainerHigh;
+    private int mPrimaryContainer;
+    private int mOnSurface;
+    private int mOnSurfaceVariant;
+    private int mOnPrimaryContainer;
+    private int mOutlineColor;
+    private int mHairlineColor;
+    private float mCornerRadius;
+    private int mFocusStrokePx;
+    private int mHairlineStrokePx;
 
     public IconCardView(Context context, int styleResId) {
         super(new ContextThemeWrapper(context, styleResId), null, 0);
@@ -38,20 +53,62 @@ public class IconCardView extends BaseCardView {
         setFocusableInTouchMode(true);
         //setCardType(CARD_TYPE_INFO_UNDER);
         setCardType(CARD_TYPE_MAIN_ONLY);
-        setBackgroundResource(R.color.primary_dark);
 
-        LayoutInflater inflater = LayoutInflater.from(getContext());
+        Context context = getContext();
+        mSurfaceContainer = ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainer, R.color.m3_grey_surface_container);
+        mSurfaceContainerHigh = ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high);
+        mPrimaryContainer = ViewUtil.getThemeColor(context, R.attr.m3PrimaryContainer, R.color.m3_grey_primary_container);
+        mOnSurface = ViewUtil.getThemeColor(context, R.attr.m3OnSurface, R.color.m3_on_surface);
+        mOnSurfaceVariant = ViewUtil.getThemeColor(context, R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant);
+        mOnPrimaryContainer = ViewUtil.getThemeColor(context, R.attr.m3OnPrimaryContainer, R.color.m3_on_surface);
+        mOutlineColor = ViewUtil.getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
+        mHairlineColor = ViewUtil.getThemeColor(context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+        mCornerRadius = getResources().getDimension(R.dimen.m3_card_corner_radius);
+        mFocusStrokePx = getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
+        mHairlineStrokePx = getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
+
+        setBackground(ViewUtil.createRoundedDrawable(mSurfaceContainer, 0, 0, mCornerRadius));
+        ViewUtil.applyRoundedOutline(this, mCornerRadius);
+
+        LayoutInflater inflater = LayoutInflater.from(context);
         View view = inflater.inflate(R.layout.view_options_item, this);
 
         mLayout = view.findViewById(R.id.layout_option_card);
+        mHeaderLayout = view.findViewById(R.id.layout_header);
+        mDetailLayout = view.findViewById(R.id.layout_detail);
         mIcon = view.findViewById(R.id.image_option);
         mTitle = view.findViewById(R.id.text_option_title);
         mValue = view.findViewById(R.id.text_option_value);
+
+        if (mHeaderLayout != null) {
+            mHeaderLayout.setBackgroundColor(mSurfaceContainerHigh);
+        }
+        updateSelectedAppearance(false);
 
         TypedArray cardAttrs =
                 getContext().obtainStyledAttributes(
                         styleResId, R.styleable.lbImageCardView);
         cardAttrs.recycle();
+    }
+
+    @Override
+    public void setSelected(boolean selected) {
+        super.setSelected(selected);
+        updateSelectedAppearance(selected);
+    }
+
+    private void updateSelectedAppearance(boolean selected) {
+        if (mDetailLayout != null) {
+            mDetailLayout.setBackgroundColor(selected ? mPrimaryContainer : mSurfaceContainer);
+        }
+        if (mTitle != null) {
+            mTitle.setTextColor(selected ? mOnPrimaryContainer : mOnSurface);
+        }
+        if (mValue != null) {
+            mValue.setTextColor(selected ? mOnPrimaryContainer : mOnSurfaceVariant);
+        }
+        ViewUtil.updateCardFocusForeground(
+                this, selected, mOutlineColor, mHairlineColor, mFocusStrokePx, mHairlineStrokePx, mCornerRadius);
     }
 
     public void setMainImageDimensions(int width, int height) {

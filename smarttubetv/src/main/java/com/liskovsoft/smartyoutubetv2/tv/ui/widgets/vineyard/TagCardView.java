@@ -2,6 +2,7 @@ package com.liskovsoft.smartyoutubetv2.tv.ui.widgets.vineyard;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.PorterDuff;
 import android.util.AttributeSet;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
@@ -11,6 +12,7 @@ import android.widget.TextView;
 import androidx.core.content.ContextCompat;
 import androidx.leanback.widget.BaseCardView;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class TagCardView extends BaseCardView {
     TextView mTagNameText;
@@ -30,9 +32,14 @@ public class TagCardView extends BaseCardView {
         setFocusable(false);
         setFocusableInTouchMode(false);
         setCardType(CARD_TYPE_MAIN_ONLY);
-        setBackgroundResource(R.color.primary_light);
 
-        LayoutInflater inflater = LayoutInflater.from(getContext());
+        Context context = getContext();
+        int bgColor = ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high);
+        float pillRadius = getResources().getDimension(R.dimen.m3_pill_corner_radius);
+        setBackground(ViewUtil.createRoundedDrawable(bgColor, 0, 0, pillRadius));
+        ViewUtil.applyRoundedOutline(this, pillRadius);
+
+        LayoutInflater inflater = LayoutInflater.from(context);
         View view = inflater.inflate(R.layout.view_tag_card, this);
 
         mTagNameText = view.findViewById(R.id.text_tag_name);
@@ -51,6 +58,9 @@ public class TagCardView extends BaseCardView {
     public void setCardIcon(int resource) {
         mResultImage.setVisibility(View.VISIBLE);
         mResultImage.setImageDrawable(ContextCompat.getDrawable(getContext(), resource));
+        if (mTagNameText != null) {
+            mResultImage.setColorFilter(mTagNameText.getCurrentTextColor(), PorterDuff.Mode.SRC_IN);
+        }
     }
 
     private static Context getStyledContext(Context context, AttributeSet attrs, int defStyleAttr) {
@@ -89,6 +99,9 @@ public class TagCardView extends BaseCardView {
     public void setTextColor(int color) {
         if (mTagNameText != null) {
             mTagNameText.setTextColor(color);
+        }
+        if (mResultImage != null) {
+            mResultImage.setColorFilter(color, PorterDuff.Mode.SRC_IN);
         }
     }
 }

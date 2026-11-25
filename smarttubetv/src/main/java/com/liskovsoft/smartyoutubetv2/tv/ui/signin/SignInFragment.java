@@ -1,8 +1,12 @@
 package com.liskovsoft.smartyoutubetv2.tv.ui.signin;
 
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.widget.ImageView;
+import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
@@ -42,7 +46,38 @@ public class SignInFragment extends GuidedStepSupportFragment implements SignInV
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
+        styleGuidanceViews();
         mSignInPresenter.onViewInitialized();
+    }
+
+    private void styleGuidanceViews() {
+        if (getContext() == null || getGuidanceStylist() == null) {
+            return;
+        }
+
+        TextView titleView = getGuidanceStylist().getTitleView();
+        if (titleView != null) {
+            titleView.setTextColor(ViewUtil.getThemeColor(
+                    getContext(), R.attr.m3OnSurface, R.color.m3_on_surface));
+            titleView.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        }
+
+        TextView descriptionView = getGuidanceStylist().getDescriptionView();
+        if (descriptionView != null) {
+            descriptionView.setTextColor(ViewUtil.getThemeColor(
+                    getContext(), R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant));
+            descriptionView.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
+        }
+
+        ImageView iconView = getGuidanceStylist().getIconView();
+        if (iconView != null) {
+            float density = getResources().getDisplayMetrics().density;
+            float radiusPx = 16f * density;
+            int padPx = Math.round(12 * density);
+            iconView.setPadding(padPx, padPx, padPx, padPx);
+            iconView.setBackground(ViewUtil.createRoundedDrawable(Color.WHITE, 0, 0, radiusPx));
+            ViewUtil.applyRoundedOutline(iconView, radiusPx);
+        }
     }
 
     @Override
@@ -80,8 +115,13 @@ public class SignInFragment extends GuidedStepSupportFragment implements SignInV
 
         String description = getString(R.string.signin_view_description, signInUrl);
         int start = description.indexOf(signInUrl);
-        int end = start + signInUrl.length();
-        CharSequence coloredDescription = Utils.color(description, ContextCompat.getColor(getContext(), R.color.red), start, end);
+        CharSequence coloredDescription = description;
+        if (start >= 0) {
+            int end = start + signInUrl.length();
+            int accentColor = ViewUtil.getThemeColor(
+                    getContext(), R.attr.m3Primary, R.color.m3_grey_primary);
+            coloredDescription = Utils.color(description, accentColor, start, end);
+        }
 
         getGuidanceStylist().getDescriptionView().setText(coloredDescription);
     }

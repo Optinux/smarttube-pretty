@@ -2,6 +2,7 @@ package com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.search;
 
 import android.Manifest;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -43,6 +44,7 @@ import com.liskovsoft.sharedutils.helpers.MessageHelpers;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.SearchPresenter;
 import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.smartyoutubetv2.tv.BuildConfig;
+import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -344,11 +346,36 @@ public class SearchSupportFragment extends Fragment {
         applyExternalQuery();
 
         // MOD: inner search bar views for improved focus handling
+        Context context = root.getContext();
+        View searchBarItems = mSearchBar.findViewById(R.id.lb_search_bar_items);
+        int surfaceHigh = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3SurfaceContainerHigh, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_surface_container_high);
+        int surfaceHighest = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3SurfaceContainerHighest, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_surface_container_highest);
+        int outline = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3Outline, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_outline);
+        int outlineVariant = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OutlineVariant, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_outline_variant);
+        float pillRadius = context.getResources().getDimension(com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_pill_corner_radius);
+        int focusStrokePx = context.getResources().getDimensionPixelSize(com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_focus_stroke_width);
+        int hairlineStrokePx = context.getResources().getDimensionPixelSize(com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_hairline_stroke_width);
 
         mSearchTextEditor = mSearchBar.findViewById(R.id.lb_search_text_editor);
+        if (searchBarItems != null) {
+            boolean initiallyFocused = mSearchTextEditor.hasFocus();
+            searchBarItems.setBackground(ViewUtil.createRoundedDrawable(
+                    initiallyFocused ? surfaceHighest : surfaceHigh,
+                    initiallyFocused ? outline : outlineVariant,
+                    initiallyFocused ? focusStrokePx : hairlineStrokePx,
+                    pillRadius));
+        }
         mSearchTextEditor.setSelectAllOnFocus(true); // Select all on focus (easy clear previous search)
         mSearchTextEditor.setOnFocusChangeListener((v, focused) -> {
             Log.d(TAG, "on search field focused");
+
+            if (searchBarItems != null) {
+                searchBarItems.setBackground(ViewUtil.createRoundedDrawable(
+                        focused ? surfaceHighest : surfaceHigh,
+                        focused ? outline : outlineVariant,
+                        focused ? focusStrokePx : hairlineStrokePx,
+                        pillRadius));
+            }
 
             // User clicked on tag and tries to edit search query
             if (focused && !TextUtils.isEmpty(getSearchBarText())) {
@@ -403,6 +430,14 @@ public class SearchSupportFragment extends Fragment {
         mSearchSettingsOrbView.setOnOrbClickedListener(v -> onSearchSettingsClicked());
 
         mSpeechOrbView = mSearchBar.findViewById(R.id.lb_search_bar_speech_orb);
+        int orbBg = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OrbBackground, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_surface_container_high);
+        int orbFocusedBg = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OrbFocusedBackground, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_primary_container);
+        int orbIconColor = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OrbIconColor, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_on_surface);
+        SearchOrbView.Colors orbColors = new SearchOrbView.Colors(orbBg, orbFocusedBg, orbIconColor);
+        mSearchOrbView.setOrbColors(orbColors);
+        mSearchSettingsOrbView.setOrbColors(orbColors);
+        mSpeechOrbView.setNotListeningOrbColors(orbColors);
+        mSpeechOrbView.showNotListening();
         OnFocusChangeListener previousListener = mSpeechOrbView.getOnFocusChangeListener();
         mSpeechOrbView.setOnFocusChangeListener((v, focused) -> {
             if (!focused) {

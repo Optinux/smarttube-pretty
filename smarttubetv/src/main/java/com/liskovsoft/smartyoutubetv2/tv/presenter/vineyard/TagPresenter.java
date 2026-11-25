@@ -1,59 +1,71 @@
 package com.liskovsoft.smartyoutubetv2.tv.presenter.vineyard;
 
-import android.os.Build.VERSION;
+import android.content.Context;
+import android.util.TypedValue;
 import android.view.ViewGroup;
 
-import androidx.core.content.ContextCompat;
-import com.liskovsoft.sharedutils.helpers.Helpers;
-import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.common.app.models.search.vineyard.Tag;
 import com.liskovsoft.smartyoutubetv2.common.app.models.search.vineyard.User;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.base.LongClickPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.vineyard.TagCardView;
+import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class TagPresenter extends LongClickPresenter {
-    private static int sDefaultBackgroundColor;
-    private static int sDefaultTextColor;
-    private static int sSelectedBackgroundColor;
-    private static int sSelectedTextColor;
+    private int mDefaultBackgroundColor;
+    private int mDefaultTextColor;
+    private int mSelectedBackgroundColor;
+    private int mSelectedTextColor;
+    private int mOutlineColor;
+    private int mHairlineColor;
+    private float mPillRadius;
+    private int mFocusStrokePx;
+    private int mHairlineStrokePx;
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent) {
-        sDefaultBackgroundColor =
-                ContextCompat.getColor(parent.getContext(), Helpers.getThemeAttr(parent.getContext(), R.attr.cardDefaultBackground));
-        sDefaultTextColor =
-                ContextCompat.getColor(parent.getContext(), R.color.card_default_text);
-        sSelectedBackgroundColor =
-                ContextCompat.getColor(parent.getContext(), R.color.card_selected_background_white);
-        sSelectedTextColor =
-                ContextCompat.getColor(parent.getContext(), R.color.card_selected_text_grey);
+        Context context = parent.getContext();
 
-        TagCardView cardView = new TagCardView(parent.getContext()) {
+        mDefaultBackgroundColor =
+                ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high);
+        mSelectedBackgroundColor =
+                ViewUtil.getThemeColor(context, R.attr.m3PrimaryContainer, R.color.m3_grey_primary_container);
+        mDefaultTextColor =
+                ViewUtil.getThemeColor(context, R.attr.m3OnSurface, R.color.m3_on_surface);
+        mSelectedTextColor =
+                ViewUtil.getThemeColor(context, R.attr.m3OnPrimaryContainer, R.color.m3_on_surface);
+        mOutlineColor =
+                ViewUtil.getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
+        mHairlineColor =
+                ViewUtil.getThemeColor(context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+
+        mPillRadius = context.getResources().getDimension(R.dimen.m3_pill_corner_radius);
+        mFocusStrokePx = Math.round(TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 2f, context.getResources().getDisplayMetrics()));
+        mHairlineStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
+
+        TagCardView cardView = new TagCardView(context) {
             @Override
             public void setSelected(boolean selected) {
-                updateCardBackgroundColor(this, selected);
-                updateCardTextColor(this, selected);
+                updateCardAppearance(this, selected);
                 super.setSelected(selected);
             }
         };
 
         cardView.setFocusable(true);
         cardView.setFocusableInTouchMode(true);
-        updateCardBackgroundColor(cardView, false);
-        updateCardTextColor(cardView, false);
-        //if (VERSION.SDK_INT >= 23 && MainUIData.instance(parent.getContext()).isUiTweakEnabled(MainUIData.UI_TWEAK_ROUNDED_CORNERS)) {
-        //    cardView.setForeground(ContextCompat.getDrawable(parent.getContext(), R.drawable.lb_card_outline));
-        //}
+        ViewUtil.applyRoundedOutline(cardView, mPillRadius);
+        updateCardAppearance(cardView, false);
         return new ViewHolder(cardView);
     }
 
-    private static void updateCardBackgroundColor(TagCardView view, boolean selected) {
-        view.setBackgroundColor(selected ? sSelectedBackgroundColor : sDefaultBackgroundColor);
-    }
-
-    private static void updateCardTextColor(TagCardView view, boolean selected) {
-        view.setTextColor(selected ? sSelectedTextColor : sDefaultTextColor);
+    private void updateCardAppearance(TagCardView view, boolean selected) {
+        int bgColor = selected ? mSelectedBackgroundColor : mDefaultBackgroundColor;
+        int textColor = selected ? mSelectedTextColor : mDefaultTextColor;
+        view.setBackground(ViewUtil.createRoundedDrawable(bgColor, 0, 0, mPillRadius));
+        ViewUtil.updateCardFocusForeground(
+                view, selected, mOutlineColor, mHairlineColor, mFocusStrokePx, mHairlineStrokePx, mPillRadius);
+        view.setTextColor(textColor);
     }
 
     @Override

@@ -17,6 +17,8 @@ package com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.seekpreview
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.os.Build.VERSION;
 import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.View;
@@ -25,6 +27,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import androidx.annotation.RestrictTo;
 import androidx.leanback.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 
@@ -48,6 +51,10 @@ public class ThumbsBar extends LinearLayout {
     // setNumberofThumbs API or auto-calculated according to android tv design spec.
     private boolean mIsUserSets = false;
     private int mRotation;
+    private final float mCornerRadiusPx;
+    private final int mHeroBorderWidthPx;
+    private final int mHeroBorderColor;
+    private final float mHeroElevationPx;
 
     public ThumbsBar(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
@@ -67,6 +74,17 @@ public class ThumbsBar extends LinearLayout {
         // According to the spec, the margin between thumbs to be 4dp
         mMeasuredMarginInPixel = context.getResources().getDimensionPixelSize(
                 R.dimen.lb_playback_transport_thumbs_margin);
+        mCornerRadiusPx = context.getResources().getDimensionPixelSize(
+                com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_card_small_corner_radius);
+        float density = context.getResources().getDisplayMetrics().density;
+        mHeroBorderWidthPx = Math.max(1, Math.round(2 * density));
+        mHeroBorderColor = ViewUtil.getThemeColor(
+                context,
+                com.liskovsoft.smartyoutubetv2.tv.R.attr.m3Primary,
+                com.liskovsoft.smartyoutubetv2.tv.R.color.white);
+        mHeroElevationPx = 8 * density;
+        setClipChildren(false);
+        setClipToPadding(false);
     }
 
     /**
@@ -174,9 +192,22 @@ public class ThumbsBar extends LinearLayout {
             if (heroIndex == i) {
                 lp.width = mHeroThumbWidthInPixel;
                 lp.height = mHeroThumbHeightInPixel;
+                child.setPadding(mHeroBorderWidthPx, mHeroBorderWidthPx, mHeroBorderWidthPx, mHeroBorderWidthPx);
+                child.setBackground(ViewUtil.createRoundedDrawable(
+                        Color.TRANSPARENT, mHeroBorderColor, mHeroBorderWidthPx, mCornerRadiusPx));
+                child.setAlpha(1.0f);
+                if (VERSION.SDK_INT >= 21) {
+                    child.setElevation(mHeroElevationPx);
+                }
             } else {
                 lp.width = mThumbWidthInPixel;
                 lp.height = mThumbHeightInPixel;
+                child.setPadding(0, 0, 0, 0);
+                child.setBackground(null);
+                child.setAlpha(0.88f);
+                if (VERSION.SDK_INT >= 21) {
+                    child.setElevation(0f);
+                }
             }
             child.setLayoutParams(lp);
         }
@@ -275,6 +306,7 @@ public class ThumbsBar extends LinearLayout {
     protected View createThumbView(ViewGroup parent) {
         ImageView imageView = new ImageView(parent.getContext());
         imageView.setAdjustViewBounds(true); // MOD: fit width
+        ViewUtil.applyRoundedOutline(imageView, mCornerRadiusPx);
         if (mRotation > 0) {
             imageView.setRotation((float) mRotation);
         }

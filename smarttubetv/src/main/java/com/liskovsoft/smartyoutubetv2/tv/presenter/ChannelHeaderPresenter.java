@@ -104,6 +104,33 @@ public class ChannelHeaderPresenter extends RowPresenter {
         SpeechOrbView speechOrbView = searchBar.findViewById(R.id.lb_search_bar_speech_orb);
         SearchEditText searchTextEditor = searchBar.findViewById(R.id.lb_search_text_editor);
         SearchOrbView searchSettingsOrbView = searchBar.findViewById(R.id.search_settings_orb);
+        View searchBarItems = searchBar.findViewById(R.id.lb_search_bar_items);
+
+        int orbBg = ViewUtil.getThemeColor(context, R.attr.m3OrbBackground, R.color.m3_grey_surface_container_high);
+        int orbFocusedBg = ViewUtil.getThemeColor(context, R.attr.m3OrbFocusedBackground, R.color.m3_grey_primary_container);
+        int orbIconColor = ViewUtil.getThemeColor(context, R.attr.m3OrbIconColor, R.color.m3_on_surface);
+        SearchOrbView.Colors orbColors = new SearchOrbView.Colors(orbBg, orbFocusedBg, orbIconColor);
+        searchOrbView.setOrbColors(orbColors);
+        searchSettingsOrbView.setOrbColors(orbColors);
+        speechOrbView.setNotListeningOrbColors(orbColors);
+        speechOrbView.showNotListening();
+
+        int surfaceHigh = ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high);
+        int surfaceHighest = ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainerHighest, R.color.m3_grey_surface_container_highest);
+        int outline = ViewUtil.getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
+        int outlineVariant = ViewUtil.getThemeColor(context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+        float pillRadius = context.getResources().getDimension(R.dimen.m3_pill_corner_radius);
+        int focusStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
+        int hairlineStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
+        if (searchBarItems != null) {
+            boolean initiallyFocused = searchTextEditor.hasFocus();
+            searchBarItems.setBackground(ViewUtil.createRoundedDrawable(
+                    initiallyFocused ? surfaceHighest : surfaceHigh,
+                    initiallyFocused ? outline : outlineVariant,
+                    initiallyFocused ? focusStrokePx : hairlineStrokePx,
+                    pillRadius));
+        }
+
         // Default recognizer. Used when there's no speech callbacks specified.
         searchBar.setSpeechRecognizer(SpeechRecognizer.createSpeechRecognizer(context));
         searchBar.setOnFocusChangeListener((v, focused) -> {
@@ -113,6 +140,14 @@ public class ChannelHeaderPresenter extends RowPresenter {
         searchTextEditor.setSelectAllOnFocus(true); // Select all on focus (easy clear previous search)
         searchTextEditor.setOnFocusChangeListener((v, focused) -> {
             Log.d(TAG, "on search field focused");
+
+            if (searchBarItems != null) {
+                searchBarItems.setBackground(ViewUtil.createRoundedDrawable(
+                        focused ? surfaceHighest : surfaceHigh,
+                        focused ? outline : outlineVariant,
+                        focused ? focusStrokePx : hairlineStrokePx,
+                        pillRadius));
+            }
 
             if (mIsKeyboardAutoShowEnabled && focused) {
                 Helpers.showKeyboardAlt(v.getContext(), v);

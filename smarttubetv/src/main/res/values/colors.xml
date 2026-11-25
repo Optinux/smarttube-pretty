@@ -1,71 +1,201 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- MOD: Focused player button color (default: #66EEEEEE, new: #E8FFFFFF) -->
-    <color name="lb_control_button_color">#86EEEEEE</color>
+    <!-- MOD: Focused player button color (default: #66EEEEEE, new: M3 Expressive) -->
+    <color name="lb_control_button_color">#CCFFFFFF</color>
 
-    <!-- Common colors -->
-    <color name="default_background_gradient_start">#000000</color>
-    <color name="default_background_gradient_end">#DDDDDD</color>
-    <color name="fastlane_background">#0096a6</color>
-    <color name="fastlane_background_dark">#004B53</color>
-    <color name="default_light_grey">#343434</color>
-    <color name="search_opaque">#0096a6</color>
-    <color name="search_opaque_yellow">#ffaa3f</color>
+    <!-- Common colors (Material 3 Expressive TV Tokens) -->
+    <color name="default_background_gradient_start">#0B0D12</color>
+    <color name="default_background_gradient_end">#1D212A</color>
+    <color name="fastlane_background">#56D6E8</color>
+    <color name="fastlane_background_dark">#131C1F</color>
+    <color name="default_light_grey">#2B303C</color>
+    <color name="search_opaque">#56D6E8</color>
+    <color name="search_opaque_yellow">#FFAA3F</color>
 
     <!-- Card view colors -->
-    <color name="card_selected_background_white">#FFFFFF</color>
-    <color name="card_selected_background_white_grey">#D3D3D3</color>
-    <color name="card_selected_background_yellow">#ffaa3f</color>
-    <color name="card_selected_background_grey">#343434</color>
-    <color name="card_selected_text_black">#000000</color>
-    <color name="card_selected_text_grey">#343434</color>
-    <color name="card_default_background">#0096a6</color>
-    <color name="card_default_background_dark">#004B53</color>
-    <color name="card_default_text">#FFFFFF</color>
+    <color name="card_selected_background_white">#2D3442</color>
+    <color name="card_selected_background_white_grey">#222630</color>
+    <color name="card_selected_background_yellow">#FFAA3F</color>
+    <color name="card_selected_background_grey">#2A2E38</color>
+    <color name="card_selected_text_black">#111318</color>
+    <color name="card_selected_text_grey">#F2F4F8</color>
+    <color name="card_default_background">#1A2529</color>
+    <color name="card_default_background_dark">#1A2529</color>
+    <color name="card_default_text">#ECEDF2</color>
 
     <!-- Browse fragment colors -->
-    <color name="shelf_background">#282828</color>
-    <color name="shelf_background_dark">#131313</color>
-    <color name="icon_background">#4A4F51</color>
-    <color name="icon_alt_background">#2A2F51</color>
+    <color name="shelf_background">#161920</color>
+    <color name="shelf_background_dark">#0D1315</color>
+    <color name="icon_background">#252B36</color>
+    <color name="icon_alt_background">#1F273B</color>
     <color name="player_background">#FF000000</color>
 
     <!-- Dark color scheme -->
-    <color name="scheme_grey_background">#181818</color>
-    <color name="scheme_grey_background_dark">#181818</color>
-    <color name="scheme_grey_shelf_background_dark">#000000</color>
-    <color name="scheme_grey_card_background_dark">#121212</color>
+    <color name="scheme_grey_background">#161920</color>
+    <color name="scheme_grey_background_dark">#161920</color>
+    <color name="scheme_grey_shelf_background_dark">#0F1115</color>
+    <color name="scheme_grey_card_background_dark">#1D212A</color>
 
     <!-- Red color scheme -->
-    <color name="scheme_red_background">#131313</color>
-    <color name="scheme_red_background_dark">@color/dark_red</color>
-    <color name="scheme_red_shelf_background_dark">#131313</color>
-    <color name="scheme_red_card_background_dark">#36474f</color>
+    <color name="scheme_red_background">#1D1416</color>
+    <color name="scheme_red_background_dark">#1D1416</color>
+    <color name="scheme_red_shelf_background_dark">#140E0F</color>
+    <color name="scheme_red_card_background_dark">#271B1E</color>
 
     <!-- Blue color scheme -->
-    <color name="scheme_blue_background">#33B5E5</color>
-    <color name="scheme_blue_background_dark">#207EA1</color>
+    <color name="scheme_blue_background">#9ECAFF</color>
+    <color name="scheme_blue_background_dark">#121823</color>
 
     <!-- Vineyard -->
-    <color name="black_87pc">#77000000</color>
-    <color name="primary_dark">#00796B</color>
-    <color name="primary_light">#B2DFDB</color>
-    <color name="primary">#009688</color>
-    <color name="white_87pc">#DDFFFFFF</color>
+    <color name="black_87pc">#DE000000</color>
+    <color name="primary_dark">#161920</color>
+    <color name="primary_light">#272C37</color>
+    <color name="primary">#1D212A</color>
+    <color name="white_87pc">#DEFFFFFF</color>
 
-    <!-- Tooltip mod: extracted private values -->
-    <color name="tooltip_background_dark_mod">#e6616161</color>
-    <color name="tooltip_background_light_mod">#e6FFFFFF</color>
-    <color name="foreground_material_dark_mod">@android:color/white</color>
-    <color name="foreground_material_light_mod">@android:color/black</color>
+    <!-- Tooltip mod: M3 Expressive surfaceContainerHighest -->
+    <color name="tooltip_background_dark_mod">#F02B303C</color>
+    <color name="tooltip_background_light_mod">#F2ECEDF2</color>
+    <color name="foreground_material_dark_mod">#F2F4F8</color>
+    <color name="foreground_material_light_mod">#111318</color>
 
-    <!-- Default Orb buttons colors: search, accounts, search settings etc -->
-    <color name="orb_color">@color/grey</color>
-    <color name="orb_bright_color">@color/grey</color>
-    <color name="orb_icon_color">@color/white</color>
+    <!-- Default Orb buttons colors (fallback when theme attr isn't resolved) -->
+    <color name="orb_color">@color/m3_grey_surface_container_high</color>
+    <color name="orb_bright_color">@color/m3_grey_primary_container</color>
+    <color name="orb_icon_color">@color/m3_on_surface</color>
 
     <!-- Search page mic button color -->
-    <color name="lb_speech_orb_not_recording">@color/orb_color</color>
-    <color name="lb_speech_orb_not_recording_pulsed">@color/orb_bright_color</color>
-    <color name="lb_speech_orb_not_recording_icon">@color/orb_icon_color</color>
+    <color name="lb_speech_orb_not_recording">@color/m3_grey_surface_container_high</color>
+    <color name="lb_speech_orb_not_recording_pulsed">@color/m3_grey_primary_container</color>
+    <color name="lb_speech_orb_not_recording_icon">@color/m3_on_surface</color>
+
+    <!-- ============================================================ -->
+    <!-- Material 3 Expressive TV Design Tokens                       -->
+    <!-- ============================================================ -->
+
+    <!-- Shared text / scrim / badge tokens -->
+    <color name="m3_on_surface">#ECEDF2</color>
+    <color name="m3_on_surface_variant">#A4ACBE</color>
+    <color name="m3_on_surface_muted">#7E879B</color>
+    <color name="m3_oled_surface">#000000</color>
+
+    <color name="m3_badge_live_bg">#E53935</color>
+    <color name="m3_badge_new_bg">#C62828</color>
+    <color name="m3_badge_shorts_bg">#E6272C37</color>
+    <color name="m3_badge_default_bg">#D9111318</color>
+    <color name="m3_badge_text">#F5F7FA</color>
+
+    <color name="m3_scrim_top">#000B0D12</color>
+    <color name="m3_scrim_mid">#A60B0D12</color>
+    <color name="m3_scrim_bottom">#F00B0D12</color>
+    <color name="m3_scrim_suggestions">#DB0B0D12</color>
+
+    <color name="m3_seekbar_track">#4DFFFFFF</color>
+    <color name="m3_seekbar_buffer">#80CFD8DC</color>
+    <color name="m3_seekbar_knob">#FFFFFF</color>
+
+    <color name="m3_dialog_backdrop">#CC090B0F</color>
+    <color name="m3_transparent_item_focused">#33FFFFFF</color>
+
+    <!-- 1. Dark Grey (YouTube Expressive Dark - Default) -->
+    <color name="m3_grey_surface">#0F1115</color>
+    <color name="m3_grey_surface_container_low">#161920</color>
+    <color name="m3_grey_surface_container">#1D212A</color>
+    <color name="m3_grey_surface_container_high">#272C37</color>
+    <color name="m3_grey_surface_container_highest">#333947</color>
+    <color name="m3_grey_primary">#FF897D</color>
+    <color name="m3_grey_on_primary">#410E0B</color>
+    <color name="m3_grey_primary_container">#5B1D1D</color>
+    <color name="m3_grey_on_primary_container">#FFDAD6</color>
+    <color name="m3_grey_secondary_container">#2D3340</color>
+    <color name="m3_grey_on_secondary_container">#F2F4F8</color>
+    <color name="m3_grey_outline">#FF897D</color>
+    <color name="m3_grey_outline_variant">#343A48</color>
+    <color name="m3_grey_accent_red">#FF4E45</color>
+
+    <!-- 2. Teal (Expressive Ocean Teal) -->
+    <color name="m3_teal_surface">#0D1315</color>
+    <color name="m3_teal_surface_container_low">#131C1F</color>
+    <color name="m3_teal_surface_container">#1A2529</color>
+    <color name="m3_teal_surface_container_high">#233136</color>
+    <color name="m3_teal_surface_container_highest">#2D3E44</color>
+    <color name="m3_teal_primary">#56D6E8</color>
+    <color name="m3_teal_on_primary">#00363D</color>
+    <color name="m3_teal_primary_container">#004F58</color>
+    <color name="m3_teal_on_primary_container">#B8F2FA</color>
+    <color name="m3_teal_secondary_container">#213B40</color>
+    <color name="m3_teal_on_secondary_container">#DCEFF2</color>
+    <color name="m3_teal_outline">#56D6E8</color>
+    <color name="m3_teal_outline_variant">#2D4147</color>
+
+    <!-- 3. Red (Expressive Crimson) -->
+    <color name="m3_red_surface">#140E0F</color>
+    <color name="m3_red_surface_container_low">#1D1416</color>
+    <color name="m3_red_surface_container">#271B1E</color>
+    <color name="m3_red_surface_container_high">#342327</color>
+    <color name="m3_red_surface_container_highest">#422D32</color>
+    <color name="m3_red_primary">#FFB4AB</color>
+    <color name="m3_red_on_primary">#561116</color>
+    <color name="m3_red_primary_container">#7A1D22</color>
+    <color name="m3_red_on_primary_container">#FFDAD6</color>
+    <color name="m3_red_secondary_container">#4A2529</color>
+    <color name="m3_red_on_secondary_container">#FCE8E6</color>
+    <color name="m3_red_outline">#FF897D</color>
+    <color name="m3_red_outline_variant">#4D3237</color>
+
+    <!-- 4. Dark Grey (OLED) -->
+    <color name="m3_oled_grey_surface_container_low">#090B0E</color>
+    <color name="m3_oled_grey_surface_container">#13151B</color>
+    <color name="m3_oled_grey_surface_container_high">#1E222B</color>
+    <color name="m3_oled_grey_surface_container_highest">#292E3A</color>
+    <color name="m3_oled_grey_primary">#E3E5EC</color>
+    <color name="m3_oled_grey_on_primary">#14161B</color>
+    <color name="m3_oled_grey_primary_container">#2B303D</color>
+    <color name="m3_oled_grey_on_primary_container">#FFFFFF</color>
+    <color name="m3_oled_grey_secondary_container">#232732</color>
+    <color name="m3_oled_grey_on_secondary_container">#F2F4F8</color>
+    <color name="m3_oled_grey_outline">#D8DCE6</color>
+    <color name="m3_oled_grey_outline_variant">#2A2E3A</color>
+
+    <!-- 5. Teal (OLED) -->
+    <color name="m3_oled_teal_surface_container_low">#091113</color>
+    <color name="m3_oled_teal_surface_container">#111D20</color>
+    <color name="m3_oled_teal_surface_container_high">#1A2A2E</color>
+    <color name="m3_oled_teal_surface_container_highest">#23383D</color>
+
+    <!-- 6. Monochrome (Expressive Neutral) -->
+    <color name="m3_mono_surface">#0B0B0D</color>
+    <color name="m3_mono_surface_container_low">#131316</color>
+    <color name="m3_mono_surface_container">#1C1C21</color>
+    <color name="m3_mono_surface_container_high">#26262D</color>
+    <color name="m3_mono_surface_container_highest">#32323B</color>
+    <color name="m3_mono_primary">#E2E2E8</color>
+    <color name="m3_mono_on_primary">#16161A</color>
+    <color name="m3_mono_primary_container">#383842</color>
+    <color name="m3_mono_on_primary_container">#FFFFFF</color>
+    <color name="m3_mono_secondary_container">#2D2D35</color>
+    <color name="m3_mono_on_secondary_container">#F2F2F7</color>
+    <color name="m3_mono_outline">#D4D4DD</color>
+    <color name="m3_mono_outline_variant">#33333D</color>
+
+    <!-- 7. Dark Blue (Expressive Cobalt) -->
+    <color name="m3_blue_surface">#0C1017</color>
+    <color name="m3_blue_surface_container_low">#121823</color>
+    <color name="m3_blue_surface_container">#192130</color>
+    <color name="m3_blue_surface_container_high">#222D41</color>
+    <color name="m3_blue_surface_container_highest">#2D3B54</color>
+    <color name="m3_blue_primary">#9ECAFF</color>
+    <color name="m3_blue_on_primary">#00315C</color>
+    <color name="m3_blue_primary_container">#1E4278</color>
+    <color name="m3_blue_on_primary_container">#D6E7FF</color>
+    <color name="m3_blue_secondary_container">#233654</color>
+    <color name="m3_blue_on_secondary_container">#E4EEFF</color>
+    <color name="m3_blue_outline">#9ECAFF</color>
+    <color name="m3_blue_outline_variant">#303E58</color>
+
+    <!-- 8. Dark Blue (OLED) -->
+    <color name="m3_oled_blue_surface_container_low">#090D14</color>
+    <color name="m3_oled_blue_surface_container">#111824</color>
+    <color name="m3_oled_blue_surface_container_high">#1A2436</color>
+    <color name="m3_oled_blue_surface_container_highest">#243148</color>
 </resources>
