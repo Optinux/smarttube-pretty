@@ -2,7 +2,9 @@ package com.liskovsoft.smartyoutubetv2.tv.util;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build.VERSION;
@@ -13,6 +15,7 @@ import android.view.animation.Interpolator;
 import android.view.animation.OvershootInterpolator;
 import android.view.animation.PathInterpolator;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
@@ -188,7 +191,100 @@ public final class M3Motion {
             ((ValueAnimator) animObj).cancel();
             view.setTag(R.id.m3_focus_color_animator, null);
         }
+        Object elevAnimObj = view.getTag(R.id.m3_elevation_animator);
+        if (elevAnimObj instanceof ValueAnimator) {
+            ((ValueAnimator) elevAnimObj).cancel();
+            view.setTag(R.id.m3_elevation_animator, null);
+        }
         view.setTag(R.id.m3_focus_state_tag, null);
+    }
+
+    /**
+     * Builds an 8-element corner radii array for M3 Expressive segmented grouped list items
+     * (large rounded outer ends, tight inner corners).
+     */
+    public static float[] buildSegmentedRadii(
+            float outerRadiusPx,
+            float innerRadiusPx,
+            boolean isFirst,
+            boolean isLast) {
+        float top = isFirst ? outerRadiusPx : innerRadiusPx;
+        float bottom = isLast ? outerRadiusPx : innerRadiusPx;
+        return new float[]{top, top, top, top, bottom, bottom, bottom, bottom};
+    }
+
+    /**
+     * Animates corner radius smoothly using M3 Fast Spatial physics for state-driven shape morphing.
+     */
+    public static void animateCornerMorph(
+            @Nullable View view,
+            @Nullable GradientDrawable drawable,
+            float fromRadiusPx,
+            float toRadiusPx) {
+        if (view == null || drawable == null) {
+            return;
+        }
+        if (Math.abs(fromRadiusPx - toRadiusPx) < 0.5f
+                || !areAnimationsEnabled(view.getContext())
+                || !ViewCompat.isAttachedToWindow(view)) {
+            drawable.setCornerRadius(toRadiusPx);
+            return;
+        }
+        ValueAnimator anim = ValueAnimator.ofFloat(fromRadiusPx, toRadiusPx);
+        anim.setDuration(DURATION_FAST_SPATIAL_MS);
+        anim.setInterpolator(FAST_SPATIAL_INTERPOLATOR);
+        anim.addUpdateListener(a -> {
+            float r = (float) a.getAnimatedValue();
+            drawable.setCornerRadius(Math.max(0f, r));
+            if (view instanceof FrameLayout && ((FrameLayout) view).getForeground() instanceof GradientDrawable) {
+                ((GradientDrawable) ((FrameLayout) view).getForeground()).setCornerRadius(Math.max(0f, r));
+            }
+        });
+        anim.start();
+    }
+
+    /**
+     * Animates tactile Z elevation using M3 Fast Effects (API 21+, no-op on older platforms).
+     */
+    public static void animateFocusElevation(@Nullable View view, boolean focused, float baseDp, float focusedDp) {
+        if (view == null || VERSION.SDK_INT < 21) {
+            return;
+        }
+        float density = view.getResources().getDisplayMetrics().density;
+        float targetPx = (focused ? focusedDp : baseDp) * density;
+        Object prevElev = view.getTag(R.id.m3_elevation_animator);
+        if (prevElev instanceof ValueAnimator) {
+            ((ValueAnimator) prevElev).cancel();
+        }
+        if (!areAnimationsEnabled(view.getContext()) || !ViewCompat.isAttachedToWindow(view)) {
+            view.setElevation(targetPx);
+            return;
+        }
+        float startPx = view.getElevation();
+        if (Math.abs(startPx - targetPx) < 0.5f) {
+            view.setElevation(targetPx);
+            return;
+        }
+        ValueAnimator elevAnim = ValueAnimator.ofFloat(startPx, targetPx);
+        elevAnim.setDuration(DURATION_FAST_EFFECTS_MS);
+        elevAnim.setInterpolator(FAST_EFFECTS_INTERPOLATOR);
+        elevAnim.addUpdateListener(a -> view.setElevation((float) a.getAnimatedValue()));
+        view.setTag(R.id.m3_elevation_animator, elevAnim);
+        elevAnim.start();
+    }
+
+    /**
+     * Applies a safe ImageView tint cleanly across API levels without mutating shared drawable state globally.
+     */
+    public static void setImageTint(@Nullable ImageView imageView, int color) {
+        if (imageView == null) {
+            return;
+        }
+        if (VERSION.SDK_INT >= 21) {
+            imageView.setImageTintList(ColorStateList.valueOf(color));
+        } else {
+            imageView.setColorFilter(color, PorterDuff.Mode.SRC_IN);
+        }
     }
 
     /**
@@ -206,9 +302,39 @@ public final class M3Motion {
             int toStrokePx,
             float cornerRadiusPx,
             @Nullable FocusFractionListener frameListener) {
+        applyCardFocusTransition(
+                view, focused, fromFillColor, toFillColor, fromStrokeColor, toStrokeColor,
+                fromStrokePx, toStrokePx, cornerRadiusPx, null, frameListener);
+    }
+
+    /**
+     * Smoothly animates a card or segmented list row supporting optional 8-element per-corner radii.
+     */
+    public static void applyCardFocusTransition(
+            @Nullable View view,
+            boolean focused,
+            int fromFillColor,
+            int toFillColor,
+            int fromStrokeColor,
+            int toStrokeColor,
+            int fromStrokePx,
+            int toStrokePx,
+            float cornerRadiusPx,
+            @Nullable float[] cornerRadiiPx,
+            @Nullable FocusFractionListener frameListener) {
         if (view == null) {
             return;
         }
+
+        if (cornerRadiiPx != null) {
+            view.setTag(R.id.m3_segmented_radii_tag, cornerRadiiPx);
+        } else {
+            Object tagRadii = view.getTag(R.id.m3_segmented_radii_tag);
+            if (tagRadii instanceof float[]) {
+                cornerRadiiPx = (float[]) tagRadii;
+            }
+        }
+        final float[] resolvedRadii = cornerRadiiPx;
 
         Object prevAnim = view.getTag(R.id.m3_focus_color_animator);
         if (prevAnim instanceof ValueAnimator) {
@@ -225,7 +351,7 @@ public final class M3Motion {
                 && areAnimationsEnabled(view.getContext());
 
         if (!shouldAnimate) {
-            applySurfaceStep(view, toFillColor, toStrokeColor, toStrokePx, cornerRadiusPx);
+            applySurfaceStep(view, toFillColor, toStrokeColor, toStrokePx, cornerRadiusPx, resolvedRadii);
             if (frameListener != null) {
                 frameListener.onFraction(1f, toFillColor);
             }
@@ -240,7 +366,7 @@ public final class M3Motion {
             int fill = ColorUtils.blendARGB(fromFillColor, toFillColor, t);
             int strokeColor = ColorUtils.blendARGB(fromStrokeColor, toStrokeColor, t);
             int strokePx = Math.round(fromStrokePx + (toStrokePx - fromStrokePx) * t);
-            applySurfaceStep(view, fill, strokeColor, strokePx, cornerRadiusPx);
+            applySurfaceStep(view, fill, strokeColor, strokePx, cornerRadiusPx, resolvedRadii);
             if (frameListener != null) {
                 frameListener.onFraction(t, fill);
             }
@@ -254,9 +380,11 @@ public final class M3Motion {
             int fillColor,
             int strokeColor,
             int strokePx,
-            float cornerRadiusPx) {
-        GradientDrawable bg = ensureGradientDrawable(view.getBackground(), cornerRadiusPx);
+            float cornerRadiusPx,
+            @Nullable float[] cornerRadiiPx) {
+        GradientDrawable bg = ensureGradientDrawable(view.getBackground(), cornerRadiusPx, cornerRadiiPx);
         bg.setColor(fillColor);
+        applyShapeRadii(bg, cornerRadiusPx, cornerRadiiPx);
         if (view.getBackground() != bg) {
             view.setBackground(bg);
         }
@@ -264,8 +392,9 @@ public final class M3Motion {
         if (view instanceof FrameLayout) {
             FrameLayout fl = (FrameLayout) view;
             if (strokePx > 0 && Color.alpha(strokeColor) > 0) {
-                GradientDrawable fg = ensureGradientDrawable(fl.getForeground(), cornerRadiusPx);
+                GradientDrawable fg = ensureGradientDrawable(fl.getForeground(), cornerRadiusPx, cornerRadiiPx);
                 fg.setColor(Color.TRANSPARENT);
+                applyShapeRadii(fg, cornerRadiusPx, cornerRadiiPx);
                 fg.setStroke(strokePx, strokeColor);
                 if (fl.getForeground() != fg) {
                     fl.setForeground(fg);
@@ -280,15 +409,27 @@ public final class M3Motion {
         }
     }
 
-    private static GradientDrawable ensureGradientDrawable(@Nullable Drawable existing, float cornerRadiusPx) {
+    private static void applyShapeRadii(
+            GradientDrawable drawable,
+            float cornerRadiusPx,
+            @Nullable float[] cornerRadiiPx) {
+        if (cornerRadiiPx != null && cornerRadiiPx.length == 8) {
+            drawable.setCornerRadii(cornerRadiiPx);
+        } else if (cornerRadiusPx >= 0f) {
+            drawable.setCornerRadius(cornerRadiusPx);
+        }
+    }
+
+    private static GradientDrawable ensureGradientDrawable(
+            @Nullable Drawable existing,
+            float cornerRadiusPx,
+            @Nullable float[] cornerRadiiPx) {
         if (existing instanceof GradientDrawable) {
             return (GradientDrawable) existing;
         }
         GradientDrawable drawable = new GradientDrawable();
         drawable.setShape(GradientDrawable.RECTANGLE);
-        if (cornerRadiusPx > 0f) {
-            drawable.setCornerRadius(cornerRadiusPx);
-        }
+        applyShapeRadii(drawable, cornerRadiusPx, cornerRadiiPx);
         return drawable;
     }
 

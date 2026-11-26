@@ -2,6 +2,7 @@ package com.liskovsoft.smartyoutubetv2.tv.ui.adddevice;
 
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -56,7 +57,18 @@ public class AddDeviceFragment extends GuidedStepSupportFragment implements AddD
         }
 
         if (getView() != null) {
-            M3Motion.animateEnter(getView(), 0f, 12f * getResources().getDisplayMetrics().density);
+            View root = getView();
+            View bg = root.findViewById(R.id.guidedstep_background);
+            if (bg != null) {
+                bg.setBackgroundColor(ViewUtil.getThemeColor(
+                        getContext(), R.attr.m3Surface, R.color.m3_grey_surface));
+            }
+            View actionsBg = root.findViewById(R.id.action_fragment_background);
+            if (actionsBg != null) {
+                actionsBg.setBackgroundColor(ViewUtil.getThemeColor(
+                        getContext(), R.attr.m3SurfaceContainerLow, R.color.m3_grey_surface_container_low));
+            }
+            M3Motion.animateEnter(root, 0f, 12f * getResources().getDisplayMetrics().density);
         }
     }
 

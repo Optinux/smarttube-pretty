@@ -190,10 +190,19 @@ public class ErrorSupportFragment extends BrandedSupportFragment {
             if (mBackgroundDrawable != null) {
                 mErrorFrame.setBackground(mBackgroundDrawable);
             } else {
-                mErrorFrame.setBackgroundColor(mErrorFrame.getResources().getColor(
+                android.content.Context ctx = mErrorFrame.getContext();
+                int fallbackColor = com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil.getThemeColor(
+                        ctx,
                         mIsBackgroundTranslucent
-                                ? R.color.lb_error_background_color_translucent
-                                : R.color.lb_error_background_color_opaque));
+                                ? com.liskovsoft.smartyoutubetv2.tv.R.attr.m3SurfaceContainerLow
+                                : com.liskovsoft.smartyoutubetv2.tv.R.attr.m3Surface,
+                        mIsBackgroundTranslucent
+                                ? com.liskovsoft.smartyoutubetv2.tv.R.color.m3_dialog_backdrop
+                                : com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_surface);
+                if (mIsBackgroundTranslucent) {
+                    fallbackColor = androidx.core.graphics.ColorUtils.setAlphaComponent(fallbackColor, 232);
+                }
+                mErrorFrame.setBackgroundColor(fallbackColor);
             }
         }
     }

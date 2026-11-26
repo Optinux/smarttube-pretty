@@ -43,6 +43,8 @@
                   android:paddingTop="@dimen/m3_badge_padding_vertical"
                   android:paddingBottom="@dimen/m3_badge_padding_vertical"
                   android:fontFamily="sans-serif-medium"
+                  android:fontFeatureSettings="tnum"
+                  tools:targetApi="21"
                   android:textColor="@color/m3_badge_text"
                   android:textSize="@dimen/card_badge_text_size"
                   style="@style/TextAppearance.Leanback.ImageCardView.Content" />

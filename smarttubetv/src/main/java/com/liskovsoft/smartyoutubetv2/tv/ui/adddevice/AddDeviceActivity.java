@@ -6,6 +6,12 @@ import com.liskovsoft.smartyoutubetv2.tv.ui.common.LeanbackActivity;
 
 public class AddDeviceActivity extends LeanbackActivity {
     @Override
+    protected void initTheme() {
+        // Preserve manifest GuidedStep theme while honoring dynamic Material You surface background
+        applyDynamicWindowBackground();
+    }
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 

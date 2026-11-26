@@ -210,11 +210,13 @@ public class ViewUtil {
         }
         if (itemsContainer instanceof VerticalGridView) {
             float density = context.getResources().getDisplayMetrics().density;
-            float itemCornerRadius = 14f * density;
-            int focusStrokePx = Math.max(1, Math.round(1.5f * density));
+            float itemCornerRadius = context.getResources().getDimension(R.dimen.m3_card_corner_radius);
+            int focusStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
+            int restingFill = androidx.core.graphics.ColorUtils.setAlphaComponent(
+                    getThemeColor(context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high), 128);
             int focusedFill = androidx.core.graphics.ColorUtils.setAlphaComponent(
-                    getThemeColor(context, R.attr.m3SecondaryContainer, R.color.m3_grey_secondary_container), 215);
-            int focusedStroke = getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
+                    getThemeColor(context, R.attr.m3SecondaryContainer, R.color.m3_grey_secondary_container), 235);
+            int focusedStroke = getThemeColor(context, R.attr.m3Primary, R.color.m3_grey_outline);
             // Set background for individual buttons in the list.
             // This is the only way to do this because items haven't been added yet to the container.
             ((VerticalGridView) itemsContainer).setOnChildLaidOutListener((parent, view, position, id) -> {
@@ -226,8 +228,8 @@ public class ViewUtil {
                 M3Motion.applyCardFocusTransition(
                         view,
                         initiallyFocused,
-                        initiallyFocused ? transparent : focusedFill,
-                        initiallyFocused ? focusedFill : transparent,
+                        initiallyFocused ? restingFill : focusedFill,
+                        initiallyFocused ? focusedFill : restingFill,
                         initiallyFocused ? transparent : focusedStroke,
                         initiallyFocused ? focusedStroke : transparent,
                         initiallyFocused ? 0 : focusStrokePx,
@@ -242,8 +244,8 @@ public class ViewUtil {
                     M3Motion.applyCardFocusTransition(
                             v,
                             hasFocus,
-                            hasFocus ? transparent : focusedFill,
-                            hasFocus ? focusedFill : transparent,
+                            hasFocus ? restingFill : focusedFill,
+                            hasFocus ? focusedFill : restingFill,
                             hasFocus ? transparent : focusedStroke,
                             hasFocus ? focusedStroke : transparent,
                             hasFocus ? 0 : focusStrokePx,

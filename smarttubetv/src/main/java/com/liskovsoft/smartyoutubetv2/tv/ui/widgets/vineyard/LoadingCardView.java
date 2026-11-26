@@ -1,7 +1,10 @@
 package com.liskovsoft.smartyoutubetv2.tv.ui.widgets.vineyard;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
+import android.graphics.PorterDuff;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
@@ -10,6 +13,7 @@ import android.widget.ProgressBar;
 
 import androidx.leanback.widget.BaseCardView;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class LoadingCardView extends BaseCardView {
 
@@ -34,15 +38,29 @@ public class LoadingCardView extends BaseCardView {
         setFocusable(false);
         setFocusableInTouchMode(false);
         setCardType(CARD_TYPE_MAIN_ONLY);
-        setBackgroundResource(R.color.primary_light);
+        Context context = getContext();
+        int surfaceColor = ViewUtil.getThemeColor(
+                context, R.attr.m3SurfaceContainer, R.color.m3_grey_surface_container);
+        float cornerRadius = getResources().getDimension(R.dimen.m3_card_corner_radius);
+        setBackground(ViewUtil.createRoundedDrawable(surfaceColor, 0, 0, cornerRadius));
+        ViewUtil.applyRoundedOutline(this, cornerRadius);
 
-        LayoutInflater inflater = LayoutInflater.from(getContext());
+        LayoutInflater inflater = LayoutInflater.from(context);
         inflater.inflate(R.layout.view_loading_card, this);
         TypedArray cardAttrs =
                 getContext().obtainStyledAttributes(
                         styleResId, R.styleable.lbImageCardView);
 
         mProgressBar = (ProgressBar) findViewById(R.id.progress_indicator);
+        if (mProgressBar != null) {
+            int primaryColor = ViewUtil.getThemeColor(
+                    context, R.attr.m3Primary, R.color.m3_grey_primary);
+            if (Build.VERSION.SDK_INT >= 21) {
+                mProgressBar.setIndeterminateTintList(ColorStateList.valueOf(primaryColor));
+            } else if (mProgressBar.getIndeterminateDrawable() != null) {
+                mProgressBar.getIndeterminateDrawable().setColorFilter(primaryColor, PorterDuff.Mode.SRC_IN);
+            }
+        }
         cardAttrs.recycle();
     }
 

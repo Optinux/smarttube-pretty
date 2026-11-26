@@ -399,10 +399,12 @@ public class SearchOrbView extends FrameLayout implements View.OnClickListener {
     private void updateOrbStroke(boolean focused) {
         if (mSearchOrbView != null && mSearchOrbView.getBackground() instanceof GradientDrawable && mColors != null) {
             GradientDrawable bg = (GradientDrawable) mSearchOrbView.getBackground();
+            if (!focused) {
+                bg.setStroke(0, Color.TRANSPARENT);
+                return;
+            }
             int baseStrokeColor = mColors.iconColor != Color.TRANSPARENT ? mColors.iconColor : Color.WHITE;
-            int strokeAlpha = focused ? 204 : 46;
-            int strokeColor = ColorUtils.setAlphaComponent(baseStrokeColor, strokeAlpha);
-            bg.setStroke(focused ? mFocusedStrokePx : mUnfocusedStrokePx, strokeColor);
+            bg.setStroke(mFocusedStrokePx, ColorUtils.setAlphaComponent(baseStrokeColor, 215));
         }
     }
 

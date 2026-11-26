@@ -423,7 +423,7 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
                 R.string.color_scheme_dark_grey_oled,
                 "App.Theme.DarkGrey.OLED.Player",
                 "App.Theme.DarkGrey.OLED.Browse",
-                "App.Theme.DarkGrey.Preferences",
+                "App.Theme.DarkGrey.OLED.Preferences",
                 mContext,
                 false,
                 true));
@@ -431,7 +431,7 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
                 R.string.color_scheme_teal_oled,
                 "App.Theme.Leanback.OLED.Player",
                 "App.Theme.Leanback.OLED.Browse",
-                null,
+                "App.Theme.Leanback.OLED.Preferences",
                 mContext,
                 false,
                 true));
@@ -439,7 +439,7 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
                 R.string.color_scheme_dark_grey_monochrome,
                 "App.Theme.DarkGrey2.OLED.Player",
                 "App.Theme.DarkGrey2.OLED.Browse",
-                "App.Theme.DarkGrey.Preferences",
+                "App.Theme.DarkGrey2.OLED.Preferences",
                 mContext,
                 false,
                 true));
@@ -453,7 +453,7 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
                 R.string.color_scheme_dark_blue_oled,
                 "App.Theme.Leanback.Blue.OLED.Player",
                 "App.Theme.Leanback.Blue.OLED.Browse",
-                "App.Theme.Leanback.Blue.Preferences",
+                "App.Theme.Leanback.Blue.OLED.Preferences",
                 mContext,
                 false,
                 true));
@@ -469,7 +469,7 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
                 R.string.color_scheme_material_you_oled,
                 "App.Theme.MaterialYou.OLED.Player",
                 "App.Theme.MaterialYou.OLED.Browse",
-                "App.Theme.MaterialYou.Preferences",
+                "App.Theme.MaterialYou.OLED.Preferences",
                 mContext,
                 true,
                 true));

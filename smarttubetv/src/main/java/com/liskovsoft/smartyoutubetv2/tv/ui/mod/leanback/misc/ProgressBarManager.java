@@ -1,18 +1,22 @@
 package com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.misc;
 
+import android.content.Context;
+import android.content.res.ColorStateList;
+import android.graphics.PorterDuff;
+import android.os.Build;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 
-import androidx.core.content.ContextCompat;
 import androidx.leanback.app.BrowseFragment;
 import androidx.leanback.app.VerticalGridFragment;
 
 import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
+import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 /**
  * Manager for showing/hiding progress bar widget. This class lets user specify an initial
@@ -113,11 +117,17 @@ public final class ProgressBarManager {
     }
 
     private static View createProgressBar(ViewGroup rootView, int position) {
+        Context context = rootView.getContext();
         ProgressBar progressBarView = new ProgressBar(
-                rootView.getContext(), null, android.R.attr.progressBarStyleLarge);
+                context, null, android.R.attr.progressBarStyleLarge);
         progressBarView.setIndeterminate(true);
-        progressBarView.setIndeterminateDrawable(
-                ContextCompat.getDrawable(rootView.getContext(), R.drawable.progress_large_holo));
+        int primaryColor = ViewUtil.getThemeColor(
+                context, R.attr.m3Primary, R.color.m3_grey_primary);
+        if (Build.VERSION.SDK_INT >= 21) {
+            progressBarView.setIndeterminateTintList(ColorStateList.valueOf(primaryColor));
+        } else if (progressBarView.getIndeterminateDrawable() != null) {
+            progressBarView.getIndeterminateDrawable().setColorFilter(primaryColor, PorterDuff.Mode.SRC_IN);
+        }
 
         FrameLayout.LayoutParams progressBarParams = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,

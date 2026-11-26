@@ -19,6 +19,7 @@ import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.sharedutils.okhttp.OkHttpManager;
 import com.liskovsoft.sharedutils.rx.RxHelper;
 import com.liskovsoft.smartyoutubetv2.common.R;
+import com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.OkHttpClient;
@@ -202,6 +203,7 @@ public class WebProxyDialog {
 
         mNumTests = 0;
         mProxyConfigDialog.show();
+        ThemePaletteHelper.applyDialogWindowSurface(mContext, mProxyConfigDialog);
 
         mProxyConfigDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener((view) -> {
             ((TextView) mProxyConfigDialog.findViewById(R.id.proxy_config_message)).setText("");

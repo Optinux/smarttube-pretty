@@ -65,9 +65,9 @@ public class IconCardView extends BaseCardView {
         mOnPrimaryContainer = ViewUtil.getThemeColor(context, R.attr.m3OnPrimaryContainer, R.color.m3_on_surface);
         mOutlineColor = ViewUtil.getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
         mHairlineColor = ViewUtil.getThemeColor(context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
-        mCornerRadius = getResources().getDimension(R.dimen.m3_card_corner_radius);
+        mCornerRadius = getResources().getDimension(R.dimen.m3_card_large_corner_radius);
         mFocusStrokePx = getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
-        mHairlineStrokePx = getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
+        mHairlineStrokePx = 0;
 
         setBackground(ViewUtil.createRoundedDrawable(mSurfaceContainer, 0, 0, mCornerRadius));
         ViewUtil.applyRoundedOutline(this, mCornerRadius);
@@ -102,10 +102,10 @@ public class IconCardView extends BaseCardView {
     private void updateSelectedAppearance(boolean selected) {
         int fromBg = selected ? mSurfaceContainer : mPrimaryContainer;
         int toBg = selected ? mPrimaryContainer : mSurfaceContainer;
-        int fromStroke = selected ? mHairlineColor : mOutlineColor;
-        int toStroke = selected ? mOutlineColor : mHairlineColor;
-        int fromStrokePx = selected ? mHairlineStrokePx : mFocusStrokePx;
-        int toStrokePx = selected ? mFocusStrokePx : mHairlineStrokePx;
+        int fromStroke = selected ? 0 : mOutlineColor;
+        int toStroke = selected ? mOutlineColor : 0;
+        int fromStrokePx = selected ? 0 : mFocusStrokePx;
+        int toStrokePx = selected ? mFocusStrokePx : 0;
         int fromTitle = selected ? mOnSurface : mOnPrimaryContainer;
         int toTitle = selected ? mOnPrimaryContainer : mOnSurface;
         int fromValue = selected ? mOnSurfaceVariant : mOnPrimaryContainer;

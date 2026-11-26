@@ -769,8 +769,9 @@ public class SearchBar extends RelativeLayout {
     void updateUi(boolean hasFocus) {
         View items = findViewById(R.id.lb_search_bar_items);
         Drawable background = items != null ? items.getBackground() : mBarBackground;
+        boolean managedPill = items != null && background instanceof android.graphics.drawable.GradientDrawable;
         if (hasFocus) {
-            if (background != null) {
+            if (background != null && !managedPill) {
                 background.setAlpha(255);
             }
             if (isVoiceMode()) {
@@ -781,7 +782,7 @@ public class SearchBar extends RelativeLayout {
                 mSearchTextEditor.setHintTextColor(mTextHintColorSpeechMode);
             }
         } else {
-            if (background != null) {
+            if (background != null && !managedPill) {
                 background.setAlpha(235);
             }
             mSearchTextEditor.setTextColor(mTextColor);

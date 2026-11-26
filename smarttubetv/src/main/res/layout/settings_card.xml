@@ -14,8 +14,9 @@
             android:id="@+id/settings_image"
             android:layout_width="@dimen/settings_image_size"
             android:layout_height="@dimen/settings_image_size"
-            android:layout_gravity="center"
-            android:layout_margin="@dimen/settings_image_padding"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="4dp"
             android:visibility="invisible"
             tools:ignore="ContentDescription"/>
         <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.marqueetextviewcompat.MarqueeTextViewCompat

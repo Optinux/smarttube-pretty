@@ -50,9 +50,9 @@ public class ChannelCardPresenter extends LongClickPresenter {
         Context context = parent.getContext();
 
         mDefaultBackgroundColor =
-                ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainer, R.color.card_default_background);
+                ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainer, R.color.m3_grey_surface_container);
         mSelectedBackgroundColor =
-                ViewUtil.getThemeColor(context, R.attr.m3SecondaryContainer, R.color.card_selected_background_white);
+                ViewUtil.getThemeColor(context, R.attr.m3SecondaryContainer, R.color.m3_grey_secondary_container);
         mNewContentBackgroundColor =
                 ViewUtil.getThemeColor(context, R.attr.m3PrimaryContainer, R.color.m3_grey_primary_container);
         mDefaultTextColor =
@@ -68,13 +68,10 @@ public class ChannelCardPresenter extends LongClickPresenter {
         mHairlineColor =
                 ViewUtil.getThemeColor(context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
 
-        mCornerRadius = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, 14f, context.getResources().getDisplayMetrics());
-        mFocusStrokePx = Math.round(TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, 2f, context.getResources().getDisplayMetrics()));
-        mNewStrokePx = Math.round(TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, 1.5f, context.getResources().getDisplayMetrics()));
-        mHairlineStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
+        mCornerRadius = context.getResources().getDimension(R.dimen.m3_pill_corner_radius);
+        mFocusStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
+        mNewStrokePx = 0;
+        mHairlineStrokePx = 0;
 
         updateDimensions(context);
 

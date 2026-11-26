@@ -69,7 +69,7 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
         ensureThemeTokens(context);
         LayoutInflater inflater = (LayoutInflater) context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        mDefaultIcon = new ColorDrawable(ContextCompat.getColor(context, R.color.lb_grey));
+        mDefaultIcon = new ColorDrawable(Color.TRANSPARENT);
 
         View view = inflater.inflate(R.layout.icon_header_item, viewGroup, false);
         view.setBackground(ViewUtil.createRoundedDrawable(Color.TRANSPARENT, Color.TRANSPARENT, 0, mPillCornerRadius));
@@ -99,7 +99,7 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
                 iconView.clearColorFilter();
                 Glide.with(rootView.getContext())
                         .load(mIconUrl)
-                        .apply(ViewUtil.glideOptions().error(mDefaultIcon))
+                        .apply(ViewUtil.glideOptions().circleCrop().error(mDefaultIcon))
                         .listener(mErrorListener)
                         .into(iconView);
 
@@ -146,14 +146,8 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
             GradientDrawable pill = (GradientDrawable) bg;
             int fillAlpha = Math.round(Color.alpha(mSecondaryContainerColor) * level);
             pill.setColor(ColorUtils.setAlphaComponent(mSecondaryContainerColor, fillAlpha));
-
-            float strokeT = Math.max(0f, (level - 0.5f) * 2f);
-            if (strokeT > 0.01f) {
-                int strokeAlpha = Math.round(Color.alpha(mOutlineColor) * strokeT * 0.7f);
-                pill.setStroke(mFocusStrokeWidthPx, ColorUtils.setAlphaComponent(mOutlineColor, strokeAlpha));
-            } else {
-                pill.setStroke(0, Color.TRANSPARENT);
-            }
+            // M3 Expressive navigation rail relies on flat tonal pill fill without resting/active outline clutter
+            pill.setStroke(0, Color.TRANSPARENT);
         }
 
         float contentAlpha = 0.78f + 0.22f * level;

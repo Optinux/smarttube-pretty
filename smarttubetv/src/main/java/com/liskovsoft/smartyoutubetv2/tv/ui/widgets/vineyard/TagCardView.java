@@ -44,6 +44,9 @@ public class TagCardView extends BaseCardView {
 
         mTagNameText = view.findViewById(R.id.text_tag_name);
         mResultImage = view.findViewById(R.id.image_icon);
+        if (mTagNameText != null) {
+            mTagNameText.setTextColor(ViewUtil.getThemeColor(context, R.attr.m3OnSurface, R.color.m3_on_surface));
+        }
         
         TypedArray cardAttrs =
                 getContext().obtainStyledAttributes(

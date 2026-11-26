@@ -14,6 +14,8 @@
 package com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.tooltips;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -78,6 +80,7 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
         ImageView mIcon;
         TextView mLabel;
         View mFocusableView;
+        ControlButtonPresenter.FocusScaleListener mFocusListener;
 
         public ActionViewHolder(View view) {
             super(view);
@@ -118,55 +121,67 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
                     isPrimary ? com.liskovsoft.smartyoutubetv2.tv.R.attr.m3SurfaceContainerHigh
                               : com.liskovsoft.smartyoutubetv2.tv.R.attr.m3SurfaceContainer,
                     com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_surface_container_high);
-            int focusedContainer = ViewUtil.getThemeColor(
+            int secondaryContainer = ViewUtil.getThemeColor(
                     context,
-                    isPrimary ? com.liskovsoft.smartyoutubetv2.tv.R.attr.m3PrimaryContainer
-                              : com.liskovsoft.smartyoutubetv2.tv.R.attr.m3SecondaryContainer,
+                    com.liskovsoft.smartyoutubetv2.tv.R.attr.m3SecondaryContainer,
+                    com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_secondary_container);
+            int primary = ViewUtil.getThemeColor(
+                    context,
+                    com.liskovsoft.smartyoutubetv2.tv.R.attr.m3Primary,
+                    com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_primary);
+            int onPrimary = ViewUtil.getThemeColor(
+                    context,
+                    com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OnPrimary,
+                    com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_on_primary);
+            int primaryContainer = ViewUtil.getThemeColor(
+                    context,
+                    com.liskovsoft.smartyoutubetv2.tv.R.attr.m3PrimaryContainer,
                     com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_primary_container);
-            int outlineVariant = ViewUtil.getThemeColor(
+            int onPrimaryContainer = ViewUtil.getThemeColor(
                     context,
-                    com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OutlineVariant,
-                    com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_outline_variant);
-            int outline = ViewUtil.getThemeColor(
+                    com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OnPrimaryContainer,
+                    com.liskovsoft.smartyoutubetv2.tv.R.color.m3_on_surface);
+            int onSecondaryContainer = ViewUtil.getThemeColor(
                     context,
-                    com.liskovsoft.smartyoutubetv2.tv.R.attr.m3Outline,
-                    com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_outline);
+                    com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OnSecondaryContainer,
+                    com.liskovsoft.smartyoutubetv2.tv.R.color.m3_on_surface);
+            int onSurface = ViewUtil.getThemeColor(
+                    context,
+                    com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OnSurface,
+                    com.liskovsoft.smartyoutubetv2.tv.R.color.m3_on_surface);
 
-            int defaultFill = ColorUtils.setAlphaComponent(surfaceColor, isPrimary ? 190 : 165);
-            int focusedFill = ColorUtils.setAlphaComponent(focusedContainer, 240);
-            int defaultStroke = ColorUtils.setAlphaComponent(outlineVariant, 128);
-            int focusedStroke = outline;
+            int defaultFill = ColorUtils.setAlphaComponent(surfaceColor, isPrimary ? 195 : 170);
+            int focusedFill = ColorUtils.setAlphaComponent(secondaryContainer, 242);
+            int heroDefaultFill = ColorUtils.setAlphaComponent(primaryContainer, 224);
+            int heroFocusedFill = ColorUtils.setAlphaComponent(primary, 248);
 
-            float density = context.getResources().getDisplayMetrics().density;
-            int defaultStrokePx = Math.max(1, Math.round(1f * density));
-            int focusedStrokePx = Math.max(2, Math.round(2f * density));
+            int focusedStrokePx = context.getResources().getDimensionPixelSize(
+                    com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_focus_stroke_width);
             float pillRadius = context.getResources().getDimension(
                     com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_pill_corner_radius);
+            float squircleRadius = context.getResources().getDimension(
+                    com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_card_large_corner_radius);
 
-            vh.mFocusableView.setTag(
-                    com.liskovsoft.smartyoutubetv2.tv.R.id.m3_focus_state_tag, null);
-            M3Motion.applyCardFocusTransition(
-                    vh.mFocusableView,
-                    false,
-                    focusedFill,
-                    defaultFill,
-                    focusedStroke,
-                    defaultStroke,
-                    focusedStrokePx,
-                    defaultStrokePx,
-                    pillRadius,
-                    null);
-            vh.mFocusableView.setOnFocusChangeListener(new FocusScaleListener(
+            FocusScaleListener listener = new FocusScaleListener(
                     vh.view,
                     vh.mFocusableView,
-                    null,
+                    vh.mIcon,
+                    vh.mLabel,
                     defaultFill,
                     focusedFill,
-                    defaultStroke,
-                    focusedStroke,
-                    defaultStrokePx,
+                    primary,
+                    onSurface,
+                    onSecondaryContainer,
+                    heroDefaultFill,
+                    heroFocusedFill,
+                    onPrimaryContainer,
+                    onPrimary,
                     focusedStrokePx,
-                    pillRadius));
+                    pillRadius,
+                    squircleRadius);
+            vh.mFocusListener = listener;
+            vh.mFocusableView.setOnFocusChangeListener(listener);
+            listener.syncImmediate(false);
         }
 
         // Used inside: com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.tweaks.ControlBarPresenter.ViewHolder.bindControlToAction()
@@ -177,11 +192,14 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
             ActionViewHolder vh = (ActionViewHolder) viewHolder;
 
             vh.mIcon.setImageDrawable(action.getIcon());
+            int actionPadding = 0;
             if (action instanceof PaddingAction) {
-                int padding = ((PaddingAction) action).getPadding();
-                if (padding > 0) {
-                    vh.mIcon.setPadding(padding, padding, padding, padding);
-                }
+                actionPadding = ((PaddingAction) action).getPadding();
+            }
+            if (actionPadding > 0) {
+                vh.mIcon.setPadding(actionPadding, actionPadding, actionPadding, actionPadding);
+            } else {
+                vh.mIcon.setPadding(0, 0, 0, 0);
             }
             if (vh.mLabel != null) {
                 if (action.getIcon() == null) {
@@ -203,12 +221,14 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
                 }
             }
 
-            View.OnFocusChangeListener currentListener = vh.mFocusableView.getOnFocusChangeListener();
-            if (!(currentListener instanceof FocusScaleListener)) {
-                vh.mFocusableView.setOnFocusChangeListener(
-                        new FocusScaleListener(vh.view, vh.mFocusableView, currentListener, 0, 0, 0, 0, 0, 0, 0f));
-            } else {
-                ((FocusScaleListener) currentListener).syncImmediate(vh.mFocusableView.hasFocus());
+            if (vh.mFocusListener != null) {
+                boolean isHero = action instanceof PlaybackControlsRow.PlayPauseAction;
+                boolean isActiveToggle = !isHero
+                        && action instanceof PlaybackControlsRow.MultiAction
+                        && ((PlaybackControlsRow.MultiAction) action).getIndex() > 0;
+                boolean preserveIcon = actionPadding > 0 || isActiveToggle;
+                vh.mFocusListener.configure(isHero, isActiveToggle, preserveIcon);
+                vh.mFocusListener.syncImmediate(vh.mFocusableView.hasFocus());
             }
         }
 
@@ -220,6 +240,11 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
             vh.view.setScaleY(1.0f);
             M3Motion.cancelFocusAnimations(vh.mFocusableView);
             vh.mIcon.setImageDrawable(null);
+            vh.mIcon.setPadding(0, 0, 0, 0);
+            vh.mIcon.clearColorFilter();
+            if (android.os.Build.VERSION.SDK_INT >= 21) {
+                vh.mIcon.setImageTintList((ColorStateList) null);
+            }
             if (vh.mLabel != null) {
                 vh.mLabel.setText(null);
             }
@@ -237,84 +262,130 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
             ((ActionViewHolder) viewHolder).mFocusableView.setOnLongClickListener(listener);
         }
 
-        private static class FocusScaleListener implements View.OnFocusChangeListener {
-            private static final float FOCUSED_SCALE = 1.10f;
+        static class FocusScaleListener implements View.OnFocusChangeListener {
+            private static final float FOCUSED_SCALE = 1.09f;
+            private static final float HERO_FOCUSED_SCALE = 1.12f;
             private final View mTargetView;
             private final View mSurfaceView;
-            private final View.OnFocusChangeListener mDelegate;
-            private final int mDefaultFill;
-            private final int mFocusedFill;
-            private final int mDefaultStroke;
-            private final int mFocusedStroke;
-            private final int mDefaultStrokePx;
+            private final ImageView mIconView;
+            private final TextView mLabelView;
+            private final int mNormalDefaultFill;
+            private final int mNormalFocusedFill;
+            private final int mNormalFocusedStroke;
+            private final int mNormalDefaultTint;
+            private final int mNormalFocusedTint;
+            private final int mHeroDefaultFill;
+            private final int mHeroFocusedFill;
+            private final int mHeroDefaultTint;
+            private final int mHeroFocusedTint;
             private final int mFocusedStrokePx;
-            private final float mCornerRadius;
-            private final boolean mAnimateSurface;
+            private final float mPillRadius;
+            private final float mSquircleRadius;
+            private boolean mIsHero;
+            private boolean mIsActiveToggle;
+            private boolean mPreserveIconColor;
 
             FocusScaleListener(
                     View targetView,
                     View surfaceView,
-                    View.OnFocusChangeListener delegate,
-                    int defaultFill,
-                    int focusedFill,
-                    int defaultStroke,
-                    int focusedStroke,
-                    int defaultStrokePx,
+                    ImageView iconView,
+                    TextView labelView,
+                    int normalDefaultFill,
+                    int normalFocusedFill,
+                    int normalFocusedStroke,
+                    int normalDefaultTint,
+                    int normalFocusedTint,
+                    int heroDefaultFill,
+                    int heroFocusedFill,
+                    int heroDefaultTint,
+                    int heroFocusedTint,
                     int focusedStrokePx,
-                    float cornerRadius) {
+                    float pillRadius,
+                    float squircleRadius) {
                 mTargetView = targetView;
                 mSurfaceView = surfaceView;
-                mDelegate = delegate;
-                mDefaultFill = defaultFill;
-                mFocusedFill = focusedFill;
-                mDefaultStroke = defaultStroke;
-                mFocusedStroke = focusedStroke;
-                mDefaultStrokePx = defaultStrokePx;
+                mIconView = iconView;
+                mLabelView = labelView;
+                mNormalDefaultFill = normalDefaultFill;
+                mNormalFocusedFill = normalFocusedFill;
+                mNormalFocusedStroke = normalFocusedStroke;
+                mNormalDefaultTint = normalDefaultTint;
+                mNormalFocusedTint = normalFocusedTint;
+                mHeroDefaultFill = heroDefaultFill;
+                mHeroFocusedFill = heroFocusedFill;
+                mHeroDefaultTint = heroDefaultTint;
+                mHeroFocusedTint = heroFocusedTint;
                 mFocusedStrokePx = focusedStrokePx;
-                mCornerRadius = cornerRadius;
-                mAnimateSurface = cornerRadius > 0f;
+                mPillRadius = pillRadius;
+                mSquircleRadius = squircleRadius;
+            }
+
+            void configure(boolean isHero, boolean isActiveToggle, boolean preserveIconColor) {
+                mIsHero = isHero;
+                mIsActiveToggle = isActiveToggle;
+                mPreserveIconColor = preserveIconColor;
             }
 
             void syncImmediate(boolean hasFocus) {
-                float targetScale = hasFocus ? FOCUSED_SCALE : 1.0f;
+                float targetScale = hasFocus ? (mIsHero ? HERO_FOCUSED_SCALE : FOCUSED_SCALE) : 1.0f;
                 mTargetView.animate().cancel();
                 mTargetView.setScaleX(targetScale);
                 mTargetView.setScaleY(targetScale);
-                if (mAnimateSurface && mSurfaceView != null) {
+                if (mPreserveIconColor && mIconView != null) {
+                    mIconView.clearColorFilter();
+                    if (android.os.Build.VERSION.SDK_INT >= 21) {
+                        mIconView.setImageTintList((ColorStateList) null);
+                    }
+                }
+                if (mSurfaceView != null) {
                     M3Motion.cancelFocusAnimations(mSurfaceView);
-                    M3Motion.applyCardFocusTransition(
-                            mSurfaceView,
-                            hasFocus,
-                            hasFocus ? mDefaultFill : mFocusedFill,
-                            hasFocus ? mFocusedFill : mDefaultFill,
-                            hasFocus ? mDefaultStroke : mFocusedStroke,
-                            hasFocus ? mFocusedStroke : mDefaultStroke,
-                            hasFocus ? mDefaultStrokePx : mFocusedStrokePx,
-                            hasFocus ? mFocusedStrokePx : mDefaultStrokePx,
-                            mCornerRadius,
-                            null);
+                    applyTransition(hasFocus);
                 }
             }
 
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
-                if (mDelegate != null) {
-                    mDelegate.onFocusChange(v, hasFocus);
+                M3Motion.animateFocusScale(
+                        mTargetView, hasFocus, mIsHero ? HERO_FOCUSED_SCALE : FOCUSED_SCALE);
+                if (mSurfaceView != null) {
+                    applyTransition(hasFocus);
                 }
-                M3Motion.animateFocusScale(mTargetView, hasFocus, FOCUSED_SCALE);
-                if (mAnimateSurface && mSurfaceView != null) {
-                    M3Motion.applyCardFocusTransition(
-                            mSurfaceView,
-                            hasFocus,
-                            hasFocus ? mDefaultFill : mFocusedFill,
-                            hasFocus ? mFocusedFill : mDefaultFill,
-                            hasFocus ? mDefaultStroke : mFocusedStroke,
-                            hasFocus ? mFocusedStroke : mDefaultStroke,
-                            hasFocus ? mDefaultStrokePx : mFocusedStrokePx,
-                            hasFocus ? mFocusedStrokePx : mDefaultStrokePx,
-                            mCornerRadius,
-                            null);
-                }
+            }
+
+            private void applyTransition(boolean hasFocus) {
+                int defaultFill = mIsHero
+                        ? mHeroDefaultFill
+                        : (mIsActiveToggle
+                                ? ColorUtils.setAlphaComponent(mNormalFocusedFill, 200)
+                                : mNormalDefaultFill);
+                int focusedFill = mIsHero ? mHeroFocusedFill : mNormalFocusedFill;
+                int focusedStroke = mIsHero ? mHeroDefaultTint : mNormalFocusedStroke;
+                int defaultTint = mIsHero ? mHeroDefaultTint : mNormalDefaultTint;
+                int focusedTint = mIsHero ? mHeroFocusedTint : mNormalFocusedTint;
+                float cornerRadius = mIsHero ? mSquircleRadius : mPillRadius;
+
+                int fromTint = hasFocus ? defaultTint : focusedTint;
+                int toTint = hasFocus ? focusedTint : defaultTint;
+
+                M3Motion.applyCardFocusTransition(
+                        mSurfaceView,
+                        hasFocus,
+                        hasFocus ? defaultFill : focusedFill,
+                        hasFocus ? focusedFill : defaultFill,
+                        hasFocus ? 0 : focusedStroke,
+                        hasFocus ? focusedStroke : 0,
+                        hasFocus ? 0 : mFocusedStrokePx,
+                        hasFocus ? mFocusedStrokePx : 0,
+                        cornerRadius,
+                        (fraction, currentFill) -> {
+                            int blendedTint = ColorUtils.blendARGB(fromTint, toTint, fraction);
+                            if (!mPreserveIconColor) {
+                                M3Motion.setImageTint(mIconView, blendedTint);
+                            }
+                            if (mLabelView != null) {
+                                mLabelView.setTextColor(blendedTint);
+                            }
+                        });
             }
         }
     }

@@ -27,4 +27,5 @@
     <item name="m3_focus_color_animator" type="id"/>
     <item name="m3_focus_state_tag" type="id"/>
     <item name="m3_elevation_animator" type="id"/>
+    <item name="m3_segmented_radii_tag" type="id"/>
 </resources>

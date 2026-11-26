@@ -35,9 +35,9 @@ public class SettingsCardPresenter extends Presenter {
         Context context = parent.getContext();
 
         mDefaultBackgroundColor =
-                ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainer, R.color.card_default_background);
+                ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainer, R.color.m3_grey_surface_container);
         mSelectedBackgroundColor =
-                ViewUtil.getThemeColor(context, R.attr.m3PrimaryContainer, R.color.card_selected_background_white);
+                ViewUtil.getThemeColor(context, R.attr.m3PrimaryContainer, R.color.m3_grey_primary_container);
         mDefaultTextColor =
                 ViewUtil.getThemeColor(context, R.attr.m3OnSurface, R.color.m3_on_surface);
         mSelectedTextColor =
@@ -47,10 +47,9 @@ public class SettingsCardPresenter extends Presenter {
         mHairlineColor =
                 ViewUtil.getThemeColor(context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
 
-        mCornerRadius = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, 18f, context.getResources().getDisplayMetrics());
+        mCornerRadius = context.getResources().getDimension(R.dimen.m3_card_large_corner_radius);
         mFocusStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
-        mHairlineStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
+        mHairlineStrokePx = 0;
 
         @SuppressLint("InflateParams")
         FrameLayout container = (FrameLayout) LayoutInflater.from(context).inflate(R.layout.settings_card, null);
@@ -82,10 +81,10 @@ public class SettingsCardPresenter extends Presenter {
         }
         int fromBg = hasFocus ? mDefaultBackgroundColor : mSelectedBackgroundColor;
         int toBg = hasFocus ? mSelectedBackgroundColor : mDefaultBackgroundColor;
-        int fromStroke = hasFocus ? mHairlineColor : mOutlineColor;
-        int toStroke = hasFocus ? mOutlineColor : mHairlineColor;
-        int fromStrokePx = hasFocus ? mHairlineStrokePx : mFocusStrokePx;
-        int toStrokePx = hasFocus ? mFocusStrokePx : mHairlineStrokePx;
+        int fromStroke = hasFocus ? 0 : mOutlineColor;
+        int toStroke = hasFocus ? mOutlineColor : 0;
+        int fromStrokePx = hasFocus ? 0 : mFocusStrokePx;
+        int toStrokePx = hasFocus ? mFocusStrokePx : 0;
         int fromContent = hasFocus ? mDefaultTextColor : mSelectedTextColor;
         int toContent = hasFocus ? mSelectedTextColor : mDefaultTextColor;
 

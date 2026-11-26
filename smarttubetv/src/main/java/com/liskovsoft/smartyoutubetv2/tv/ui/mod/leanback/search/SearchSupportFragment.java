@@ -351,17 +351,15 @@ public class SearchSupportFragment extends Fragment {
         View searchBarItems = mSearchBar.findViewById(R.id.lb_search_bar_items);
         int surfaceHigh = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3SurfaceContainerHigh, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_surface_container_high);
         int surfaceHighest = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3SurfaceContainerHighest, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_surface_container_highest);
-        int outline = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3Outline, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_outline);
-        int outlineVariant = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OutlineVariant, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_outline_variant);
+        int primary = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3Primary, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_primary);
         float pillRadius = context.getResources().getDimension(com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_pill_corner_radius);
         int focusStrokePx = context.getResources().getDimensionPixelSize(com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_focus_stroke_width);
-        int hairlineStrokePx = context.getResources().getDimensionPixelSize(com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_hairline_stroke_width);
 
         mSearchTextEditor = mSearchBar.findViewById(R.id.lb_search_text_editor);
         if (searchBarItems != null) {
             boolean initiallyFocused = mSearchTextEditor.hasFocus();
             applySearchBarFocus(searchBarItems, initiallyFocused, surfaceHigh, surfaceHighest,
-                    outlineVariant, outline, hairlineStrokePx, focusStrokePx, pillRadius, false);
+                    primary, focusStrokePx, pillRadius, false);
         }
         mSearchTextEditor.setSelectAllOnFocus(true); // Select all on focus (easy clear previous search)
         mSearchTextEditor.setOnFocusChangeListener((v, focused) -> {
@@ -369,7 +367,7 @@ public class SearchSupportFragment extends Fragment {
 
             if (searchBarItems != null) {
                 applySearchBarFocus(searchBarItems, focused, surfaceHigh, surfaceHighest,
-                        outlineVariant, outline, hairlineStrokePx, focusStrokePx, pillRadius, true);
+                        primary, focusStrokePx, pillRadius, true);
             }
 
             // User clicked on tag and tries to edit search query
@@ -492,9 +490,7 @@ public class SearchSupportFragment extends Fragment {
             boolean focused,
             int surfaceHigh,
             int surfaceHighest,
-            int outlineVariant,
-            int outline,
-            int hairlineStrokePx,
+            int primary,
             int focusStrokePx,
             float pillRadius,
             boolean animate) {
@@ -506,10 +502,10 @@ public class SearchSupportFragment extends Fragment {
                 focused,
                 focused ? surfaceHigh : surfaceHighest,
                 focused ? surfaceHighest : surfaceHigh,
-                focused ? outlineVariant : outline,
-                focused ? outline : outlineVariant,
-                focused ? hairlineStrokePx : focusStrokePx,
-                focused ? focusStrokePx : hairlineStrokePx,
+                focused ? 0 : primary,
+                focused ? primary : 0,
+                focused ? 0 : focusStrokePx,
+                focused ? focusStrokePx : 0,
                 pillRadius,
                 null);
         M3Motion.animateFocusScale(searchBarItems, focused, 1.015f);

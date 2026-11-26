@@ -118,11 +118,9 @@ public class ChannelHeaderPresenter extends RowPresenter {
 
         int surfaceHigh = ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high);
         int surfaceHighest = ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainerHighest, R.color.m3_grey_surface_container_highest);
-        int outline = ViewUtil.getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
-        int outlineVariant = ViewUtil.getThemeColor(context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+        int primary = ViewUtil.getThemeColor(context, R.attr.m3Primary, R.color.m3_grey_primary);
         float pillRadius = context.getResources().getDimension(R.dimen.m3_pill_corner_radius);
         int focusStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
-        int hairlineStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
         if (searchBarItems != null) {
             boolean initiallyFocused = searchTextEditor.hasFocus();
             M3Motion.cancelFocusAnimations(searchBarItems);
@@ -131,10 +129,10 @@ public class ChannelHeaderPresenter extends RowPresenter {
                     initiallyFocused,
                     initiallyFocused ? surfaceHigh : surfaceHighest,
                     initiallyFocused ? surfaceHighest : surfaceHigh,
-                    initiallyFocused ? outlineVariant : outline,
-                    initiallyFocused ? outline : outlineVariant,
-                    initiallyFocused ? hairlineStrokePx : focusStrokePx,
-                    initiallyFocused ? focusStrokePx : hairlineStrokePx,
+                    0,
+                    primary,
+                    initiallyFocused ? 0 : focusStrokePx,
+                    initiallyFocused ? focusStrokePx : 0,
                     pillRadius,
                     null);
         }
@@ -155,10 +153,10 @@ public class ChannelHeaderPresenter extends RowPresenter {
                         focused,
                         focused ? surfaceHigh : surfaceHighest,
                         focused ? surfaceHighest : surfaceHigh,
-                        focused ? outlineVariant : outline,
-                        focused ? outline : outlineVariant,
-                        focused ? hairlineStrokePx : focusStrokePx,
-                        focused ? focusStrokePx : hairlineStrokePx,
+                        focused ? 0 : primary,
+                        focused ? primary : 0,
+                        focused ? 0 : focusStrokePx,
+                        focused ? focusStrokePx : 0,
                         pillRadius,
                         null);
                 M3Motion.animateFocusScale(searchBarItems, focused, 1.015f);

@@ -95,7 +95,6 @@ public final class AccentColorPickerDialog {
             GradientDrawable cardBg = new GradientDrawable();
             cardBg.setCornerRadius(16f * density);
             cardBg.setColor(derived.secondaryContainer);
-            cardBg.setStroke(Math.max(1, Math.round(1.5f * density)), derived.outline);
             previewCard.setBackground(cardBg);
 
             GradientDrawable swatchBg = new GradientDrawable();
@@ -109,6 +108,7 @@ public final class AccentColorPickerDialog {
             pillBg.setColor(derived.primary);
             previewPill.setBackground(pillBg);
             previewPill.setTextColor(derived.onPrimary);
+            previewHex.setTextColor(ColorUtils.setAlphaComponent(derived.onSecondaryContainer, 210));
 
             previewHex.setText(hex);
             hueVal.setText(Math.round(hsl[0]) + "°");
@@ -149,7 +149,7 @@ public final class AccentColorPickerDialog {
         };
 
         float density = context.getResources().getDisplayMetrics().density;
-        int swatchSize = Math.round(34 * density);
+        int swatchSize = Math.round(38 * density);
         int swatchMargin = Math.round(5 * density);
         for (int i = 0; i < QUICK_SWATCHES.length; i++) {
             int swatchColor = QUICK_SWATCHES[i];
@@ -163,13 +163,13 @@ public final class AccentColorPickerDialog {
 
             StateListDrawable states = new StateListDrawable();
             GradientDrawable focused = new GradientDrawable();
-            focused.setShape(GradientDrawable.OVAL);
+            focused.setShape(GradientDrawable.RECTANGLE);
+            focused.setCornerRadius(12f * density);
             focused.setColor(swatchColor);
-            focused.setStroke(Math.round(3f * density), Color.WHITE);
+            focused.setStroke(Math.round(2.5f * density), Color.WHITE);
             GradientDrawable normal = new GradientDrawable();
             normal.setShape(GradientDrawable.OVAL);
             normal.setColor(swatchColor);
-            normal.setStroke(Math.max(1, Math.round(1f * density)), 0x44FFFFFF);
             states.addState(new int[]{android.R.attr.state_focused}, focused);
             states.addState(new int[]{android.R.attr.state_pressed}, focused);
             states.addState(new int[]{}, normal);
@@ -269,13 +269,7 @@ public final class AccentColorPickerDialog {
 
         try {
             dialog.show();
-            if (dialog.getWindow() != null) {
-                GradientDrawable dialogBg = new GradientDrawable();
-                dialogBg.setCornerRadius(28f * density);
-                dialogBg.setColor(0xFF1D212A);
-                dialogBg.setStroke(Math.max(1, Math.round(1f * density)), 0xFF343A48);
-                dialog.getWindow().setBackgroundDrawable(dialogBg);
-            }
+            ThemePaletteHelper.applyDialogWindowSurface(context, dialog);
             if (contentView != null) {
                 Interpolator decelerate = Build.VERSION.SDK_INT >= 21
                         ? new PathInterpolator(0.05f, 0.70f, 0.10f, 1.00f)

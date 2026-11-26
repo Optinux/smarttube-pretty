@@ -57,9 +57,9 @@ public class VideoCardPresenter extends LongClickPresenter {
         Context context = parent.getContext();
 
         mDefaultBackgroundColor =
-                ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainer, R.color.card_default_background);
+                ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainer, R.color.m3_grey_surface_container);
         mSelectedBackgroundColor =
-                ViewUtil.getThemeColor(context, R.attr.m3SecondaryContainer, R.color.card_selected_background_white);
+                ViewUtil.getThemeColor(context, R.attr.m3SecondaryContainer, R.color.m3_grey_secondary_container);
         mDefaultTextColor =
                 ViewUtil.getThemeColor(context, R.attr.m3OnSurface, R.color.card_default_text);
         mDefaultSubtitleColor =
@@ -67,7 +67,7 @@ public class VideoCardPresenter extends LongClickPresenter {
         mSelectedTextColor =
                 ViewUtil.getThemeColor(context, R.attr.m3OnSecondaryContainer, R.color.card_selected_text_grey);
         mSelectedSubtitleColor =
-                ViewUtil.getThemeColor(context, R.attr.m3OnPrimaryContainer, R.color.m3_on_surface_variant);
+                ColorUtils.setAlphaComponent(mSelectedTextColor, 205);
         mOutlineColor =
                 ViewUtil.getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
         mHairlineColor =
@@ -112,10 +112,10 @@ public class VideoCardPresenter extends LongClickPresenter {
     private void updateCardBackgroundColor(ComplexImageCardView view, boolean selected) {
         int fromBg = selected ? mDefaultBackgroundColor : mSelectedBackgroundColor;
         int toBg = selected ? mSelectedBackgroundColor : mDefaultBackgroundColor;
-        int fromStroke = selected ? mHairlineColor : mOutlineColor;
-        int toStroke = selected ? mOutlineColor : mHairlineColor;
-        int fromStrokePx = selected ? mHairlineStrokePx : mFocusStrokePx;
-        int toStrokePx = selected ? mFocusStrokePx : mHairlineStrokePx;
+        int fromStroke = selected ? 0 : mOutlineColor;
+        int toStroke = selected ? mOutlineColor : 0;
+        int fromStrokePx = selected ? 0 : mFocusStrokePx;
+        int toStrokePx = selected ? mFocusStrokePx : 0;
 
         int fromTitle = selected ? mDefaultTextColor : mSelectedTextColor;
         int toTitle = selected ? mSelectedTextColor : mDefaultTextColor;

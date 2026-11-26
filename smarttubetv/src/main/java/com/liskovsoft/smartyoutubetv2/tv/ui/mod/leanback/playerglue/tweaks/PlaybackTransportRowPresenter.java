@@ -570,25 +570,27 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
             if (mThumbsBarTitle != null) {
                 Context context = rootView.getContext();
                 float density = context.getResources().getDisplayMetrics().density;
-                int hPad = (int) (14 * density);
-                int vPad = (int) (4 * density);
+                int hPad = (int) (16 * density);
+                int vPad = (int) (6 * density);
                 mThumbsBarTitle.setPadding(hPad, vPad, hPad, vPad);
-                int surfaceHigh = ViewUtil.getThemeColor(
+                int secondaryContainer = ViewUtil.getThemeColor(
                         context,
-                        com.liskovsoft.smartyoutubetv2.tv.R.attr.m3SurfaceContainerHigh,
-                        com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_surface_container_high);
+                        com.liskovsoft.smartyoutubetv2.tv.R.attr.m3SecondaryContainer,
+                        com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_secondary_container);
+                int onSecondaryContainer = ViewUtil.getThemeColor(
+                        context,
+                        com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OnSecondaryContainer,
+                        com.liskovsoft.smartyoutubetv2.tv.R.color.m3_on_surface);
                 int pillBg = Color.argb(
-                        230, Color.red(surfaceHigh), Color.green(surfaceHigh), Color.blue(surfaceHigh));
-                int outlineVariant = ViewUtil.getThemeColor(
-                        context,
-                        com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OutlineVariant,
-                        com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_outline_variant);
+                        236, Color.red(secondaryContainer), Color.green(secondaryContainer), Color.blue(secondaryContainer));
                 int pillRadius = context.getResources().getDimensionPixelSize(
                         com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_pill_corner_radius);
                 mThumbsBarTitle.setBackground(ViewUtil.createRoundedDrawable(
-                        pillBg, outlineVariant, (int) Math.max(1, density), pillRadius));
-                mThumbsBarTitle.setTextColor(ContextCompat.getColor(
-                        context, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_on_surface));
+                        pillBg, 0, 0, pillRadius));
+                mThumbsBarTitle.setTextColor(onSecondaryContainer);
+                if (Build.VERSION.SDK_INT >= 21) {
+                    mThumbsBarTitle.setFontFeatureSettings("tnum");
+                }
             }
             mThumbsBarWrapper = (ViewGroup) rootView.findViewById(com.liskovsoft.smartyoutubetv2.tv.R.id.thumbs_row_wrapper);
         }
@@ -740,7 +742,7 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
             if (adapter.getPresenterSelector() instanceof ControlButtonPresenterSelector) {
                 ControlButtonPresenterSelector selector =
                         (ControlButtonPresenterSelector) adapter.getPresenterSelector();
-                return selector.getSecondaryPresenter();
+                return primary ? selector.getPrimaryPresenter() : selector.getSecondaryPresenter();
             }
             return adapter.getPresenter(adapter.size() > 0 ? adapter.get(0) : null);
         }

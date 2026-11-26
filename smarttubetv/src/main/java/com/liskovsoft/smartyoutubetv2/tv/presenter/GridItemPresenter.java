@@ -30,15 +30,15 @@ public class GridItemPresenter extends Presenter {
         int width = res.getDimensionPixelSize(R.dimen.settings_card_width);
         int height = res.getDimensionPixelSize(R.dimen.settings_card_height);
 
-        int defaultBg = ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainer, R.color.card_default_background);
-        int focusedBg = ViewUtil.getThemeColor(context, R.attr.m3PrimaryContainer, R.color.card_selected_background_white);
-        int defaultStroke = ViewUtil.getThemeColor(context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+        int defaultBg = ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainer, R.color.m3_grey_surface_container);
+        int focusedBg = ViewUtil.getThemeColor(context, R.attr.m3PrimaryContainer, R.color.m3_grey_primary_container);
+        int defaultStroke = 0;
         int focusedStroke = ViewUtil.getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
         int defaultText = ViewUtil.getThemeColor(context, R.attr.m3OnSurface, R.color.m3_on_surface);
         int focusedText = ViewUtil.getThemeColor(context, R.attr.m3OnPrimaryContainer, R.color.m3_on_surface);
 
-        float cornerRadius = res.getDimension(R.dimen.m3_card_corner_radius);
-        int hairlineStrokePx = res.getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
+        float cornerRadius = res.getDimension(R.dimen.m3_card_large_corner_radius);
+        int hairlineStrokePx = 0;
         int focusStrokePx = res.getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
         int paddingPx = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, res.getDisplayMetrics()));
 
@@ -53,9 +53,12 @@ public class GridItemPresenter extends Presenter {
 
         applyItemStyle(view, false, false, defaultBg, focusedBg, defaultStroke, focusedStroke,
                 hairlineStrokePx, focusStrokePx, defaultText, focusedText, cornerRadius);
-        view.setOnFocusChangeListener((v, hasFocus) -> applyItemStyle(
-                view, hasFocus, true, defaultBg, focusedBg, defaultStroke, focusedStroke,
-                hairlineStrokePx, focusStrokePx, defaultText, focusedText, cornerRadius));
+        view.setOnFocusChangeListener((v, hasFocus) -> {
+            applyItemStyle(
+                    view, hasFocus, true, defaultBg, focusedBg, defaultStroke, focusedStroke,
+                    hairlineStrokePx, focusStrokePx, defaultText, focusedText, cornerRadius);
+            M3Motion.animateFocusScale(view, hasFocus, 1.05f);
+        });
         return new ViewHolder(view);
     }
 

@@ -7,7 +7,7 @@
     <solid android:color="@color/tg_selected_bg" />
 
     <stroke
-        android:width="1.5dp"
-        android:color="#66FFFFFF" />
+        android:width="2dp"
+        android:color="#C8DCE6F2" />
 
 </shape>

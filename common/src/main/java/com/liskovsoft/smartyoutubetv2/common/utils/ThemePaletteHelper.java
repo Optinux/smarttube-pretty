@@ -139,8 +139,8 @@ public final class ThemePaletteHelper {
 
                 if (isOled) {
                     palette.surface = Color.BLACK;
-                    palette.surfaceContainerLow = ColorUtils.blendARGB(Color.BLACK, n1_900, 0.45f);
-                    palette.surfaceContainer = ColorUtils.blendARGB(Color.BLACK, n1_900, 0.75f);
+                    palette.surfaceContainerLow = ColorUtils.blendARGB(Color.BLACK, n1_900, 0.38f);
+                    palette.surfaceContainer = ColorUtils.blendARGB(Color.BLACK, n1_900, 0.72f);
                     palette.surfaceContainerHigh = n1_900;
                     palette.surfaceContainerHighest = n2_800;
                 } else {
@@ -243,11 +243,11 @@ public final class ThemePaletteHelper {
         float sat = clamp(hsl[1], 0.45f, 0.92f);
 
         palette.primary = hslColor(hue, sat, 0.76f);
-        palette.onPrimary = hslColor(hue, clamp(sat, 0.40f, 0.75f), 0.18f);
-        palette.primaryContainer = hslColor(hue, clamp(sat * 0.78f, 0.32f, 0.75f), 0.26f);
-        palette.onPrimaryContainer = hslColor(hue, clamp(sat * 0.85f, 0.35f, 0.90f), 0.90f);
-        palette.secondaryContainer = hslColor(hue, clamp(sat * 0.40f, 0.15f, 0.42f), 0.22f);
-        palette.onSecondaryContainer = hslColor(hue, clamp(sat * 0.45f, 0.15f, 0.55f), 0.92f);
+        palette.onPrimary = hslColor(hue, clamp(sat, 0.40f, 0.75f), 0.16f);
+        palette.primaryContainer = hslColor(hue, clamp(sat * 0.78f, 0.32f, 0.75f), 0.25f);
+        palette.onPrimaryContainer = hslColor(hue, clamp(sat * 0.85f, 0.35f, 0.90f), 0.92f);
+        palette.secondaryContainer = hslColor(hue, clamp(sat * 0.38f, 0.15f, 0.40f), 0.21f);
+        palette.onSecondaryContainer = hslColor(hue, clamp(sat * 0.45f, 0.15f, 0.55f), 0.93f);
         palette.outline = palette.primary;
         palette.progressPrimary = hslColor(hue, clamp(hsl[1], 0.55f, 0.95f), clamp(hsl[2], 0.58f, 0.74f));
     }
@@ -264,6 +264,25 @@ public final class ThemePaletteHelper {
 
     public static String formatHex(int color) {
         return String.format("#%06X", (0xFFFFFF & color));
+    }
+
+    /**
+     * Applies a consistent Material 3 Expressive 28dp rounded surface to an AppCompat AlertDialog window,
+     * honoring active Material You / OLED surface tokens when enabled.
+     */
+    public static void applyDialogWindowSurface(Context context, android.app.Dialog dialog) {
+        if (context == null || dialog == null || dialog.getWindow() == null) {
+            return;
+        }
+        M3Palette active = getActivePalette(context);
+        int surfaceColor = active != null && active.overrideSurfaces
+                ? active.surfaceContainerHigh
+                : 0xFF1D212A;
+        float density = context.getResources().getDisplayMetrics().density;
+        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+        bg.setCornerRadius(28f * density);
+        bg.setColor(surfaceColor);
+        dialog.getWindow().setBackgroundDrawable(bg);
     }
 
     private static int hslColor(float h, float s, float l) {

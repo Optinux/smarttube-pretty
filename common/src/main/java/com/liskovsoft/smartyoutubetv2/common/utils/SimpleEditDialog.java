@@ -82,6 +82,7 @@ public class SimpleEditDialog {
 
         try {
             configDialog.show();
+            ThemePaletteHelper.applyDialogWindowSurface(context, configDialog);
         } catch (RuntimeException e) {
             // BadTokenException: Unable to add window -- token null is not for an application
             // RuntimeException: InputChannel is not initialized

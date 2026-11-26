@@ -40,7 +40,7 @@
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:textSize">20sp</item>
         <item name="android:textColor">@color/m3_on_surface</item>
-        <item name="android:letterSpacing" tools:targetApi="21">0.01</item>
+        <item name="android:letterSpacing" tools:targetApi="21">0.0</item>
     </style>
 
     <style name="Widget.M3.Row.Header" parent="Widget.Leanback.Row.Header">
@@ -49,7 +49,7 @@
 
     <style name="TextAppearance.M3.Header" parent="TextAppearance.Leanback.Header">
         <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textSize">16sp</item>
+        <item name="android:textSize">15sp</item>
         <item name="android:textColor">@color/m3_on_surface</item>
     </style>
 
@@ -59,9 +59,9 @@
 
     <style name="TextAppearance.M3.CardTitle" parent="TextAppearance.Leanback.ImageCardView.Title">
         <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">15sp</item>
         <item name="android:textColor">@color/m3_on_surface</item>
-        <item name="android:lineSpacingMultiplier">1.1</item>
+        <item name="android:lineSpacingMultiplier">1.12</item>
     </style>
 
     <style name="TextAppearance.M3.CardContent" parent="TextAppearance.Leanback.ImageCardView.Content">
@@ -82,8 +82,8 @@
     <style name="Widget.M3.ImageCardView.InfoAreaStyle" parent="Widget.Leanback.ImageCardView.InfoAreaStyle">
         <item name="android:paddingStart">12dp</item>
         <item name="android:paddingEnd">12dp</item>
-        <item name="android:paddingTop">9dp</item>
-        <item name="android:paddingBottom">10dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">11dp</item>
     </style>
 
     <style name="TextAppearance.M3.Title" parent="TextAppearance.Leanback.Title">
@@ -728,8 +728,69 @@
         <item name="cardDefaultBackground">@color/m3_oled_blue_surface_container</item>
         <item name="cardSelectedBackground">@color/m3_blue_secondary_container</item>
         <item name="m3Surface">@color/m3_oled_surface</item>
+        <item name="m3SurfaceContainerLow">@color/m3_oled_blue_surface_container_low</item>
         <item name="m3SurfaceContainer">@color/m3_oled_blue_surface_container</item>
         <item name="m3SurfaceContainerHigh">@color/m3_oled_blue_surface_container_high</item>
+        <item name="m3SurfaceContainerHighest">@color/m3_oled_blue_surface_container_highest</item>
+        <item name="m3OrbBackground">@color/m3_oled_blue_surface_container_high</item>
+    </style>
+
+    <style name="App.Theme.DarkGrey.OLED.Preferences" parent="App.Theme.DarkGrey.Preferences">
+        <item name="defaultBrandColor">@color/m3_oled_grey_surface_container_high</item>
+        <item name="android:colorPrimary" tools:targetApi="21">@color/m3_oled_grey_surface_container_high</item>
+        <item name="android:colorAccent" tools:targetApi="21">@color/m3_oled_grey_primary</item>
+        <item name="m3Surface">@color/m3_oled_surface</item>
+        <item name="m3SurfaceContainerLow">@color/m3_oled_grey_surface_container_low</item>
+        <item name="m3SurfaceContainer">@color/m3_oled_grey_surface_container</item>
+        <item name="m3SurfaceContainerHigh">@color/m3_oled_grey_surface_container_high</item>
+        <item name="m3SurfaceContainerHighest">@color/m3_oled_grey_surface_container_highest</item>
+        <item name="m3Primary">@color/m3_oled_grey_primary</item>
+        <item name="m3OnPrimary">@color/m3_oled_grey_on_primary</item>
+        <item name="m3PrimaryContainer">@color/m3_oled_grey_primary_container</item>
+        <item name="m3OnPrimaryContainer">@color/m3_oled_grey_on_primary_container</item>
+        <item name="m3SecondaryContainer">@color/m3_oled_grey_secondary_container</item>
+        <item name="m3OnSecondaryContainer">@color/m3_oled_grey_on_secondary_container</item>
+        <item name="m3Outline">@color/m3_oled_grey_outline</item>
+        <item name="m3OutlineVariant">@color/m3_oled_grey_outline_variant</item>
+    </style>
+
+    <style name="App.Theme.Leanback.OLED.Preferences" parent="App.Theme.Leanback.Preferences">
+        <item name="defaultBrandColor">@color/m3_oled_teal_surface_container_high</item>
+        <item name="android:colorPrimary" tools:targetApi="21">@color/m3_oled_teal_surface_container_high</item>
+        <item name="m3Surface">@color/m3_oled_surface</item>
+        <item name="m3SurfaceContainerLow">@color/m3_oled_teal_surface_container_low</item>
+        <item name="m3SurfaceContainer">@color/m3_oled_teal_surface_container</item>
+        <item name="m3SurfaceContainerHigh">@color/m3_oled_teal_surface_container_high</item>
+        <item name="m3SurfaceContainerHighest">@color/m3_oled_teal_surface_container_highest</item>
+    </style>
+
+    <style name="App.Theme.DarkGrey2.OLED.Preferences" parent="App.Theme.DarkGrey.OLED.Preferences">
+        <item name="defaultBrandColor">@color/m3_mono_surface_container_high</item>
+        <item name="android:colorPrimary" tools:targetApi="21">@color/m3_mono_surface_container_high</item>
+        <item name="android:colorAccent" tools:targetApi="21">@color/m3_mono_primary</item>
+        <item name="m3Surface">@color/m3_mono_surface</item>
+        <item name="m3SurfaceContainerLow">@color/m3_mono_surface_container_low</item>
+        <item name="m3SurfaceContainer">@color/m3_mono_surface_container</item>
+        <item name="m3SurfaceContainerHigh">@color/m3_mono_surface_container_high</item>
+        <item name="m3SurfaceContainerHighest">@color/m3_mono_surface_container_highest</item>
+        <item name="m3Primary">@color/m3_mono_primary</item>
+        <item name="m3OnPrimary">@color/m3_mono_on_primary</item>
+        <item name="m3PrimaryContainer">@color/m3_mono_primary_container</item>
+        <item name="m3OnPrimaryContainer">@color/m3_mono_on_primary_container</item>
+        <item name="m3SecondaryContainer">@color/m3_mono_secondary_container</item>
+        <item name="m3OnSecondaryContainer">@color/m3_mono_on_secondary_container</item>
+        <item name="m3Outline">@color/m3_mono_outline</item>
+        <item name="m3OutlineVariant">@color/m3_mono_outline_variant</item>
+    </style>
+
+    <style name="App.Theme.Leanback.Blue.OLED.Preferences" parent="App.Theme.Leanback.Blue.Preferences">
+        <item name="defaultBrandColor">@color/m3_oled_blue_surface_container_high</item>
+        <item name="android:colorPrimary" tools:targetApi="21">@color/m3_oled_blue_surface_container_high</item>
+        <item name="m3Surface">@color/m3_oled_surface</item>
+        <item name="m3SurfaceContainerLow">@color/m3_oled_blue_surface_container_low</item>
+        <item name="m3SurfaceContainer">@color/m3_oled_blue_surface_container</item>
+        <item name="m3SurfaceContainerHigh">@color/m3_oled_blue_surface_container_high</item>
+        <item name="m3SurfaceContainerHighest">@color/m3_oled_blue_surface_container_highest</item>
     </style>
     <!-- End Color scheme: Dark Blue (OLED) -->
 
@@ -741,5 +802,6 @@
     <style name="App.Theme.MaterialYou.Preferences" parent="App.Theme.DarkGrey.Preferences" />
     <style name="App.Theme.MaterialYou.OLED.Browse" parent="App.Theme.DarkGrey.OLED.Browse" />
     <style name="App.Theme.MaterialYou.OLED.Player" parent="App.Theme.DarkGrey.OLED.Player" />
+    <style name="App.Theme.MaterialYou.OLED.Preferences" parent="App.Theme.DarkGrey.OLED.Preferences" />
     <!-- End Color scheme: Material You -->
 </resources>
