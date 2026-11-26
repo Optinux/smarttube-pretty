@@ -75,26 +75,35 @@
         android:layout_height="match_parent" />
 
     <!-- Right Pane: Interactive Detail & Live Controls Canvas -->
-    <ScrollView
-        android:id="@+id/settings_detail_scroll"
+    <FrameLayout
+        android:id="@+id/settings_detail_pane"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:layout_gravity="start"
-        android:focusable="false"
+        android:padding="16dp"
         android:clipChildren="true"
-        android:clipToPadding="true"
-        android:fillViewport="true"
-        android:scrollbars="none">
+        android:clipToPadding="true">
 
-        <LinearLayout
-            android:id="@+id/settings_detail_container"
+        <ScrollView
+            android:id="@+id/settings_detail_scroll"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:focusable="false"
             android:clipChildren="true"
             android:clipToPadding="true"
-            android:orientation="vertical"
-            android:padding="20dp"
-            tools:ignore="UselessParent" />
-    </ScrollView>
+            android:fillViewport="true"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/settings_detail_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipChildren="true"
+                android:clipToPadding="true"
+                android:orientation="vertical"
+                android:padding="4dp"
+                tools:ignore="UselessParent" />
+        </ScrollView>
+    </FrameLayout>
 </com.liskovsoft.smartyoutubetv2.tv.ui.browse.settings.SettingsHubRootLayout>

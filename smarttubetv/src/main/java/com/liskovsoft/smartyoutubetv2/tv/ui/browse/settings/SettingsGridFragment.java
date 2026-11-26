@@ -89,6 +89,7 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
     private View mPaneSpacer;
     private RecyclerView mRailList;
     private RailAdapter mRailAdapter;
+    private FrameLayout mDetailPane;
     private LinearLayout mDetailContainer;
     private ScrollView mDetailScroll;
     private LinearLayout mRailPane;
@@ -165,6 +166,7 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         mBackButton = view.findViewById(R.id.settings_back_button);
         mRailTitle = view.findViewById(R.id.settings_rail_title);
         mRailList = view.findViewById(R.id.settings_rail_list);
+        mDetailPane = view.findViewById(R.id.settings_detail_pane);
         mDetailScroll = view.findViewById(R.id.settings_detail_scroll);
         mDetailContainer = view.findViewById(R.id.settings_detail_container);
 
@@ -306,14 +308,18 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
                 mPaneSpacer.setLayoutParams(spLp);
             }
 
-            LinearLayout.LayoutParams detLp = (LinearLayout.LayoutParams) mDetailScroll.getLayoutParams();
-            detLp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            detLp.height = 0;
-            detLp.weight = 1f;
-            mDetailScroll.setLayoutParams(detLp);
+            if (mDetailPane != null) {
+                LinearLayout.LayoutParams detLp = (LinearLayout.LayoutParams) mDetailPane.getLayoutParams();
+                detLp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                detLp.height = 0;
+                detLp.weight = 1f;
+                mDetailPane.setLayoutParams(detLp);
 
-            int detailPad = Math.round(14 * density);
-            mDetailContainer.setPadding(detailPad, detailPad, detailPad, detailPad);
+                int outerPad = Math.round(10 * density);
+                int innerPad = Math.round(4 * density);
+                mDetailPane.setPadding(outerPad, outerPad, outerPad, outerPad);
+                mDetailContainer.setPadding(innerPad, innerPad, innerPad, innerPad);
+            }
         } else {
             int railWidthPx = Math.round((medium ? 216 : 260) * density);
             int spacerWidthPx = Math.round((medium ? 12 : 18) * density);
@@ -333,20 +339,24 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
                 mPaneSpacer.setLayoutParams(spLp);
             }
 
-            int availDetailPx = widthPx - startPad - endPad - railWidthPx - spacerWidthPx;
-            LinearLayout.LayoutParams detLp = (LinearLayout.LayoutParams) mDetailScroll.getLayoutParams();
-            detLp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-            if (availDetailPx > maxDetailPx) {
-                detLp.width = maxDetailPx;
-                detLp.weight = 0f;
-            } else {
-                detLp.width = 0;
-                detLp.weight = 1f;
-            }
-            mDetailScroll.setLayoutParams(detLp);
+            if (mDetailPane != null) {
+                int availDetailPx = widthPx - startPad - endPad - railWidthPx - spacerWidthPx;
+                LinearLayout.LayoutParams detLp = (LinearLayout.LayoutParams) mDetailPane.getLayoutParams();
+                detLp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+                if (availDetailPx > maxDetailPx) {
+                    detLp.width = maxDetailPx;
+                    detLp.weight = 0f;
+                } else {
+                    detLp.width = 0;
+                    detLp.weight = 1f;
+                }
+                mDetailPane.setLayoutParams(detLp);
 
-            int detailPad = Math.round((medium ? 16 : 20) * density);
-            mDetailContainer.setPadding(detailPad, detailPad, detailPad, detailPad);
+                int outerPad = Math.round((medium ? 12 : 16) * density);
+                int innerPad = Math.round(4 * density);
+                mDetailPane.setPadding(outerPad, outerPad, outerPad, outerPad);
+                mDetailContainer.setPadding(innerPad, innerPad, innerPad, innerPad);
+            }
         }
 
         mRootLayout.setPaddingRelative(startPad, topPad, endPad, bottomPad);
@@ -459,8 +469,13 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
 
         mRailPane.setBackground(ViewUtil.createRoundedDrawable(surfaceLow, outlineVariant, hairlinePx, railRadius));
         ViewUtil.applyRoundedOutline(mRailPane, railRadius);
-        mDetailScroll.setBackground(ViewUtil.createRoundedDrawable(surfaceContainer, outlineVariant, hairlinePx, detailRadius));
-        ViewUtil.applyRoundedOutline(mDetailScroll, detailRadius);
+        if (mDetailPane != null) {
+            mDetailPane.setBackground(ViewUtil.createRoundedDrawable(surfaceContainer, outlineVariant, hairlinePx, detailRadius));
+            if (android.os.Build.VERSION.SDK_INT >= 23) {
+                mDetailPane.setForeground(ViewUtil.createRoundedDrawable(Color.TRANSPARENT, outlineVariant, hairlinePx, detailRadius));
+            }
+            ViewUtil.applyRoundedOutline(mDetailPane, detailRadius);
+        }
         mRailTitle.setTextColor(onSurface);
         if (mBackButton != null) {
             mBackButton.refreshThemeColors();
