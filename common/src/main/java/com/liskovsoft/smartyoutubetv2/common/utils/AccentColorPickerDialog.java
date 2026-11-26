@@ -1,5 +1,6 @@
 package com.liskovsoft.smartyoutubetv2.common.utils;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -7,6 +8,7 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.os.Build;
+import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -93,7 +95,8 @@ public final class AccentColorPickerDialog {
 
             float density = context.getResources().getDisplayMetrics().density;
             GradientDrawable cardBg = new GradientDrawable();
-            cardBg.setCornerRadius(16f * density);
+            // M3 optical nesting: 28dp dialog window - 20dp content padding = 8dp inner preview card radius
+            cardBg.setCornerRadius(8f * density);
             cardBg.setColor(derived.secondaryContainer);
             previewCard.setBackground(cardBg);
 
@@ -149,8 +152,8 @@ public final class AccentColorPickerDialog {
         };
 
         float density = context.getResources().getDisplayMetrics().density;
-        int swatchSize = Math.round(38 * density);
-        int swatchMargin = Math.round(5 * density);
+        int swatchSize = Math.round(40 * density);
+        int swatchMargin = Math.round(4 * density);
         for (int i = 0; i < QUICK_SWATCHES.length; i++) {
             int swatchColor = QUICK_SWATCHES[i];
             View btn = new View(context);
@@ -166,7 +169,7 @@ public final class AccentColorPickerDialog {
             focused.setShape(GradientDrawable.RECTANGLE);
             focused.setCornerRadius(12f * density);
             focused.setColor(swatchColor);
-            focused.setStroke(Math.round(2.5f * density), Color.WHITE);
+            focused.setStroke(Math.round(2f * density), 0xEBECECF2);
             GradientDrawable normal = new GradientDrawable();
             normal.setShape(GradientDrawable.OVAL);
             normal.setColor(swatchColor);
@@ -179,8 +182,13 @@ public final class AccentColorPickerDialog {
                     ? new PathInterpolator(0.42f, 1.67f, 0.21f, 0.90f)
                     : new OvershootInterpolator(0.75f);
             btn.setOnFocusChangeListener((v, hasFocus) -> {
-                float targetScale = hasFocus ? 1.18f : 1.0f;
+                float targetScale = hasFocus ? 1.16f : 1.0f;
                 v.animate().cancel();
+                if (!areAnimationsEnabled(v.getContext())) {
+                    v.setScaleX(targetScale);
+                    v.setScaleY(targetScale);
+                    return;
+                }
                 v.animate()
                         .scaleX(targetScale)
                         .scaleY(targetScale)
@@ -270,7 +278,7 @@ public final class AccentColorPickerDialog {
         try {
             dialog.show();
             ThemePaletteHelper.applyDialogWindowSurface(context, dialog);
-            if (contentView != null) {
+            if (contentView != null && areAnimationsEnabled(context)) {
                 Interpolator decelerate = Build.VERSION.SDK_INT >= 21
                         ? new PathInterpolator(0.05f, 0.70f, 0.10f, 1.00f)
                         : new DecelerateInterpolator(1.8f);
@@ -301,6 +309,22 @@ public final class AccentColorPickerDialog {
             }
             dialog.dismiss();
         });
+    }
+
+    private static boolean areAnimationsEnabled(Context context) {
+        if (Build.VERSION.SDK_INT >= 26 && !ValueAnimator.areAnimatorsEnabled()) {
+            return false;
+        }
+        if (context != null && Build.VERSION.SDK_INT >= 17) {
+            try {
+                return Settings.Global.getFloat(
+                        context.getContentResolver(),
+                        Settings.Global.ANIMATOR_DURATION_SCALE,
+                        1.0f) > 0f;
+            } catch (Exception ignored) {
+            }
+        }
+        return true;
     }
 
     private static Integer parseHexColor(String input) {

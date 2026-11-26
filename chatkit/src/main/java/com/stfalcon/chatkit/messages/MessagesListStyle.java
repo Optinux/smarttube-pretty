@@ -22,6 +22,7 @@ import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
 
 import androidx.annotation.ColorInt;
@@ -105,6 +106,10 @@ class MessagesListStyle extends Style {
     private int dateHeaderTextStyle;
 
     private boolean isMessageFocusable;
+    private int incomingFocusStrokeColor;
+    private float incomingBubbleRadiusPx;
+    private int incomingFocusStrokePx;
+    private boolean hasCustomM3Theme;
 
     static MessagesListStyle parse(Context context, AttributeSet attrs) {
         MessagesListStyle style = new MessagesListStyle(context, attrs);
@@ -411,7 +416,42 @@ class MessagesListStyle extends Style {
         return incomingImageTimeTextStyle;
     }
 
+    void setIncomingM3Colors(Context context,
+                             @ColorInt int normalBg,
+                             @ColorInt int selectedBg,
+                             @ColorInt int focusStrokeColor,
+                             @ColorInt int textColor,
+                             @ColorInt int linkColor) {
+        this.incomingDefaultBubbleColor = normalBg;
+        this.incomingDefaultBubblePressedColor = selectedBg;
+        this.incomingDefaultBubbleSelectedColor = selectedBg;
+        this.incomingFocusStrokeColor = focusStrokeColor;
+        this.incomingTextColor = textColor;
+        this.incomingTextLinkColor = linkColor;
+        this.incomingBubbleRadiusPx = context.getResources().getDimension(R.dimen.message_bubble_corners_radius);
+        this.incomingFocusStrokePx = Math.max(1, Math.round(2f * context.getResources().getDisplayMetrics().density));
+        this.hasCustomM3Theme = true;
+    }
+
+    boolean hasCustomM3Theme() {
+        return hasCustomM3Theme;
+    }
+
+    private Drawable createM3BubbleDrawable(@ColorInt int fillColor, @ColorInt int strokeColor, int strokeWidthPx) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setShape(GradientDrawable.RECTANGLE);
+        drawable.setCornerRadius(incomingBubbleRadiusPx);
+        drawable.setColor(fillColor);
+        if (strokeWidthPx > 0 && strokeColor != Color.TRANSPARENT) {
+            drawable.setStroke(strokeWidthPx, strokeColor);
+        }
+        return drawable;
+    }
+
     protected Drawable getIncomingBubbleDrawable() {
+        if (hasCustomM3Theme) {
+            return createM3BubbleDrawable(incomingDefaultBubbleColor, Color.TRANSPARENT, 0);
+        }
         if (incomingBubbleDrawable == -1) {
             return getMessageSelector(incomingDefaultBubbleColor, incomingDefaultBubbleSelectedColor,
                     incomingDefaultBubblePressedColor, R.drawable.shape_incoming_message);
@@ -421,6 +461,9 @@ class MessagesListStyle extends Style {
     }
 
     protected Drawable getIncomingBubbleSelectedDrawable() {
+        if (hasCustomM3Theme) {
+            return createM3BubbleDrawable(incomingDefaultBubbleSelectedColor, incomingFocusStrokeColor, incomingFocusStrokePx);
+        }
         return getMessageSelector(incomingDefaultBubbleSelectedColor, incomingDefaultBubbleSelectedColor,
                 incomingDefaultBubblePressedColor, R.drawable.shape_incoming_message);
     }

@@ -34,7 +34,7 @@
             android:fontFamily="sans-serif-medium"
             android:gravity="center_vertical"
             android:textSize="20sp"
-            android:textColor="@color/m3_on_surface"
+            android:textColor="?attr/m3OnSurface"
             android:singleLine="false"
             android:maxLines="2"
             android:ellipsize="end" />
@@ -69,15 +69,15 @@
         app:textAutoLink="web"
         app:showIncomingTime="false"
         app:isMessageFocusable="true"
-        app:incomingBubblePaddingLeft="14sp"
-        app:incomingBubblePaddingRight="14sp"
-        app:incomingBubblePaddingTop="8sp"
-        app:incomingBubblePaddingBottom="8sp"
+        app:incomingBubblePaddingLeft="14dp"
+        app:incomingBubblePaddingRight="14dp"
+        app:incomingBubblePaddingTop="8dp"
+        app:incomingBubblePaddingBottom="8dp"
         app:incomingAvatarWidth="32dp"
         app:incomingAvatarHeight="32dp"
-        app:incomingDefaultBubbleColor="@color/comments_bg"
-        app:incomingDefaultBubbleSelectedColor="@color/comments_bg_pressed"
-        app:incomingDefaultBubblePressedColor="@color/comments_bg_pressed"
-        app:incomingTextColor="@color/m3_on_surface" />
+        app:incomingDefaultBubbleColor="?attr/m3SurfaceContainerHigh"
+        app:incomingDefaultBubbleSelectedColor="?attr/m3SecondaryContainer"
+        app:incomingDefaultBubblePressedColor="?attr/m3SecondaryContainer"
+        app:incomingTextColor="?attr/m3OnSurface" />
 
 </LinearLayout>

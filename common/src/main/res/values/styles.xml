@@ -14,4 +14,41 @@
         <item name="android:windowTranslucentStatus" tools:targetApi="19">true</item>
         <item name="android:windowTranslucentNavigation" tools:targetApi="19">true</item>
     </style>
+
+    <!-- Override SharedModules AppDialog styles locally so submodule remains unmodified upstream -->
+    <style name="AppDialogBase" parent="Theme.AppCompat.Dialog.Alert">
+        <item name="android:textColor">@color/dialog_text_color</item>
+        <item name="android:windowBackground">@drawable/app_dialog_bg</item>
+        <item name="android:colorBackground">@color/dialog_bg_color</item>
+
+        <item name="colorPrimaryDark">@color/dialog_text_color</item>
+        <item name="colorPrimary">@color/dialog_text_color</item>
+        <item name="colorAccent">@color/dialog_text_color</item>
+
+        <item name="android:selectableItemBackground">@drawable/dialog_item_background</item>
+        <item name="android:textColorPrimary">@color/dialog_text_color</item>
+        <item name="android:textColorSecondary">@color/dialog_text_color</item>
+
+        <item name="buttonBarNeutralButtonStyle">@style/AppDialogButtonStyle</item>
+        <item name="buttonBarNegativeButtonStyle">@style/AppDialogButtonStyle</item>
+        <item name="buttonBarPositiveButtonStyle">@style/AppDialogButtonStyle</item>
+    </style>
+
+    <style name="AppDialog" parent="AppDialogBase" />
+
+    <style name="AppDialogButtonStyle">
+        <item name="android:textColor">@color/dialog_text_color</item>
+        <item name="android:background">@drawable/dialog_item_background</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+        <item name="android:minHeight">44dp</item>
+        <item name="android:minWidth">64dp</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:gravity">center_vertical|center_horizontal</item>
+    </style>
 </resources>

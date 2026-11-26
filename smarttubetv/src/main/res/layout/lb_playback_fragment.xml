@@ -28,12 +28,12 @@
         android:id="@+id/leanback_subtitles"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingLeft="150sp"
-        android:paddingRight="150sp"/>
+        android:paddingLeft="150dp"
+        android:paddingRight="150dp"/>
 
     <LinearLayout
         android:id="@+id/live_chat_wrapper"
-        android:layout_width="300sp"
+        android:layout_width="300dp"
         android:layout_height="match_parent"
         android:layout_gravity="right">
         <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.chat.LiveChatView
@@ -43,12 +43,12 @@
             app:showIncomingTime="false"
             app:isMessageFocusable="false"
             app:incomingDefaultBubbleColor="@color/live_chat_bg"
-            app:incomingDefaultBubblePressedColor="@color/live_chat_bg_pressed"
-            app:incomingTextColor="@color/m3_on_surface"
-            app:incomingBubblePaddingLeft="12sp"
-            app:incomingBubblePaddingRight="12sp"
-            app:incomingBubblePaddingTop="6sp"
-            app:incomingBubblePaddingBottom="6sp"
+            app:incomingDefaultBubblePressedColor="?attr/m3SecondaryContainer"
+            app:incomingTextColor="?attr/m3OnSurface"
+            app:incomingBubblePaddingLeft="12dp"
+            app:incomingBubblePaddingRight="12dp"
+            app:incomingBubblePaddingTop="6dp"
+            app:incomingBubblePaddingBottom="6dp"
             app:incomingAvatarHeight="24dp"
             app:incomingAvatarWidth="24dp"
             android:visibility="gone"
@@ -62,7 +62,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|right"
         android:gravity="right"
-        android:padding="10sp">
+        android:padding="10dp">
         <!-- Global clock -->
         <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.time.DateTimeView
             android:id="@+id/global_time"
@@ -71,7 +71,7 @@
             android:textSize="20sp"
             android:visibility="gone"
             android:fontFamily="sans-serif-medium"
-            android:textColor="@color/m3_on_surface"
+            android:textColor="?attr/m3OnSurface"
             android:shadowColor="#80000000"
             android:shadowDx="0"
             android:shadowDy="1"
@@ -85,7 +85,7 @@
             android:textSize="20sp"
             android:visibility="gone"
             android:fontFamily="sans-serif-medium"
-            android:textColor="@color/m3_on_surface"
+            android:textColor="?attr/m3OnSurface"
             android:shadowColor="#80000000"
             android:shadowDx="0"
             android:shadowDy="1"
@@ -97,10 +97,10 @@
     <FrameLayout android:id="@+id/debug_view_group"
                  android:layout_width="wrap_content"
                  android:layout_height="wrap_content"
-                 android:padding="6sp"
+                 android:padding="6dp"
                  android:visibility="gone"
                  android:layout_gravity="top|right"
-                 android:background="#B30B0D12"/>
+                 android:background="@color/m3_scrim_suggestions"/>
 
     <ViewStub
         android:id="@+id/youtube_overlay_stub"

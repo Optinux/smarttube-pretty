@@ -52,8 +52,6 @@ public class SearchFieldPresenter extends Presenter {
                 context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high);
         int bgFocused = ViewUtil.getThemeColor(
                 context, R.attr.m3SurfaceContainerHighest, R.color.m3_grey_surface_container_highest);
-        int strokeUnfocused = ViewUtil.getThemeColor(
-                context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
         int strokeFocused = ViewUtil.getThemeColor(
                 context, R.attr.m3Outline, R.color.m3_grey_outline);
         int textColor = ViewUtil.getThemeColor(
@@ -62,9 +60,7 @@ public class SearchFieldPresenter extends Presenter {
                 context, R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant);
 
         float pillRadius = context.getResources().getDimension(R.dimen.m3_pill_corner_radius);
-        int hairlineStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
-        int focusStrokePx = Math.round(TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, 2f, context.getResources().getDisplayMetrics()));
+        int focusStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
 
         M3Motion.cancelFocusAnimations(editField);
         M3Motion.applyCardFocusTransition(
@@ -73,9 +69,9 @@ public class SearchFieldPresenter extends Presenter {
                 bgFocused,
                 bgUnfocused,
                 strokeFocused,
-                strokeUnfocused,
+                android.graphics.Color.TRANSPARENT,
                 focusStrokePx,
-                hairlineStrokePx,
+                0,
                 pillRadius,
                 null);
         editField.setTextColor(textColor);
@@ -88,10 +84,10 @@ public class SearchFieldPresenter extends Presenter {
                     hasFocus,
                     hasFocus ? bgUnfocused : bgFocused,
                     hasFocus ? bgFocused : bgUnfocused,
-                    hasFocus ? strokeUnfocused : strokeFocused,
-                    hasFocus ? strokeFocused : strokeUnfocused,
-                    hasFocus ? hairlineStrokePx : focusStrokePx,
-                    hasFocus ? focusStrokePx : hairlineStrokePx,
+                    hasFocus ? android.graphics.Color.TRANSPARENT : strokeFocused,
+                    hasFocus ? strokeFocused : android.graphics.Color.TRANSPARENT,
+                    hasFocus ? 0 : focusStrokePx,
+                    hasFocus ? focusStrokePx : 0,
                     pillRadius,
                     null);
             M3Motion.animateFocusScale(editField, hasFocus, 1.015f);
@@ -142,7 +138,14 @@ public class SearchFieldPresenter extends Presenter {
 
     @Override
     public void onUnbindViewHolder(ViewHolder viewHolder) {
-
+        EditText editField = viewHolder.view.findViewById(R.id.simple_edit_value);
+        if (editField != null) {
+            M3Motion.cancelFocusAnimations(editField);
+            if (editField.getTag() instanceof TextWatcher) {
+                editField.removeTextChangedListener((TextWatcher) editField.getTag());
+                editField.setTag(null);
+            }
+        }
     }
 
     private void updateDimensions(Context context) {

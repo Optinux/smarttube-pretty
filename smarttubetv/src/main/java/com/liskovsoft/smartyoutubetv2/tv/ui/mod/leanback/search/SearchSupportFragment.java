@@ -351,15 +351,21 @@ public class SearchSupportFragment extends Fragment {
         View searchBarItems = mSearchBar.findViewById(R.id.lb_search_bar_items);
         int surfaceHigh = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3SurfaceContainerHigh, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_surface_container_high);
         int surfaceHighest = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3SurfaceContainerHighest, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_surface_container_highest);
-        int primary = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3Primary, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_primary);
+        int outline = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3Outline, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_outline);
+        int onSurface = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OnSurface, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_on_surface);
+        int onSurfaceVariant = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OnSurfaceVariant, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_on_surface_variant);
         float pillRadius = context.getResources().getDimension(com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_pill_corner_radius);
         int focusStrokePx = context.getResources().getDimensionPixelSize(com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_focus_stroke_width);
 
         mSearchTextEditor = mSearchBar.findViewById(R.id.lb_search_text_editor);
+        if (mSearchTextEditor != null) {
+            mSearchTextEditor.setTextColor(onSurface);
+            mSearchTextEditor.setHintTextColor(onSurfaceVariant);
+        }
         if (searchBarItems != null) {
             boolean initiallyFocused = mSearchTextEditor.hasFocus();
             applySearchBarFocus(searchBarItems, initiallyFocused, surfaceHigh, surfaceHighest,
-                    primary, focusStrokePx, pillRadius, false);
+                    outline, focusStrokePx, pillRadius, false);
         }
         mSearchTextEditor.setSelectAllOnFocus(true); // Select all on focus (easy clear previous search)
         mSearchTextEditor.setOnFocusChangeListener((v, focused) -> {
@@ -367,7 +373,7 @@ public class SearchSupportFragment extends Fragment {
 
             if (searchBarItems != null) {
                 applySearchBarFocus(searchBarItems, focused, surfaceHigh, surfaceHighest,
-                        primary, focusStrokePx, pillRadius, true);
+                        outline, focusStrokePx, pillRadius, true);
             }
 
             // User clicked on tag and tries to edit search query
@@ -426,10 +432,14 @@ public class SearchSupportFragment extends Fragment {
         int orbBg = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OrbBackground, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_surface_container_high);
         int orbFocusedBg = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OrbFocusedBackground, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_primary_container);
         int orbIconColor = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OrbIconColor, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_on_surface);
+        int orbStrokeColor = ViewUtil.getThemeColor(context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3Outline, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_outline);
         SearchOrbView.Colors orbColors = new SearchOrbView.Colors(orbBg, orbFocusedBg, orbIconColor);
         mSearchOrbView.setOrbColors(orbColors);
+        mSearchOrbView.setFocusedStrokeColor(orbStrokeColor);
         mSearchSettingsOrbView.setOrbColors(orbColors);
+        mSearchSettingsOrbView.setFocusedStrokeColor(orbStrokeColor);
         mSpeechOrbView.setNotListeningOrbColors(orbColors);
+        mSpeechOrbView.setFocusedStrokeColor(orbStrokeColor);
         mSpeechOrbView.showNotListening();
         OnFocusChangeListener previousListener = mSpeechOrbView.getOnFocusChangeListener();
         mSpeechOrbView.setOnFocusChangeListener((v, focused) -> {

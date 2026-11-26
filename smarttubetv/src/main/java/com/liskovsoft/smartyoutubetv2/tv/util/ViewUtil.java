@@ -22,6 +22,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.ColorUtils;
 import androidx.leanback.widget.FocusHighlight;
 import androidx.leanback.widget.ListRow;
 import androidx.leanback.widget.RowPresenter;
@@ -33,6 +34,7 @@ import com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper;
 import com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper.M3Palette;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.adapter.VideoGroupObjectAdapter;
+import com.stfalcon.chatkit.messages.MessagesList;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.marqueetextview.MarqueeTextView;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.marqueetextviewcompat.MarqueeTextViewCompat;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.speedmarquee.SpeedMarquee;
@@ -200,23 +202,28 @@ public class ViewUtil {
         int transparent = ContextCompat.getColor(context, R.color.transparent);
         int semiTransparent = ContextCompat.getColor(context, R.color.semi_grey);
 
-        // Disable shadow outline on parent fragment
+        // Disable shadow outline and dim backdrop on parent fragment
         if (mainContainer instanceof FrameLayout && VERSION.SDK_INT >= 21) {
             // ViewOutlineProvider: NoClassDefFoundError on API 19
+            rootView.setBackgroundColor(transparent);
             mainContainer.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+            if (VERSION.SDK_INT >= 23) {
+                mainContainer.setForeground(null);
+            }
         }
         if (mainFrame instanceof LinearLayout) {
             mainFrame.setBackgroundColor(transparent);
         }
         if (itemsContainer instanceof VerticalGridView) {
-            float density = context.getResources().getDisplayMetrics().density;
-            float itemCornerRadius = context.getResources().getDimension(R.dimen.m3_card_corner_radius);
+            float itemCornerRadius = context.getResources().getDimension(R.dimen.m3_card_small_corner_radius);
             int focusStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
             int restingFill = androidx.core.graphics.ColorUtils.setAlphaComponent(
-                    getThemeColor(context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high), 128);
+                    getThemeColor(context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high), 140);
             int focusedFill = androidx.core.graphics.ColorUtils.setAlphaComponent(
                     getThemeColor(context, R.attr.m3SecondaryContainer, R.color.m3_grey_secondary_container), 235);
-            int focusedStroke = getThemeColor(context, R.attr.m3Primary, R.color.m3_grey_outline);
+            int focusedStroke = getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
+            ((VerticalGridView) itemsContainer).setVerticalSpacing(
+                    Math.round(3f * context.getResources().getDisplayMetrics().density));
             // Set background for individual buttons in the list.
             // This is the only way to do this because items haven't been added yet to the container.
             ((VerticalGridView) itemsContainer).setOnChildLaidOutListener((parent, view, position, id) -> {
@@ -366,6 +373,10 @@ public class ViewUtil {
         if (attrResId == R.attr.m3SecondaryContainer || attrResId == R.attr.cardSelectedBackground) return palette.secondaryContainer;
         if (attrResId == R.attr.m3OnSecondaryContainer) return palette.onSecondaryContainer;
         if (attrResId == R.attr.m3Outline) return palette.outline;
+        if (attrResId == R.attr.m3Error) return palette.error;
+        if (attrResId == R.attr.m3OnError) return palette.onError;
+        if (attrResId == R.attr.m3ErrorContainer) return palette.errorContainer;
+        if (attrResId == R.attr.m3OnErrorContainer) return palette.onErrorContainer;
         if (attrResId == R.attr.m3OrbFocusedBackground) return palette.orbFocusedBackground;
         if (attrResId == R.attr.playbackProgressPrimaryColor) return palette.progressPrimary;
         if (attrResId == R.attr.playbackControlsIconHighlightColor) return palette.primary;
@@ -467,5 +478,22 @@ public class ViewUtil {
         };
         int[] colors = new int[]{focusedColor, focusedColor, focusedColor, defaultColor};
         return new ColorStateList(states, colors);
+    }
+
+    /**
+     * Applies runtime Material 3 Expressive surface, focus, and text colors to ChatKit message lists.
+     */
+    public static void applyM3MessagesListStyle(MessagesList messagesList, boolean translucentOverlay) {
+        if (messagesList == null) {
+            return;
+        }
+        Context context = messagesList.getContext();
+        int surfaceHigh = getThemeColor(context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high);
+        int normalBg = translucentOverlay ? ColorUtils.setAlphaComponent(surfaceHigh, 195) : surfaceHigh;
+        int secondaryContainer = getThemeColor(context, R.attr.m3SecondaryContainer, R.color.m3_grey_secondary_container);
+        int focusStroke = getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
+        int onSurface = getThemeColor(context, R.attr.m3OnSurface, R.color.m3_on_surface);
+        int primary = getThemeColor(context, R.attr.m3Primary, R.color.m3_grey_primary);
+        messagesList.setIncomingM3Colors(normalBg, secondaryContainer, focusStroke, onSurface, primary);
     }
 }

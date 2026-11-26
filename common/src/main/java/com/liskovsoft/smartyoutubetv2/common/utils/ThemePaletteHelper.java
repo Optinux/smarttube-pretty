@@ -37,6 +37,10 @@ public final class ThemePaletteHelper {
         public int onSurfaceVariant;
         public int outline;
         public int outlineVariant;
+        public int error = 0xFFFFB4AB;
+        public int onError = 0xFF690005;
+        public int errorContainer = 0xFF93000A;
+        public int onErrorContainer = 0xFFFFDAD6;
         public int orbBackground;
         public int orbFocusedBackground;
         public int orbIconColor;
@@ -159,7 +163,7 @@ public final class ThemePaletteHelper {
                 palette.onSecondaryContainer = a2_100;
                 palette.onSurface = n1_100;
                 palette.onSurfaceVariant = n2_200;
-                palette.outline = a1_200;
+                palette.outline = ColorUtils.blendARGB(n1_100, a1_200, 0.45f);
                 palette.outlineVariant = n2_700;
                 palette.orbBackground = palette.surfaceContainerHigh;
                 palette.orbFocusedBackground = a1_700;
@@ -240,16 +244,19 @@ public final class ThemePaletteHelper {
         }
 
         float hue = hsl[0];
-        float sat = clamp(hsl[1], 0.45f, 0.92f);
+        float sat = clamp(hsl[1], 0.42f, 0.88f);
 
-        palette.primary = hslColor(hue, sat, 0.76f);
-        palette.onPrimary = hslColor(hue, clamp(sat, 0.40f, 0.75f), 0.16f);
-        palette.primaryContainer = hslColor(hue, clamp(sat * 0.78f, 0.32f, 0.75f), 0.25f);
-        palette.onPrimaryContainer = hslColor(hue, clamp(sat * 0.85f, 0.35f, 0.90f), 0.92f);
-        palette.secondaryContainer = hslColor(hue, clamp(sat * 0.38f, 0.15f, 0.40f), 0.21f);
-        palette.onSecondaryContainer = hslColor(hue, clamp(sat * 0.45f, 0.15f, 0.55f), 0.93f);
-        palette.outline = palette.primary;
-        palette.progressPrimary = hslColor(hue, clamp(hsl[1], 0.55f, 0.95f), clamp(hsl[2], 0.58f, 0.74f));
+        // Normalize tones by WCAG relative luminance (HCT-inspired) so Yellow/Cyan aren't blinding
+        // and Blue/Violet aren't dim compared to Red/Coral presets.
+        palette.primary = hslColorForLuminance(hue, sat, 0.48f);
+        palette.onPrimary = hslColorForLuminance(hue, clamp(sat, 0.35f, 0.72f), 0.032f);
+        palette.primaryContainer = hslColorForLuminance(hue, clamp(sat * 0.78f, 0.32f, 0.75f), 0.068f);
+        palette.onPrimaryContainer = hslColorForLuminance(hue, clamp(sat * 0.85f, 0.35f, 0.88f), 0.72f);
+        palette.secondaryContainer = hslColorForLuminance(hue, clamp(sat * 0.36f, 0.14f, 0.36f), 0.055f);
+        palette.onSecondaryContainer = hslColorForLuminance(hue, clamp(sat * 0.42f, 0.14f, 0.48f), 0.78f);
+        int baseOnSurface = palette.onSurface != 0 ? palette.onSurface : 0xFFECEDF2;
+        palette.outline = ColorUtils.blendARGB(baseOnSurface, palette.primary, 0.45f);
+        palette.progressPrimary = hslColorForLuminance(hue, clamp(hsl[1], 0.55f, 0.94f), 0.38f);
     }
 
     /**
@@ -274,10 +281,7 @@ public final class ThemePaletteHelper {
         if (context == null || dialog == null || dialog.getWindow() == null) {
             return;
         }
-        M3Palette active = getActivePalette(context);
-        int surfaceColor = active != null && active.overrideSurfaces
-                ? active.surfaceContainerHigh
-                : 0xFF1D212A;
+        int surfaceColor = resolveDialogSurfaceColor(context);
         float density = context.getResources().getDisplayMetrics().density;
         android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
         bg.setCornerRadius(28f * density);
@@ -285,8 +289,43 @@ public final class ThemePaletteHelper {
         dialog.getWindow().setBackgroundDrawable(bg);
     }
 
+    private static int resolveDialogSurfaceColor(Context context) {
+        M3Palette active = getActivePalette(context);
+        if (active != null && active.overrideSurfaces) {
+            return active.surfaceContainerHigh;
+        }
+        int attrId = context.getResources().getIdentifier("m3SurfaceContainerHigh", "attr", context.getPackageName());
+        if (attrId != 0) {
+            android.util.TypedValue out = new android.util.TypedValue();
+            if (context.getTheme().resolveAttribute(attrId, out, true)) {
+                if (out.resourceId != 0) {
+                    return ContextCompat.getColor(context, out.resourceId);
+                }
+                return out.data;
+            }
+        }
+        return 0xFF1D212A;
+    }
+
     private static int hslColor(float h, float s, float l) {
         return ColorUtils.HSLToColor(new float[]{h, s, l});
+    }
+
+    private static int hslColorForLuminance(float h, float s, float targetRelLuminance) {
+        float low = 0.0f;
+        float high = 1.0f;
+        int best = hslColor(h, s, 0.5f);
+        for (int i = 0; i < 12; i++) {
+            float mid = (low + high) * 0.5f;
+            best = hslColor(h, s, mid);
+            double lum = ColorUtils.calculateLuminance(best);
+            if (lum < targetRelLuminance) {
+                low = mid;
+            } else {
+                high = mid;
+            }
+        }
+        return best;
     }
 
     private static float clamp(float val, float min, float max) {

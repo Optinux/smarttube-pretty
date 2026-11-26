@@ -5,6 +5,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -13,6 +14,7 @@ import androidx.core.content.ContextCompat;
 import androidx.leanback.app.GuidedStepSupportFragment;
 import androidx.leanback.widget.GuidanceStylist;
 import androidx.leanback.widget.GuidedAction;
+import androidx.leanback.widget.GuidedActionsStylist;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
@@ -23,6 +25,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.presenters.SignInPresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.views.SignInView;
 import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.guided.M3GuidedActionsStylist;
 import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
@@ -51,6 +54,11 @@ public class SignInFragment extends GuidedStepSupportFragment implements SignInV
         mSignInPresenter.onViewInitialized();
     }
 
+    @Override
+    public GuidedActionsStylist onCreateActionsStylist() {
+        return new M3GuidedActionsStylist();
+    }
+
     private void styleGuidanceViews() {
         if (getContext() == null || getGuidanceStylist() == null) {
             return;
@@ -73,8 +81,8 @@ public class SignInFragment extends GuidedStepSupportFragment implements SignInV
         ImageView iconView = getGuidanceStylist().getIconView();
         if (iconView != null) {
             float density = getResources().getDisplayMetrics().density;
-            float radiusPx = 16f * density;
-            int padPx = Math.round(12 * density);
+            float radiusPx = getResources().getDimension(R.dimen.m3_card_large_corner_radius);
+            int padPx = Math.round(14 * density);
             int outlineColor = ViewUtil.getThemeColor(
                     getContext(), R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
             int strokePx = getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
@@ -84,7 +92,18 @@ public class SignInFragment extends GuidedStepSupportFragment implements SignInV
         }
 
         if (getView() != null) {
-            M3Motion.animateEnter(getView(), 0f, 12f * getResources().getDisplayMetrics().density);
+            View root = getView();
+            View bg = root.findViewById(R.id.guidedstep_background);
+            if (bg != null) {
+                bg.setBackgroundColor(ViewUtil.getThemeColor(
+                        getContext(), R.attr.m3Surface, R.color.m3_grey_surface));
+            }
+            View actionsBg = root.findViewById(R.id.action_fragment_background);
+            if (actionsBg != null) {
+                actionsBg.setBackgroundColor(ViewUtil.getThemeColor(
+                        getContext(), R.attr.m3SurfaceContainerLow, R.color.m3_grey_surface_container_low));
+            }
+            M3Motion.animateEnter(root, 0f, 12f * getResources().getDisplayMetrics().density);
         }
     }
 

@@ -52,7 +52,7 @@
             android:fontFamily="sans-serif-medium"
             android:gravity="center_vertical"
             android:textSize="20sp"
-            android:textColor="@color/m3_on_surface"
+            android:textColor="?attr/m3OnSurface"
             android:singleLine="false"
             android:maxLines="2"
             android:ellipsize="end" />
@@ -70,7 +70,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif"
         android:textSize="15sp"
-        android:textColor="@color/m3_on_surface"
+        android:textColor="?attr/m3OnSurface"
         android:lineSpacingMultiplier="1.25"
         android:paddingTop="20dp"
         android:paddingBottom="20dp"

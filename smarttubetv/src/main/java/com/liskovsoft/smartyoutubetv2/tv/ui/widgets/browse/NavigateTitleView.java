@@ -223,13 +223,18 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
         int orbBg = ViewUtil.getThemeColor(getContext(), R.attr.m3OrbBackground, R.color.m3_grey_surface_container_high);
         int orbFocusedBg = ViewUtil.getThemeColor(getContext(), R.attr.m3OrbFocusedBackground, R.color.m3_grey_primary_container);
         int orbIconColor = ViewUtil.getThemeColor(getContext(), R.attr.m3OrbIconColor, R.color.m3_on_surface);
+        int orbStrokeColor = ViewUtil.getThemeColor(getContext(), R.attr.m3Outline, R.color.m3_grey_outline);
         Colors orbColors = new Colors(orbBg, orbFocusedBg, orbIconColor);
         if (mSearchOrbView != null) {
             mSearchOrbView.setOrbColors(orbColors);
+            mSearchOrbView.setFocusedStrokeColor(orbStrokeColor);
         }
         mAccountView.setOrbColors(orbColors);
+        mAccountView.setFocusedStrokeColor(orbStrokeColor);
         mLanguageView.setOrbColors(orbColors);
+        mLanguageView.setFocusedStrokeColor(orbStrokeColor);
         mExitPip.setOrbColors(orbColors);
+        mExitPip.setFocusedStrokeColor(orbStrokeColor);
 
         int onSurface = ViewUtil.getThemeColor(getContext(), R.attr.m3OnSurface, R.color.m3_on_surface);
         int onSurfaceVariant = ViewUtil.getThemeColor(getContext(), R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant);

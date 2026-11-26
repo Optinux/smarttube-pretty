@@ -201,9 +201,7 @@ public class ThumbsBar extends LinearLayout {
                     child.setBackground(ViewUtil.createRoundedDrawable(
                             Color.TRANSPARENT, mHeroBorderColor, mHeroBorderWidthPx, mCornerRadiusPx));
                 }
-                child.setAlpha(1.0f);
-                child.setScaleX(1.04f);
-                child.setScaleY(1.04f);
+                animateThumbState(child, 1.04f, 1.0f);
                 if (VERSION.SDK_INT >= 21) {
                     child.setElevation(mHeroElevationPx);
                 }
@@ -215,15 +213,30 @@ public class ThumbsBar extends LinearLayout {
                     child.setForeground(null);
                 }
                 child.setBackground(null);
-                child.setAlpha(0.84f);
-                child.setScaleX(1.0f);
-                child.setScaleY(1.0f);
+                animateThumbState(child, 1.0f, 0.84f);
                 if (VERSION.SDK_INT >= 21) {
                     child.setElevation(0f);
                 }
             }
             child.setLayoutParams(lp);
         }
+    }
+
+    private static void animateThumbState(View child, float targetScale, float targetAlpha) {
+        child.animate().cancel();
+        if (!com.liskovsoft.smartyoutubetv2.tv.util.M3Motion.areAnimationsEnabled(child.getContext())) {
+            child.setScaleX(targetScale);
+            child.setScaleY(targetScale);
+            child.setAlpha(targetAlpha);
+            return;
+        }
+        child.animate()
+                .scaleX(targetScale)
+                .scaleY(targetScale)
+                .alpha(targetAlpha)
+                .setDuration(com.liskovsoft.smartyoutubetv2.tv.util.M3Motion.DURATION_FAST_EFFECTS_MS)
+                .setInterpolator(com.liskovsoft.smartyoutubetv2.tv.util.M3Motion.fastEffects())
+                .start();
     }
 
     private static int roundUp(int num, int divisor) {

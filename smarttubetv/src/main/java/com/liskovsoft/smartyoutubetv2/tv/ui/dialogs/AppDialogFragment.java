@@ -199,6 +199,7 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
         } else if (pref instanceof MultiSelectListPreference) {
             MultiSelectListPreference listPreference = (MultiSelectListPreference) pref;
             LeanbackListPreferenceDialogFragment f = LeanbackListPreferenceDialogFragment.newInstanceMulti(listPreference.getKey());
+            f.enableTransparent(mIsTransparent);
             f.setTargetFragment(caller, 0);
             f.setPreference(pref);
             startPreferenceFragment(f);
@@ -317,11 +318,26 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
             return;
         }
 
+        int outlineVariant = ViewUtil.getThemeColor(
+                context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+        float density = context.getResources().getDisplayMetrics().density;
+
         if (parentRootView != null) {
+            int backdropColor = androidx.core.content.ContextCompat.getColor(context, R.color.m3_dialog_backdrop);
+            parentRootView.setBackgroundColor(
+                    androidx.core.graphics.ColorUtils.setAlphaComponent(backdropColor, 145));
             View mainContainer = parentRootView.findViewById(R.id.settings_preference_fragment_container);
             if (mainContainer != null) {
-                float cornerRadiusPx = context.getResources().getDimension(R.dimen.m3_dialog_corner_radius);
-                ViewUtil.applyRoundedOutline(mainContainer, cornerRadiusPx);
+                float sheetRadiusPx = context.getResources().getDimension(R.dimen.m3_card_corner_radius);
+                ViewUtil.applyRoundedOutline(mainContainer, sheetRadiusPx);
+                if (android.os.Build.VERSION.SDK_INT >= 23 && mainContainer instanceof android.widget.FrameLayout) {
+                    int borderPx = Math.max(1, Math.round(1f * density));
+                    mainContainer.setForeground(ViewUtil.createRoundedDrawable(
+                            Color.TRANSPARENT,
+                            androidx.core.graphics.ColorUtils.setAlphaComponent(outlineVariant, 170),
+                            borderPx,
+                            sheetRadiusPx));
+                }
             }
         }
 
@@ -337,12 +353,10 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
                     context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high));
             if (titleContainer instanceof ViewGroup) {
                 ViewGroup titleGroup = (ViewGroup) titleContainer;
-                int dividerColor = ViewUtil.getThemeColor(
-                        context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
                 for (int i = 0; i < titleGroup.getChildCount(); i++) {
                     View child = titleGroup.getChildAt(i);
                     if (child.getId() != R.id.decor_title && child.getLayoutParams() != null && child.getLayoutParams().height <= 4) {
-                        child.setBackgroundColor(dividerColor);
+                        child.setBackgroundColor(outlineVariant);
                     }
                 }
             }
@@ -360,16 +374,19 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
         }
         if (listView instanceof VerticalGridView) {
             VerticalGridView gridView = (VerticalGridView) listView;
-            float density = context.getResources().getDisplayMetrics().density;
             int padH = Math.round(12 * density);
-            int padTop = Math.round(8 * density);
+            int padTop = Math.round(10 * density);
             int padBottom = Math.round(16 * density);
             gridView.setPaddingRelative(padH, padTop, padH, padBottom);
             gridView.setClipToPadding(false);
-            gridView.setVerticalSpacing(Math.round(4 * density));
+            gridView.setVerticalSpacing(Math.round(3 * density));
 
-            float itemCornerRadius = 14f * density;
-            int strokeWidthPx = Math.max(1, Math.round(1.5f * density));
+            float outerItemRadius = context.getResources().getDimension(R.dimen.m3_card_small_corner_radius);
+            float innerItemRadius = context.getResources().getDimension(R.dimen.m3_segment_inner_corner_radius);
+            int strokeWidthPx = context.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
+            int surfaceContainerHigh = ViewUtil.getThemeColor(
+                    context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high);
+            int restingFill = androidx.core.graphics.ColorUtils.setAlphaComponent(surfaceContainerHigh, 190);
             int focusedFill = ViewUtil.getThemeColor(
                     context, R.attr.m3SecondaryContainer, R.color.m3_grey_secondary_container);
             int focusedStroke = ViewUtil.getThemeColor(
@@ -377,18 +394,25 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
 
             gridView.setOnChildLaidOutListener((parent, child, position, id) -> {
                 if (child != null) {
+                    androidx.recyclerview.widget.RecyclerView.Adapter<?> adapter = gridView.getAdapter();
+                    int count = adapter != null ? adapter.getItemCount() : 0;
+                    boolean isFirst = position == 0;
+                    boolean isLast = count > 0 && position == count - 1;
+                    float[] radii = M3Motion.buildSegmentedRadii(outerItemRadius, innerItemRadius, isFirst, isLast);
+
                     boolean initiallyFocused = child.hasFocus();
                     M3Motion.cancelFocusAnimations(child);
                     M3Motion.applyCardFocusTransition(
                             child,
                             initiallyFocused,
-                            initiallyFocused ? Color.TRANSPARENT : focusedFill,
-                            initiallyFocused ? focusedFill : Color.TRANSPARENT,
+                            initiallyFocused ? restingFill : focusedFill,
+                            initiallyFocused ? focusedFill : restingFill,
                             initiallyFocused ? Color.TRANSPARENT : focusedStroke,
                             initiallyFocused ? focusedStroke : Color.TRANSPARENT,
                             initiallyFocused ? 0 : strokeWidthPx,
                             initiallyFocused ? strokeWidthPx : 0,
-                            itemCornerRadius,
+                            outerItemRadius,
+                            radii,
                             null);
                     final View.OnFocusChangeListener prevListener = child.getOnFocusChangeListener();
                     child.setOnFocusChangeListener((v, hasFocus) -> {
@@ -398,13 +422,14 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
                         M3Motion.applyCardFocusTransition(
                                 v,
                                 hasFocus,
-                                hasFocus ? Color.TRANSPARENT : focusedFill,
-                                hasFocus ? focusedFill : Color.TRANSPARENT,
+                                hasFocus ? restingFill : focusedFill,
+                                hasFocus ? focusedFill : restingFill,
                                 hasFocus ? Color.TRANSPARENT : focusedStroke,
                                 hasFocus ? focusedStroke : Color.TRANSPARENT,
                                 hasFocus ? 0 : strokeWidthPx,
                                 hasFocus ? strokeWidthPx : 0,
-                                itemCornerRadius,
+                                outerItemRadius,
+                                null,
                                 null);
                         M3Motion.animateFocusScale(v, hasFocus, 1.015f);
                     });

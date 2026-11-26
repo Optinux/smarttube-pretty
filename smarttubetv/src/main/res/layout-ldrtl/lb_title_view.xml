@@ -45,9 +45,9 @@
             android:nextFocusRight="@id/title_orb"
             android:nextFocusLeft="@id/language_orb"
             app:searchOrbIcon="@drawable/browse_title_account"
-            app:searchOrbColor="@color/m3_grey_surface_container_high"
-            app:searchOrbBrightColor="@color/m3_grey_primary_container"
-            app:searchOrbIconColor="@color/m3_on_surface"
+            app:searchOrbColor="?attr/m3OrbBackground"
+            app:searchOrbBrightColor="?attr/m3OrbFocusedBackground"
+            app:searchOrbIconColor="?attr/m3OrbIconColor"
             android:visibility="gone" />
 
         <androidx.leanback.widget.SearchOrbView
@@ -59,9 +59,9 @@
             android:nextFocusRight="@id/account_orb"
             android:nextFocusLeft="@id/exit_pip"
             app:searchOrbIcon="@drawable/search_bar_language_orb"
-            app:searchOrbColor="@color/m3_grey_surface_container_high"
-            app:searchOrbBrightColor="@color/m3_grey_primary_container"
-            app:searchOrbIconColor="@color/m3_on_surface"
+            app:searchOrbColor="?attr/m3OrbBackground"
+            app:searchOrbBrightColor="?attr/m3OrbFocusedBackground"
+            app:searchOrbIconColor="?attr/m3OrbIconColor"
             android:visibility="gone" />
 
         <androidx.leanback.widget.SearchOrbView
@@ -72,9 +72,9 @@
             android:layout_marginStart="@dimen/search_bar_right_items_margin"
             android:nextFocusRight="@id/language_orb"
             app:searchOrbIcon="@drawable/browse_title_pip"
-            app:searchOrbColor="@color/m3_grey_surface_container_high"
-            app:searchOrbBrightColor="@color/m3_grey_primary_container"
-            app:searchOrbIconColor="@color/m3_on_surface"
+            app:searchOrbColor="?attr/m3OrbBackground"
+            app:searchOrbBrightColor="?attr/m3OrbFocusedBackground"
+            app:searchOrbIconColor="?attr/m3OrbIconColor"
             android:visibility="gone" />
 
         <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.marqueetextviewcompat.TitleMarqueeTextViewCompat
@@ -86,7 +86,7 @@
             android:fontFamily="sans-serif-medium"
             android:maxWidth="@dimen/pip_title_max_width"
             android:textSize="@dimen/pip_title_size"
-            android:textColor="@color/m3_on_surface"
+            android:textColor="?attr/m3OnSurface"
             style="?attr/browseTitleTextStyle"
             android:ellipsize="marquee"
             android:visibility="gone" />

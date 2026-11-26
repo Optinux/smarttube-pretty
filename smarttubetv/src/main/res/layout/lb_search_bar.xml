@@ -78,8 +78,8 @@
                     android:inputType="text|textAutoComplete"
                     android:singleLine="true"
                     android:textAlignment="viewStart"
-                    android:textColor="@color/m3_on_surface"
-                    android:textColorHint="@color/m3_on_surface_variant"
+                    android:textColor="?attr/m3OnSurface"
+                    android:textColorHint="?attr/m3OnSurfaceVariant"
                     android:textCursorDrawable="@drawable/search_bar_cursor"
                     android:hint="@string/lb_search_bar_hint"
                     android:textSize="@dimen/lb_search_bar_text_size"/>
@@ -96,9 +96,9 @@
         android:focusable="true"
         android:focusableInTouchMode="false"
         app:searchOrbIcon="@drawable/search_bar_settings_orb"
-        app:searchOrbColor="@color/m3_grey_surface_container_high"
-        app:searchOrbBrightColor="@color/m3_grey_primary_container"
-        app:searchOrbIconColor="@color/m3_on_surface" />
+        app:searchOrbColor="?attr/m3OrbBackground"
+        app:searchOrbBrightColor="?attr/m3OrbFocusedBackground"
+        app:searchOrbIconColor="?attr/m3OrbIconColor" />
 
     <!-- Start search button -->
     <androidx.leanback.widget.SearchOrbView
@@ -110,7 +110,7 @@
         android:layout_alignParentEnd="true"
         android:focusable="true"
         android:focusableInTouchMode="false"
-        app:searchOrbColor="@color/m3_grey_surface_container_high"
-        app:searchOrbBrightColor="@color/m3_grey_primary_container"
-        app:searchOrbIconColor="@color/m3_on_surface" />
+        app:searchOrbColor="?attr/m3OrbBackground"
+        app:searchOrbBrightColor="?attr/m3OrbFocusedBackground"
+        app:searchOrbIconColor="?attr/m3OrbIconColor" />
 </merge>

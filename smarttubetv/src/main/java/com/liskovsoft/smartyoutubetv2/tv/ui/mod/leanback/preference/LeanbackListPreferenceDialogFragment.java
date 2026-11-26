@@ -366,7 +366,7 @@ public class LeanbackListPreferenceDialogFragment extends LeanbackPreferenceDial
         }
     }
 
-    private static void applyDynamicButtonTint(Context context, Checkable widgetView) {
+    protected static void applyDynamicButtonTint(Context context, Checkable widgetView) {
         if (context == null || !(widgetView instanceof CompoundButton)) {
             return;
         }

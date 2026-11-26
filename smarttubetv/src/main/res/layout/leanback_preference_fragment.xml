@@ -25,6 +25,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/m3SurfaceContainer"
+    android:elevation="@dimen/lb_preference_decor_elevation"
     android:orientation="vertical"
     android:transitionGroup="false"
     tools:targetApi="21">
@@ -51,7 +52,7 @@
             android:fontFamily="sans-serif-medium"
             android:gravity="center_vertical"
             android:textSize="20sp"
-            android:textColor="@color/m3_on_surface"
+            android:textColor="?attr/m3OnSurface"
             android:singleLine="false"
             android:maxLines="2"
             android:ellipsize="end" />

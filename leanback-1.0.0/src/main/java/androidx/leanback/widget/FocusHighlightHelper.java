@@ -137,7 +137,7 @@ public class FocusHighlightHelper {
                 mWrapper.setShadowFocusLevel(effectsLevel);
             } else {
                 ShadowOverlayHelper.setNoneWrapperShadowFocusLevel(mView, effectsLevel);
-                if (mScaleDiff > 0f && Build.VERSION.SDK_INT >= 21 && !(this instanceof HeaderFocusAnimator)) {
+                if (mScaleDiff > 0f && Build.VERSION.SDK_INT >= 21 && !(this instanceof HeaderItemFocusHighlight.HeaderFocusAnimator)) {
                     mView.setTranslationZ(mElevationLiftPx * Math.max(0f, Math.min(1f, effectsLevel)));
                 }
             }

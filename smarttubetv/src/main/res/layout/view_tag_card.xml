@@ -25,5 +25,5 @@
         android:layout_toEndOf="@+id/image_icon"
         android:fontFamily="sans-serif-medium"
         android:textSize="15sp"
-        android:textColor="@color/m3_on_surface"/>
+        android:textColor="?attr/m3OnSurface"/>
 </RelativeLayout>

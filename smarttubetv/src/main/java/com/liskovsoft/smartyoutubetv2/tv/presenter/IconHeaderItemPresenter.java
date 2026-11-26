@@ -150,22 +150,21 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
             pill.setStroke(0, Color.TRANSPARENT);
         }
 
-        float contentAlpha = 0.78f + 0.22f * level;
         TextView label = holder.view.findViewById(R.id.header_label);
         if (label != null) {
             label.setTextColor(ColorUtils.blendARGB(mOnSurfaceVariantColor, mOnSecondaryContainerColor, level));
-            label.setAlpha(contentAlpha);
-            label.setTypeface(Typeface.create("sans-serif-medium", level > 0.5f ? Typeface.BOLD : Typeface.NORMAL));
+            label.setAlpha(1.0f);
+            label.setTypeface(Typeface.create(level > 0.5f ? "sans-serif-medium" : "sans-serif", Typeface.NORMAL));
         }
 
         ImageView iconView = holder.view.findViewById(R.id.header_icon);
         if (iconView != null) {
-            iconView.setAlpha(contentAlpha);
+            iconView.setAlpha(1.0f);
             float iconScale = 1.0f + 0.08f * level;
             iconView.setScaleX(iconScale);
             iconView.setScaleY(iconScale);
             if (mIconUrl == null && mResId > 0) {
-                int iconTint = ColorUtils.blendARGB(mOnSurfaceVariantColor, mPrimaryColor, level);
+                int iconTint = ColorUtils.blendARGB(mOnSurfaceVariantColor, mOnSecondaryContainerColor, level);
                 ImageViewCompat.setImageTintList(iconView, ColorStateList.valueOf(iconTint));
             } else {
                 ImageViewCompat.setImageTintList(iconView, null);

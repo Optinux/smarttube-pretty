@@ -2,12 +2,16 @@ package com.liskovsoft.smartyoutubetv2.tv.ui.adddevice;
 
 import android.os.Bundle;
 import androidx.leanback.app.GuidedStepSupportFragment;
+import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.tv.ui.common.LeanbackActivity;
 
 public class AddDeviceActivity extends LeanbackActivity {
     @Override
     protected void initTheme() {
-        // Preserve manifest GuidedStep theme while honoring dynamic Material You surface background
+        int guidedThemeResId = MainUIData.instance(this).getColorScheme().guidedStepThemeResId;
+        if (guidedThemeResId > 0) {
+            setTheme(guidedThemeResId);
+        }
         applyDynamicWindowBackground();
     }
 

@@ -19,6 +19,7 @@ package com.stfalcon.chatkit.messages;
 import android.content.Context;
 import android.util.AttributeSet;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -93,6 +94,17 @@ public class MessagesList extends RecyclerView {
 
         addOnScrollListener(new RecyclerScrollMoreListener(layoutManager, adapter));
         super.setAdapter(adapter);
+    }
+
+    public void setIncomingM3Colors(@ColorInt int normalBg,
+                                    @ColorInt int selectedBg,
+                                    @ColorInt int focusStrokeColor,
+                                    @ColorInt int textColor,
+                                    @ColorInt int linkColor) {
+        if (messagesListStyle == null) {
+            parseStyle(getContext(), null);
+        }
+        messagesListStyle.setIncomingM3Colors(getContext(), normalBg, selectedBg, focusStrokeColor, textColor, linkColor);
     }
 
     @SuppressWarnings("ResourceType")

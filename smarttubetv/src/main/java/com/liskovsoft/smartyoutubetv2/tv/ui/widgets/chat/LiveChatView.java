@@ -58,6 +58,7 @@ public class LiveChatView extends com.stfalcon.chatkit.messages.MessagesList {
         setVisibility(View.VISIBLE);
 
         if (mAdapter == null) {
+            ViewUtil.applyM3MessagesListStyle(this, true);
             mAdapter = new MessagesListAdapter<>(SENDER_ID, (imageView, url, payload) ->
                     Glide.with(getContext())
                             .load(url)

@@ -11,6 +11,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.ColorUtils;
 import androidx.fragment.app.Fragment;
 import androidx.leanback.app.BrowseSupportFragment;
 import androidx.leanback.app.BrowseSupportFragment.MainFragmentAdapter;
@@ -32,6 +33,7 @@ public class ErrorDialogFragment extends ErrorSupportFragment implements BrowseS
 
     private final Handler mHandler = new Handler();
     private final ErrorFragmentData mDialogData;
+    private boolean mEnteredOnce;
     private final MainFragmentAdapter<Fragment> mMainFragmentAdapter =
             new MainFragmentAdapter<Fragment>(this) {
                 @Override
@@ -59,7 +61,8 @@ public class ErrorDialogFragment extends ErrorSupportFragment implements BrowseS
         super.onStart();
 
         setDialogContent();
-        if (getView() != null) {
+        if (!mEnteredOnce && getView() != null) {
+            mEnteredOnce = true;
             M3Motion.animateEnter(getView(), 0f, 12f * getResources().getDisplayMetrics().density);
         }
     }
@@ -114,27 +117,62 @@ public class ErrorDialogFragment extends ErrorSupportFragment implements BrowseS
         }
 
         float density = context.getResources().getDisplayMetrics().density;
-        int fill = ViewUtil.getThemeColor(
+        int defaultFill = ViewUtil.getThemeColor(
+                context, R.attr.m3SurfaceContainerHighest, R.color.m3_grey_surface_container_highest);
+        int focusedFill = ViewUtil.getThemeColor(
                 context, R.attr.m3PrimaryContainer, R.color.m3_grey_primary_container);
-        int textColor = ViewUtil.getThemeColor(
+        int defaultText = ViewUtil.getThemeColor(
+                context, R.attr.m3OnSurface, R.color.m3_on_surface);
+        int focusedText = ViewUtil.getThemeColor(
                 context, R.attr.m3OnPrimaryContainer, R.color.m3_grey_on_primary_container);
         int outline = ViewUtil.getThemeColor(
                 context, R.attr.m3Outline, R.color.m3_grey_outline);
         float pillRadius = context.getResources().getDimension(R.dimen.m3_pill_corner_radius);
-        int strokeWidthPx = Math.max(1, Math.round(2f * density));
+        int strokeWidthPx = context.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
 
         int padH = Math.round(24 * density);
         int padV = Math.round(12 * density);
         button.setPaddingRelative(padH, padV, padH, padV);
-        button.setTextColor(textColor);
         button.setAllCaps(false);
         button.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         if (VERSION.SDK_INT >= 21) {
             button.setStateListAnimator(null);
         }
-        button.setBackground(ViewUtil.createFocusSelectorDrawable(
-                fill, fill, Color.TRANSPARENT, outline, 0, strokeWidthPx, pillRadius));
-        button.setOnFocusChangeListener((v, hasFocus) -> M3Motion.animateFocusScale(v, hasFocus, 1.05f));
+
+        boolean initiallyFocused = button.hasFocus();
+        M3Motion.cancelFocusAnimations(button);
+        M3Motion.applyCardFocusTransition(
+                button,
+                initiallyFocused,
+                initiallyFocused ? defaultFill : focusedFill,
+                initiallyFocused ? focusedFill : defaultFill,
+                initiallyFocused ? Color.TRANSPARENT : outline,
+                initiallyFocused ? outline : Color.TRANSPARENT,
+                initiallyFocused ? 0 : strokeWidthPx,
+                initiallyFocused ? strokeWidthPx : 0,
+                pillRadius,
+                (fraction, currentFill) -> button.setTextColor(
+                        ColorUtils.blendARGB(initiallyFocused ? defaultText : focusedText,
+                                initiallyFocused ? focusedText : defaultText, fraction)));
+        M3Motion.animateFocusScale(button, initiallyFocused, 1.05f);
+
+        button.setOnFocusChangeListener((v, hasFocus) -> {
+            int fromText = hasFocus ? defaultText : focusedText;
+            int toText = hasFocus ? focusedText : defaultText;
+            M3Motion.applyCardFocusTransition(
+                    v,
+                    hasFocus,
+                    hasFocus ? defaultFill : focusedFill,
+                    hasFocus ? focusedFill : defaultFill,
+                    hasFocus ? Color.TRANSPARENT : outline,
+                    hasFocus ? outline : Color.TRANSPARENT,
+                    hasFocus ? 0 : strokeWidthPx,
+                    hasFocus ? strokeWidthPx : 0,
+                    pillRadius,
+                    (fraction, currentFill) -> button.setTextColor(
+                            ColorUtils.blendARGB(fromText, toText, fraction)));
+            M3Motion.animateFocusScale(v, hasFocus, 1.05f);
+        });
     }
 
     @Override

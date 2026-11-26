@@ -110,17 +110,26 @@ public class ChannelHeaderPresenter extends RowPresenter {
         int orbBg = ViewUtil.getThemeColor(context, R.attr.m3OrbBackground, R.color.m3_grey_surface_container_high);
         int orbFocusedBg = ViewUtil.getThemeColor(context, R.attr.m3OrbFocusedBackground, R.color.m3_grey_primary_container);
         int orbIconColor = ViewUtil.getThemeColor(context, R.attr.m3OrbIconColor, R.color.m3_on_surface);
+        int orbStrokeColor = ViewUtil.getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
         SearchOrbView.Colors orbColors = new SearchOrbView.Colors(orbBg, orbFocusedBg, orbIconColor);
         searchOrbView.setOrbColors(orbColors);
+        searchOrbView.setFocusedStrokeColor(orbStrokeColor);
         searchSettingsOrbView.setOrbColors(orbColors);
+        searchSettingsOrbView.setFocusedStrokeColor(orbStrokeColor);
         speechOrbView.setNotListeningOrbColors(orbColors);
+        speechOrbView.setFocusedStrokeColor(orbStrokeColor);
         speechOrbView.showNotListening();
 
         int surfaceHigh = ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high);
         int surfaceHighest = ViewUtil.getThemeColor(context, R.attr.m3SurfaceContainerHighest, R.color.m3_grey_surface_container_highest);
-        int primary = ViewUtil.getThemeColor(context, R.attr.m3Primary, R.color.m3_grey_primary);
+        int onSurface = ViewUtil.getThemeColor(context, R.attr.m3OnSurface, R.color.m3_on_surface);
+        int onSurfaceVariant = ViewUtil.getThemeColor(context, R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant);
         float pillRadius = context.getResources().getDimension(R.dimen.m3_pill_corner_radius);
         int focusStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
+        if (searchTextEditor != null) {
+            searchTextEditor.setTextColor(onSurface);
+            searchTextEditor.setHintTextColor(onSurfaceVariant);
+        }
         if (searchBarItems != null) {
             boolean initiallyFocused = searchTextEditor.hasFocus();
             M3Motion.cancelFocusAnimations(searchBarItems);
@@ -130,7 +139,7 @@ public class ChannelHeaderPresenter extends RowPresenter {
                     initiallyFocused ? surfaceHigh : surfaceHighest,
                     initiallyFocused ? surfaceHighest : surfaceHigh,
                     0,
-                    primary,
+                    orbStrokeColor,
                     initiallyFocused ? 0 : focusStrokePx,
                     initiallyFocused ? focusStrokePx : 0,
                     pillRadius,
@@ -153,8 +162,8 @@ public class ChannelHeaderPresenter extends RowPresenter {
                         focused,
                         focused ? surfaceHigh : surfaceHighest,
                         focused ? surfaceHighest : surfaceHigh,
-                        focused ? 0 : primary,
-                        focused ? primary : 0,
+                        focused ? 0 : orbStrokeColor,
+                        focused ? orbStrokeColor : 0,
                         focused ? 0 : focusStrokePx,
                         focused ? focusStrokePx : 0,
                         pillRadius,

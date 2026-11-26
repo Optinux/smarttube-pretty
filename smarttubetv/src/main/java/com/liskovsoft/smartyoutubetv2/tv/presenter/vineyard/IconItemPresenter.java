@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat;
 import androidx.leanback.widget.Presenter;
 import com.liskovsoft.smartyoutubetv2.common.app.models.search.vineyard.Option;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.vineyard.IconCardView;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 
 public class IconItemPresenter extends Presenter {
     
@@ -38,5 +39,7 @@ public class IconItemPresenter extends Presenter {
     }
 
     @Override
-    public void onUnbindViewHolder(ViewHolder viewHolder) { }
+    public void onUnbindViewHolder(ViewHolder viewHolder) {
+        M3Motion.cancelFocusAnimations(viewHolder.view);
+    }
 }

@@ -64,7 +64,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="8dp"
-                android:textColor="@color/m3_on_surface"
+                android:textColor="?attr/m3OnSurface"
                 tools:text="12:34"
                 style="?attr/playbackControlsTimeStyle" />
         </LinearLayout>
@@ -128,7 +128,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
-                    android:textColor="@color/m3_on_surface_variant"
+                    android:textColor="?attr/m3OnSurfaceVariant"
                     android:textSize="13sp"
                     style="?attr/playbackControlsTimeStyle" />
                 <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.time.DateTimeView
@@ -137,7 +137,7 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
                     android:layout_below="@+id/quality_info"
-                    android:textColor="@color/m3_on_surface_variant"
+                    android:textColor="?attr/m3OnSurfaceVariant"
                     android:textSize="13sp"
                     style="?attr/playbackControlsTimeStyle" />
             </RelativeLayout>
@@ -179,7 +179,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
-                    android:textColor="@color/m3_on_surface_variant"
+                    android:textColor="?attr/m3OnSurfaceVariant"
                     android:textSize="13sp"
                     style="?attr/playbackControlsTimeStyle" />
 
@@ -196,7 +196,7 @@
                         android:layout_height="wrap_content"
                         android:layout_toStartOf="@+id/separate_time"
                         android:layout_marginStart="@dimen/lb_playback_transport_time_margin"
-                        android:textColor="@color/m3_on_surface"
+                        android:textColor="?attr/m3OnSurface"
                         style="?attr/playbackControlsTimeStyle" />
 
                     <TextView
@@ -206,7 +206,7 @@
                         android:text="@string/lb_playback_time_separator"
                         android:layout_toStartOf="@+id/total_time"
                         android:layout_marginStart="@dimen/lb_playback_transport_time_margin"
-                        android:textColor="@color/m3_on_surface_variant"
+                        android:textColor="?attr/m3OnSurfaceVariant"
                         style="?attr/playbackControlsTimeStyle" />
 
                     <TextView
@@ -215,7 +215,7 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_marginStart="@dimen/lb_playback_transport_time_margin"
-                        android:textColor="@color/m3_on_surface"
+                        android:textColor="?attr/m3OnSurface"
                         style="?attr/playbackControlsTimeStyle" />
                 </RelativeLayout>
             </RelativeLayout>

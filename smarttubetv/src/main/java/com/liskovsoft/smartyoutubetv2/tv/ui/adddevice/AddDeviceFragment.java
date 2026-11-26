@@ -9,9 +9,11 @@ import androidx.annotation.Nullable;
 import androidx.leanback.app.GuidedStepSupportFragment;
 import androidx.leanback.widget.GuidanceStylist;
 import androidx.leanback.widget.GuidedAction;
+import androidx.leanback.widget.GuidedActionsStylist;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.AddDevicePresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.views.AddDeviceView;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.guided.M3GuidedActionsStylist;
 import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
@@ -35,6 +37,11 @@ public class AddDeviceFragment extends GuidedStepSupportFragment implements AddD
 
         styleGuidanceViews();
         mAddDevicePresenter.onViewInitialized();
+    }
+
+    @Override
+    public GuidedActionsStylist onCreateActionsStylist() {
+        return new M3GuidedActionsStylist();
     }
 
     private void styleGuidanceViews() {

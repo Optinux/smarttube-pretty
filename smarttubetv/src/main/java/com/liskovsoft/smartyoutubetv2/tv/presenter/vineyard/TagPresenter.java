@@ -42,9 +42,8 @@ public class TagPresenter extends LongClickPresenter {
                 ViewUtil.getThemeColor(context, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
 
         mPillRadius = context.getResources().getDimension(R.dimen.m3_pill_corner_radius);
-        mFocusStrokePx = Math.round(TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, 2f, context.getResources().getDisplayMetrics()));
-        mHairlineStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
+        mFocusStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
+        mHairlineStrokePx = 0;
 
         TagCardView cardView = new TagCardView(context) {
             @Override
@@ -64,10 +63,10 @@ public class TagPresenter extends LongClickPresenter {
     private void updateCardAppearance(TagCardView view, boolean selected) {
         int fromBg = selected ? mDefaultBackgroundColor : mSelectedBackgroundColor;
         int toBg = selected ? mSelectedBackgroundColor : mDefaultBackgroundColor;
-        int fromStroke = selected ? mHairlineColor : mOutlineColor;
-        int toStroke = selected ? mOutlineColor : mHairlineColor;
-        int fromStrokePx = selected ? mHairlineStrokePx : mFocusStrokePx;
-        int toStrokePx = selected ? mFocusStrokePx : mHairlineStrokePx;
+        int fromStroke = selected ? 0 : mOutlineColor;
+        int toStroke = selected ? mOutlineColor : 0;
+        int fromStrokePx = selected ? 0 : mFocusStrokePx;
+        int toStrokePx = selected ? mFocusStrokePx : 0;
         int fromText = selected ? mDefaultTextColor : mSelectedTextColor;
         int toText = selected ? mSelectedTextColor : mDefaultTextColor;
 

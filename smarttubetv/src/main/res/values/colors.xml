@@ -78,6 +78,10 @@
     <color name="m3_on_surface_variant">#A4ACBE</color>
     <color name="m3_on_surface_muted">#7E879B</color>
     <color name="m3_oled_surface">#000000</color>
+    <color name="m3_error">#FFB4AB</color>
+    <color name="m3_on_error">#690005</color>
+    <color name="m3_error_container">#93000A</color>
+    <color name="m3_on_error_container">#FFDAD6</color>
 
     <color name="m3_badge_live_bg">#E53935</color>
     <color name="m3_badge_new_bg">#C62828</color>
@@ -109,7 +113,7 @@
     <color name="m3_grey_on_primary_container">#FFDAD6</color>
     <color name="m3_grey_secondary_container">#2D3340</color>
     <color name="m3_grey_on_secondary_container">#F2F4F8</color>
-    <color name="m3_grey_outline">#FF897D</color>
+    <color name="m3_grey_outline">#F4C2BD</color>
     <color name="m3_grey_outline_variant">#343A48</color>
     <color name="m3_grey_accent_red">#FF4E45</color>
 
@@ -125,7 +129,7 @@
     <color name="m3_teal_on_primary_container">#B8F2FA</color>
     <color name="m3_teal_secondary_container">#213B40</color>
     <color name="m3_teal_on_secondary_container">#DCEFF2</color>
-    <color name="m3_teal_outline">#56D6E8</color>
+    <color name="m3_teal_outline">#A8E3EE</color>
     <color name="m3_teal_outline_variant">#2D4147</color>
 
     <!-- 3. Red (Expressive Crimson) -->
@@ -140,7 +144,7 @@
     <color name="m3_red_on_primary_container">#FFDAD6</color>
     <color name="m3_red_secondary_container">#4A2529</color>
     <color name="m3_red_on_secondary_container">#FCE8E6</color>
-    <color name="m3_red_outline">#FF897D</color>
+    <color name="m3_red_outline">#F4C7C3</color>
     <color name="m3_red_outline_variant">#4D3237</color>
 
     <!-- 4. Dark Grey (OLED) -->
@@ -190,7 +194,7 @@
     <color name="m3_blue_on_primary_container">#D6E7FF</color>
     <color name="m3_blue_secondary_container">#233654</color>
     <color name="m3_blue_on_secondary_container">#E4EEFF</color>
-    <color name="m3_blue_outline">#9ECAFF</color>
+    <color name="m3_blue_outline">#C7DEF8</color>
     <color name="m3_blue_outline_variant">#303E58</color>
 
     <!-- 8. Dark Blue (OLED) -->

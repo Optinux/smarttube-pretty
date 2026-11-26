@@ -59,6 +59,7 @@ public class ChatPreferenceDialogFragment extends LeanbackPreferenceDialogFragme
         }
 
         MessagesList messagesList = (MessagesList) view.findViewById(R.id.messagesList);
+        ViewUtil.applyM3MessagesListStyle(messagesList, mIsTransparent);
         MessagesListAdapter<ChatItemMessage> adapter = new MessagesListAdapter<>(SENDER_ID, (imageView, url, payload) ->
                 Glide.with(view.getContext())
                     .load(url)

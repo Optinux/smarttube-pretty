@@ -561,6 +561,7 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
         public final int playerThemeResId;
         public final int browseThemeResId;
         public final int settingsThemeResId;
+        public final int guidedStepThemeResId;
         public final boolean isMaterialYou;
         public final boolean isOled;
 
@@ -583,6 +584,10 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
             this.playerThemeResId = Helpers.getResourceId(playerTheme, "style", context);
             this.browseThemeResId = Helpers.getResourceId(browseTheme, "style", context);
             this.settingsThemeResId = Helpers.getResourceId(settingsTheme, "style", context);
+            String guidedStepTheme = browseTheme != null && browseTheme.endsWith(".Browse")
+                    ? browseTheme.substring(0, browseTheme.length() - ".Browse".length()) + ".GuidedStep"
+                    : null;
+            this.guidedStepThemeResId = Helpers.getResourceId(guidedStepTheme, "style", context);
             this.isMaterialYou = isMaterialYou;
             this.isOled = isOled;
         }
