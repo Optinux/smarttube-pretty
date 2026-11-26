@@ -52,11 +52,14 @@ jobs:
           out_path = sys.argv[1]
           raw = os.environ.get("KEYSTORE_B64", "")
           cleaned = re.sub(r"\s+", "", raw).replace("-", "+").replace("_", "/")
+          if cleaned.endswith("\u23ce"):
+              print("::warning::Stripped trailing '⏎' character from SIGNING_KEYSTORE_BASE64; re-save the secret without it.", file=sys.stderr)
+              cleaned = cleaned[:-1]
           cleaned += "=" * (-len(cleaned) % 4)
           try:
               data = base64.b64decode(cleaned, validate=True)
-          except binascii.Error as exc:
-              print(f"::error::SIGNING_KEYSTORE_BASE64 is not valid base64 (cleaned length={len(cleaned)}): {exc}. Re-encode your .jks file with 'base64 -w 0 your.jks' and update the secret.", file=sys.stderr)
+          except (binascii.Error, ValueError) as exc:
+              print(f"::error::SIGNING_KEYSTORE_BASE64 is not valid base64 (cleaned length={len(cleaned)}): {exc}. Re-encode your .jks file cleanly (e.g. 'base64 -w 0 your.jks; echo') and update the secret.", file=sys.stderr)
               sys.exit(1)
 
           if len(data) < 32:
