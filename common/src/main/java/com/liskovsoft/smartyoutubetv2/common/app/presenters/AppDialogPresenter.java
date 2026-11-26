@@ -37,6 +37,11 @@ public class AppDialogPresenter extends BasePresenter<AppDialogView> {
     private boolean mBackupIsTransparent;
     private boolean mBackupIsOverlay;
     private boolean mBackupIsExpandable;
+    private InlineDialogListener mCaptureListener;
+
+    public interface InlineDialogListener {
+        void onShowDialog(CharSequence title, List<OptionCategory> categories, Runnable onFinish);
+    }
 
     public AppDialogPresenter(Context context) {
         super(context);
@@ -121,9 +126,43 @@ public class AppDialogPresenter extends BasePresenter<AppDialogView> {
         showDialog(null, onFinish);
     }
 
+    public void captureNextDialog(InlineDialogListener listener) {
+        mCaptureListener = listener;
+    }
+
     public void showDialog(CharSequence dialogTitle, Runnable onFinish) {
         mTitle = dialogTitle;
         mOnFinish.add(onFinish);
+
+        if (mCaptureListener != null) {
+            InlineDialogListener listener = mCaptureListener;
+            mCaptureListener = null;
+
+            CharSequence title = mTitle;
+            List<OptionCategory> categories = mCategories != null
+                    ? new java.util.ArrayList<>(mCategories)
+                    : java.util.Collections.emptyList();
+            Set<Runnable> finishCallbacks = mOnFinish.isEmpty()
+                    ? null
+                    : new HashSet<>(mOnFinish);
+            Runnable finishAction = finishCallbacks != null ? () -> {
+                for (Runnable callback : finishCallbacks) {
+                    if (callback != null) {
+                        callback.run();
+                    }
+                }
+            } : null;
+
+            resetData();
+            mBackupTitle = null;
+            mBackupCategories = null;
+            mOnStart.clear();
+            mOnFinish.clear();
+            mTimeoutMs = 0;
+
+            listener.onShowDialog(title, categories, finishAction);
+            return;
+        }
         
         backupData(); // overlapped dialog fix
         resetData(); // prepare to new call

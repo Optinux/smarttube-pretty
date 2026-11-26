@@ -35,6 +35,8 @@ public class M3QuickToggleRow extends LinearLayout {
     private TextView mSubtitleView;
     private TextView mValuePill;
     private M3Switch mSwitch;
+    private ImageView mTrailingIcon;
+    private boolean mTrailingAccentTint;
     private OnStepListener mStepListener;
     private float[] mSegmentedRadii;
     private float mOuterRadiusPx;
@@ -42,6 +44,7 @@ public class M3QuickToggleRow extends LinearLayout {
 
     private int mRestingFill;
     private int mFocusedFill;
+    private int mPrimary;
     private int mOnSurface;
     private int mOnSurfaceVariant;
     private int mOnSecondaryContainer;
@@ -112,6 +115,8 @@ public class M3QuickToggleRow extends LinearLayout {
         mValuePill.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         mValuePill.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         mValuePill.setSingleLine(true);
+        mValuePill.setEllipsize(TextUtils.TruncateAt.END);
+        mValuePill.setMaxWidth(Math.round(180 * density));
         mValuePill.setPaddingRelative(Math.round(12 * density), Math.round(6 * density), Math.round(12 * density), Math.round(6 * density));
         mValuePill.setVisibility(GONE);
         addView(mValuePill);
@@ -119,6 +124,14 @@ public class M3QuickToggleRow extends LinearLayout {
         mSwitch = new M3Switch(context);
         mSwitch.setVisibility(GONE);
         addView(mSwitch);
+
+        mTrailingIcon = new ImageView(context);
+        int trailingSize = Math.round(20 * density);
+        LayoutParams trailingLp = new LayoutParams(trailingSize, trailingSize);
+        trailingLp.setMarginStart(Math.round(8 * density));
+        mTrailingIcon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        mTrailingIcon.setVisibility(GONE);
+        addView(mTrailingIcon, trailingLp);
 
         resolveThemeColors();
         applyVisualState(false, false);
@@ -160,17 +173,33 @@ public class M3QuickToggleRow extends LinearLayout {
 
     public void bindSwitch(boolean checked, boolean animate) {
         mValuePill.setVisibility(GONE);
+        mTrailingIcon.setVisibility(GONE);
         mSwitch.setVisibility(VISIBLE);
         mSwitch.setChecked(checked, animate);
     }
 
     public void bindValuePill(CharSequence text) {
         mSwitch.setVisibility(GONE);
+        mTrailingIcon.setVisibility(GONE);
         mValuePill.setVisibility(VISIBLE);
         mValuePill.setText(text);
         float pillRadius = getResources().getDimension(R.dimen.m3_pill_corner_radius);
         mValuePill.setBackground(ViewUtil.createRoundedDrawable(mPrimaryContainer, 0, 0, pillRadius));
         mValuePill.setTextColor(mOnPrimaryContainer);
+    }
+
+    public void bindTrailingIcon(@DrawableRes int resId, boolean accentTint) {
+        mSwitch.setVisibility(GONE);
+        mValuePill.setVisibility(GONE);
+        mTrailingAccentTint = accentTint;
+        if (resId > 0) {
+            mTrailingIcon.setImageDrawable(ContextCompat.getDrawable(getContext(), resId));
+            mTrailingIcon.setVisibility(VISIBLE);
+            int restingColor = mTrailingAccentTint ? mPrimary : mOnSurfaceVariant;
+            M3Motion.setImageTint(mTrailingIcon, hasFocus() ? mOnSecondaryContainer : restingColor);
+        } else {
+            mTrailingIcon.setVisibility(GONE);
+        }
     }
 
     public void setOnStepListener(@Nullable OnStepListener listener) {
@@ -211,6 +240,7 @@ public class M3QuickToggleRow extends LinearLayout {
         Context ctx = getContext();
         mRestingFill = ViewUtil.getThemeColor(ctx, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high);
         mFocusedFill = ViewUtil.getThemeColor(ctx, R.attr.m3SecondaryContainer, R.color.m3_grey_secondary_container);
+        mPrimary = ViewUtil.getThemeColor(ctx, R.attr.m3Primary, R.color.m3_grey_primary);
         mOnSurface = ViewUtil.getThemeColor(ctx, R.attr.m3OnSurface, R.color.m3_on_surface);
         mOnSurfaceVariant = ViewUtil.getThemeColor(ctx, R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant);
         mOnSecondaryContainer = ViewUtil.getThemeColor(ctx, R.attr.m3OnSecondaryContainer, R.color.m3_grey_on_secondary_container);
@@ -251,6 +281,10 @@ public class M3QuickToggleRow extends LinearLayout {
                     mSubtitleView.setTextColor(ColorUtils.blendARGB(fromSub, toSub, fraction));
                     if (mIconView.getVisibility() == VISIBLE) {
                         M3Motion.setImageTint(mIconView, ColorUtils.blendARGB(mOnSurfaceVariant, mOnSecondaryContainer, focused ? fraction : 1f - fraction));
+                    }
+                    if (mTrailingIcon.getVisibility() == VISIBLE) {
+                        int restingColor = mTrailingAccentTint ? mPrimary : mOnSurfaceVariant;
+                        M3Motion.setImageTint(mTrailingIcon, ColorUtils.blendARGB(restingColor, mOnSecondaryContainer, focused ? fraction : 1f - fraction));
                     }
                 });
     }

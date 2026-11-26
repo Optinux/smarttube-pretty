@@ -150,4 +150,11 @@
     <string name="settings_disabled">Disabled</string>
     <string name="settings_active">Active</string>
     <string name="settings_off">Off</string>
+    <string name="settings_locked_title">Protected settings</string>
+    <string name="settings_locked_message">Enter your settings password to view and edit these options.</string>
+    <string name="settings_unlock">Unlock</string>
+    <string name="settings_loading_options">Loading options…</string>
+    <string name="settings_empty_options">No options available.</string>
+    <string name="settings_none_selected">None</string>
+    <string name="settings_selected_count">%1$d / %2$d</string>
 </resources>
