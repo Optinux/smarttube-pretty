@@ -1073,7 +1073,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
         onExpandTransitionStart(!withHeaders, new Runnable() {
             @Override
             public void run() {
-                if (mHeadersSupportFragment == null || getContext() == null) {
+                if (mHeadersSupportFragment == null || getContext() == null || mShowingHeaders != withHeaders) {
                     return;
                 }
                 mHeadersSupportFragment.onTransitionPrepare();
@@ -1090,13 +1090,13 @@ public class BrowseSupportFragment extends BaseSupportFragment {
                     TransitionHelper.runTransition(
                             withHeaders ? mSceneWithHeaders : mSceneWithoutHeaders, mHeadersTransition);
                 }
-                if (mHeadersBackStackEnabled) {
+                if (mHeadersBackStackEnabled && getFragmentManager() != null) {
                     if (!withHeaders) {
                         getFragmentManager().beginTransaction()
                                 .addToBackStack(mWithHeadersBackStackName).commitAllowingStateLoss();
-                    } else {
+                    } else if (!getFragmentManager().isStateSaved()) {
                         int index = mBackStackChangedListener.mIndexOfHeadersBackStack;
-                        if (index >= 0) {
+                        if (index >= 0 && index < getFragmentManager().getBackStackEntryCount()) {
                             BackStackEntry entry = getFragmentManager().getBackStackEntryAt(index);
                             getFragmentManager().popBackStackImmediate(entry.getId(),
                                     FragmentManager.POP_BACK_STACK_INCLUSIVE);
@@ -1112,6 +1112,30 @@ public class BrowseSupportFragment extends BaseSupportFragment {
         return mHeadersSupportFragment.isScrolling() || mMainFragmentAdapter.isScrolling();
     }
 
+    private static boolean canTitleViewTakeFocus(View titleView) {
+        if (titleView == null || titleView.getVisibility() != View.VISIBLE) {
+            return false;
+        }
+        return hasVisibleFocusableView(titleView);
+    }
+
+    private static boolean hasVisibleFocusableView(View view) {
+        if (view.getVisibility() != View.VISIBLE) {
+            return false;
+        }
+        if (view.isFocusable() && view.isEnabled()) {
+            return true;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                if (hasVisibleFocusableView(group.getChildAt(i))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     private final BrowseFrameLayout.OnFocusSearchListener mOnFocusSearchListener =
             new BrowseFrameLayout.OnFocusSearchListener() {
@@ -1124,7 +1148,8 @@ public class BrowseSupportFragment extends BaseSupportFragment {
             if (DEBUG) Log.v(TAG, "onFocusSearch focused " + focused + " + direction " + direction);
 
             if (getTitleView() != null && !getTitleView().hasFocus()
-                    && direction == View.FOCUS_UP) {
+                    && direction == View.FOCUS_UP
+                    && canTitleViewTakeFocus(getTitleView())) {
                 return getTitleView();
             }
             if (getTitleView() != null && getTitleView().hasFocus()
@@ -1399,6 +1424,9 @@ public class BrowseSupportFragment extends BaseSupportFragment {
     }
 
     private void finishHeadersTransition(boolean showingHeaders) {
+        if (mShowingHeaders != showingHeaders) {
+            return;
+        }
         if (mMainFragmentAdapter != null) {
             mMainFragmentAdapter.onTransitionEnd();
             if (!showingHeaders && mMainFragment != null) {

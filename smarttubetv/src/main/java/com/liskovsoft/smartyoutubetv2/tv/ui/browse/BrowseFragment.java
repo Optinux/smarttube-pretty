@@ -101,14 +101,6 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
 
         mProgressBarManager.setRootView((ViewGroup) root);
 
-        if (getTitleView() instanceof NavigateTitleView) {
-            ((NavigateTitleView) getTitleView()).setOnBackClickedListener(v -> {
-                if (getActivity() != null) {
-                    getActivity().onBackPressed();
-                }
-            });
-        }
-
         return root;
     }
 

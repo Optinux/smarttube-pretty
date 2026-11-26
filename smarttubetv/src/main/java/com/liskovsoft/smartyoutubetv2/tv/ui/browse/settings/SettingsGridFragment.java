@@ -20,27 +20,25 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.leanback.app.BrowseSupportFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.liskovsoft.mediaserviceinterfaces.data.MediaGroup;
-import com.liskovsoft.mediaserviceinterfaces.oauth.Account;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.SettingsGroup;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.SettingsItem;
 import com.liskovsoft.smartyoutubetv2.common.app.models.playback.ui.OptionCategory;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.AppDialogPresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.BrowsePresenter;
-import com.liskovsoft.smartyoutubetv2.common.app.presenters.dialogs.AccountSelectionPresenter;
-import com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager;
 import com.liskovsoft.smartyoutubetv2.common.prefs.GeneralData;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData.ColorScheme;
@@ -94,19 +92,25 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
     private LinearLayout mDetailContainer;
     private ScrollView mDetailScroll;
     private LinearLayout mRailPane;
+    private M3Button mBackButton;
     private TextView mRailTitle;
-    private TextView mRailBadge;
 
     private static final String STATE_SELECTED_RAIL_POS = "state_selected_rail_pos";
     private int mSelectedRailPosition = 0;
     private int mLastLayoutWidth = -1;
     private int mLastLayoutHeight = -1;
-    private int mLastTitleBottom = -1;
+    private int mSafeInsetStart;
+    private int mSafeInsetTop;
+    private int mSafeInsetEnd;
+    private int mSafeInsetBottom;
+    private int mLastSafeInsetStart = -1;
+    private int mLastSafeInsetTop = -1;
+    private int mLastSafeInsetEnd = -1;
+    private int mLastSafeInsetBottom = -1;
     private boolean mNeedsRestart;
     private int mDetailRequestToken;
     private Runnable mPendingCategoryOnFinish;
     private boolean mPasswordUnlocked;
-    private View.OnLayoutChangeListener mTitleLayoutListener;
     private ViewTreeObserver.OnGlobalFocusChangeListener mGlobalFocusListener;
     private boolean mLastFocusInDetail;
     private WeakReference<View> mLastFocusedDetailView = new WeakReference<>(null);
@@ -158,12 +162,13 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         mRootLayout = (LinearLayout) view;
         mPaneSpacer = view.findViewById(R.id.settings_pane_spacer);
         mRailPane = view.findViewById(R.id.settings_rail_pane);
+        mBackButton = view.findViewById(R.id.settings_back_button);
         mRailTitle = view.findViewById(R.id.settings_rail_title);
-        mRailBadge = view.findViewById(R.id.settings_rail_badge);
         mRailList = view.findViewById(R.id.settings_rail_list);
         mDetailScroll = view.findViewById(R.id.settings_detail_scroll);
         mDetailContainer = view.findViewById(R.id.settings_detail_container);
 
+        setupBackButton();
         stylePanes();
         setupRailList();
         setupResponsiveLayout();
@@ -180,13 +185,50 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         }
     }
 
+    private void setupBackButton() {
+        if (mBackButton == null) {
+            return;
+        }
+        mBackButton.setButtonStyle(M3Button.STYLE_OUTLINED);
+        mBackButton.setIconOnly(R.drawable.ic_m3_arrow_back);
+        mBackButton.setNextFocusDownId(R.id.settings_rail_list);
+        mBackButton.setOnClickListener(v -> {
+            if (getActivity() != null) {
+                getActivity().onBackPressed();
+            }
+        });
+        mBackButton.setOnKeyListener((v, keyCode, event) -> {
+            if (event.getAction() != KeyEvent.ACTION_DOWN) {
+                return false;
+            }
+            boolean isRtl = ViewCompat.getLayoutDirection(v) == ViewCompat.LAYOUT_DIRECTION_RTL;
+            int towardEndKey = isRtl ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT;
+            if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                return focusFirstRailItem();
+            }
+            if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+                return true;
+            }
+            if (keyCode == towardEndKey) {
+                if (mDetailContainer != null && findFirstFocusable(mDetailContainer) != null) {
+                    focusDetailPane();
+                }
+                return true;
+            }
+            return false;
+        });
+    }
+
     private void setupResponsiveLayout() {
         if (mRootLayout == null) {
             return;
         }
         mLastLayoutWidth = -1;
         mLastLayoutHeight = -1;
-        mLastTitleBottom = -1;
+        mLastSafeInsetStart = -1;
+        mLastSafeInsetTop = -1;
+        mLastSafeInsetEnd = -1;
+        mLastSafeInsetBottom = -1;
         mRootLayout.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
             int width = right - left;
             int height = bottom - top;
@@ -195,59 +237,66 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
             }
         });
 
-        View titleView = getParentBrowseTitleView();
-        if (titleView != null) {
-            mTitleLayoutListener = (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
-                if (mRootLayout != null && mRootLayout.getWidth() > 0 && bottom != mLastTitleBottom) {
-                    int w = mRootLayout.getWidth();
-                    int h = mRootLayout.getHeight();
-                    mRootLayout.post(() -> applyResponsiveLayout(w, h));
+        ViewCompat.setOnApplyWindowInsetsListener(mRootLayout, (v, windowInsets) -> {
+            Insets safe = windowInsets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            boolean isRtl = ViewCompat.getLayoutDirection(v) == ViewCompat.LAYOUT_DIRECTION_RTL;
+            int insetStart = isRtl ? safe.right : safe.left;
+            int insetEnd = isRtl ? safe.left : safe.right;
+            if (insetStart != mSafeInsetStart || safe.top != mSafeInsetTop
+                    || insetEnd != mSafeInsetEnd || safe.bottom != mSafeInsetBottom) {
+                mSafeInsetStart = insetStart;
+                mSafeInsetTop = safe.top;
+                mSafeInsetEnd = insetEnd;
+                mSafeInsetBottom = safe.bottom;
+                if (mRootLayout.getWidth() > 0 && mRootLayout.getHeight() > 0) {
+                    applyResponsiveLayout(mRootLayout.getWidth(), mRootLayout.getHeight());
                 }
-            };
-            titleView.addOnLayoutChangeListener(mTitleLayoutListener);
-        }
-    }
-
-    @Nullable
-    private View getParentBrowseTitleView() {
-        Fragment parent = getParentFragment();
-        if (parent instanceof BrowseSupportFragment) {
-            return ((BrowseSupportFragment) parent).getTitleView();
-        }
-        return null;
+            }
+            return windowInsets;
+        });
+        ViewCompat.requestApplyInsets(mRootLayout);
     }
 
     private void applyResponsiveLayout(int widthPx, int heightPx) {
         if (!isAdded() || getContext() == null || mRootLayout == null || widthPx <= 0) {
             return;
         }
-        float density = getResources().getDisplayMetrics().density;
-        float widthDp = widthPx / density;
-        View titleView = getParentBrowseTitleView();
-        int titleBottom = (titleView != null && titleView.getVisibility() == View.VISIBLE)
-                ? titleView.getBottom()
-                : 0;
-        if (widthPx == mLastLayoutWidth && heightPx == mLastLayoutHeight && titleBottom == mLastTitleBottom) {
+        if (widthPx == mLastLayoutWidth && heightPx == mLastLayoutHeight
+                && mSafeInsetStart == mLastSafeInsetStart && mSafeInsetTop == mLastSafeInsetTop
+                && mSafeInsetEnd == mLastSafeInsetEnd && mSafeInsetBottom == mLastSafeInsetBottom) {
             return;
         }
         mLastLayoutWidth = widthPx;
         mLastLayoutHeight = heightPx;
-        mLastTitleBottom = titleBottom;
+        mLastSafeInsetStart = mSafeInsetStart;
+        mLastSafeInsetTop = mSafeInsetTop;
+        mLastSafeInsetEnd = mSafeInsetEnd;
+        mLastSafeInsetBottom = mSafeInsetBottom;
 
-        int topPad = Math.max(Math.round(92 * density), titleBottom + Math.round(12 * density));
-        int sidePad;
-        int bottomPad;
+        float density = getResources().getDisplayMetrics().density;
+        float widthDp = widthPx / density;
         boolean stacked = widthDp < 600f;
+        boolean medium = !stacked && widthDp < 840f;
+
+        int baseSidePad = Math.round((stacked ? 16 : medium ? 24 : 44) * density);
+        int baseTopPad = Math.round((stacked ? 16 : medium ? 20 : 24) * density);
+        int baseBottomPad = Math.round((stacked ? 16 : medium ? 18 : 22) * density);
+        int insetEdgeGap = Math.round((stacked ? 8 : 12) * density);
+        int insetSideGap = Math.round((stacked ? 8 : 16) * density);
+
+        int startPad = Math.max(baseSidePad, mSafeInsetStart + insetSideGap);
+        int endPad = Math.max(baseSidePad, mSafeInsetEnd + insetSideGap);
+        int topPad = Math.max(baseTopPad, mSafeInsetTop + insetEdgeGap);
+        int bottomPad = Math.max(baseBottomPad, mSafeInsetBottom + insetEdgeGap);
 
         if (stacked) {
-            sidePad = Math.round(16 * density);
-            bottomPad = Math.round(16 * density);
             mRootLayout.setOrientation(LinearLayout.VERTICAL);
 
             LinearLayout.LayoutParams railLp = (LinearLayout.LayoutParams) mRailPane.getLayoutParams();
             railLp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            int maxRailH = Math.max(Math.round(112 * density), Math.round((heightPx - topPad) * 0.34f));
-            railLp.height = Math.min(Math.round(176 * density), maxRailH);
+            int maxRailH = Math.max(Math.round(136 * density), Math.round((heightPx - topPad - bottomPad) * 0.36f));
+            railLp.height = Math.min(Math.round(196 * density), maxRailH);
             mRailPane.setLayoutParams(railLp);
 
             if (mPaneSpacer != null) {
@@ -266,9 +315,6 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
             int detailPad = Math.round(14 * density);
             mDetailContainer.setPadding(detailPad, detailPad, detailPad, detailPad);
         } else {
-            boolean medium = widthDp < 840f;
-            sidePad = Math.round((medium ? 24 : 44) * density);
-            bottomPad = Math.round((medium ? 18 : 22) * density);
             int railWidthPx = Math.round((medium ? 216 : 260) * density);
             int spacerWidthPx = Math.round((medium ? 12 : 18) * density);
             int maxDetailPx = Math.round(860 * density);
@@ -287,7 +333,7 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
                 mPaneSpacer.setLayoutParams(spLp);
             }
 
-            int availDetailPx = widthPx - (sidePad * 2) - railWidthPx - spacerWidthPx;
+            int availDetailPx = widthPx - startPad - endPad - railWidthPx - spacerWidthPx;
             LinearLayout.LayoutParams detLp = (LinearLayout.LayoutParams) mDetailScroll.getLayoutParams();
             detLp.height = ViewGroup.LayoutParams.MATCH_PARENT;
             if (availDetailPx > maxDetailPx) {
@@ -303,7 +349,7 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
             mDetailContainer.setPadding(detailPad, detailPad, detailPad, detailPad);
         }
 
-        mRootLayout.setPaddingRelative(sidePad, topPad, sidePad, bottomPad);
+        mRootLayout.setPaddingRelative(startPad, topPad, endPad, bottomPad);
     }
 
     @Override
@@ -328,12 +374,29 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
                         return first.requestFocus();
                     }
                 }
-                if (mRailList != null) {
-                    RecyclerView.ViewHolder vh = mRailList.findViewHolderForAdapterPosition(mSelectedRailPosition);
+                if (mRailList != null && !mRailEntries.isEmpty()) {
+                    int targetPos = (mSelectedRailPosition >= 0 && mSelectedRailPosition < mRailEntries.size()
+                            && mRailEntries.get(mSelectedRailPosition).type != RailEntry.TYPE_HEADER)
+                            ? mSelectedRailPosition
+                            : findFirstFocusableRailPosition();
+                    RecyclerView.ViewHolder vh = mRailList.findViewHolderForAdapterPosition(targetPos);
                     if (vh != null && vh.itemView.requestFocus()) {
                         return true;
                     }
-                    return mRailList.requestFocus();
+                    if (mRailList.requestFocus()) {
+                        return true;
+                    }
+                    // Defer focus until the rail finishes layout so the back arrow never steals initial focus.
+                    mRailList.scrollToPosition(targetPos);
+                    mRailList.post(() -> {
+                        if (mRailList != null && isAdded()) {
+                            RecyclerView.ViewHolder delayed = mRailList.findViewHolderForAdapterPosition(targetPos);
+                            if (delayed != null) {
+                                delayed.itemView.requestFocus();
+                            }
+                        }
+                    });
+                    return true;
                 }
                 return false;
             });
@@ -346,7 +409,7 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
             if (isDescendant(newFocus, mDetailContainer)) {
                 mLastFocusInDetail = true;
                 mLastFocusedDetailView = new WeakReference<>(newFocus);
-            } else if (isDescendant(newFocus, mRailList)) {
+            } else if (newFocus == mBackButton || isDescendant(newFocus, mRailList)) {
                 mLastFocusInDetail = false;
             }
         };
@@ -373,12 +436,8 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
             mRootLayout.getViewTreeObserver().removeOnGlobalFocusChangeListener(mGlobalFocusListener);
             mGlobalFocusListener = null;
         }
-        if (mTitleLayoutListener != null) {
-            View titleView = getParentBrowseTitleView();
-            if (titleView != null) {
-                titleView.removeOnLayoutChangeListener(mTitleLayoutListener);
-            }
-            mTitleLayoutListener = null;
+        if (mRootLayout != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(mRootLayout, null);
         }
         if (getContext() != null) {
             AppDialogPresenter.instance(getContext()).captureNextDialog(null);
@@ -393,12 +452,9 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         int surfaceContainer = ViewUtil.getThemeColor(ctx, R.attr.m3SurfaceContainer, R.color.m3_grey_surface_container);
         int outlineVariant = ViewUtil.getThemeColor(ctx, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
         int onSurface = ViewUtil.getThemeColor(ctx, R.attr.m3OnSurface, R.color.m3_on_surface);
-        int primaryContainer = ViewUtil.getThemeColor(ctx, R.attr.m3PrimaryContainer, R.color.m3_grey_primary_container);
-        int onPrimaryContainer = ViewUtil.getThemeColor(ctx, R.attr.m3OnPrimaryContainer, R.color.m3_grey_on_primary_container);
 
         float railRadius = ctx.getResources().getDimension(R.dimen.m3_dialog_corner_radius);
         float detailRadius = ctx.getResources().getDimension(R.dimen.m3_dialog_corner_radius);
-        float pillRadius = ctx.getResources().getDimension(R.dimen.m3_pill_corner_radius);
         int hairlinePx = ctx.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
 
         mRailPane.setBackground(ViewUtil.createRoundedDrawable(surfaceLow, outlineVariant, hairlinePx, railRadius));
@@ -406,14 +462,9 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         mDetailScroll.setBackground(ViewUtil.createRoundedDrawable(surfaceContainer, outlineVariant, hairlinePx, detailRadius));
         ViewUtil.applyRoundedOutline(mDetailScroll, detailRadius);
         mRailTitle.setTextColor(onSurface);
-
-        Account account = MediaServiceManager.instance().getSelectedAccount();
-        String badgeText = account != null && !TextUtils.isEmpty(account.getName())
-                ? account.getName()
-                : getString(R.string.settings_not_signed_in);
-        mRailBadge.setText(badgeText);
-        mRailBadge.setTextColor(onPrimaryContainer);
-        mRailBadge.setBackground(ViewUtil.createRoundedDrawable(primaryContainer, 0, 0, pillRadius));
+        if (mBackButton != null) {
+            mBackButton.refreshThemeColors();
+        }
     }
 
     private void setupRailList() {
@@ -516,6 +567,36 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         if (target != null) {
             target.requestFocus();
         }
+    }
+
+    private int findFirstFocusableRailPosition() {
+        for (int i = 0; i < mRailEntries.size(); i++) {
+            if (mRailEntries.get(i).type != RailEntry.TYPE_HEADER) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    private boolean focusFirstRailItem() {
+        if (mRailList == null || mRailEntries.isEmpty()) {
+            return false;
+        }
+        int firstPos = findFirstFocusableRailPosition();
+        RecyclerView.ViewHolder vh = mRailList.findViewHolderForAdapterPosition(firstPos);
+        if (vh != null && vh.itemView.requestFocus()) {
+            return true;
+        }
+        mRailList.scrollToPosition(firstPos);
+        mRailList.post(() -> {
+            if (mRailList != null && isAdded()) {
+                RecyclerView.ViewHolder delayed = mRailList.findViewHolderForAdapterPosition(firstPos);
+                if (delayed != null) {
+                    delayed.itemView.requestFocus();
+                }
+            }
+        });
+        return true;
     }
 
     private void returnFocusToRail() {
@@ -1330,11 +1411,16 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
                     M3Motion.animateFocusScale(v, focused, 1.015f);
                 });
 
+                int firstFocusablePos = findFirstFocusableRailPosition();
+                itemView.setNextFocusUpId(position == firstFocusablePos ? R.id.settings_back_button : View.NO_ID);
                 itemView.setOnClickListener(v -> onRailEntryClicked(position));
                 itemView.setOnKeyListener((v, keyCode, event) -> {
                     if (event.getAction() == KeyEvent.ACTION_DOWN) {
                         boolean isRtl = ViewCompat.getLayoutDirection(v) == ViewCompat.LAYOUT_DIRECTION_RTL;
                         int towardEndKey = isRtl ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT;
+                        if (keyCode == KeyEvent.KEYCODE_DPAD_UP && position == firstFocusablePos && mBackButton != null) {
+                            return mBackButton.requestFocus();
+                        }
                         if (keyCode == towardEndKey) {
                             focusDetailPane();
                             return true;

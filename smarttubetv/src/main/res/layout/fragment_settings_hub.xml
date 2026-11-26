@@ -9,7 +9,7 @@
     android:clipToPadding="false"
     android:paddingStart="44dp"
     android:paddingEnd="44dp"
-    android:paddingTop="112dp"
+    android:paddingTop="24dp"
     android:paddingBottom="22dp"
     android:descendantFocusability="afterDescendants">
 
@@ -24,13 +24,24 @@
         android:clipToPadding="true">
 
         <LinearLayout
+            android:id="@+id/settings_rail_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingStart="6dp"
+            android:paddingStart="3dp"
             android:paddingEnd="6dp"
+            android:paddingTop="2dp"
             android:paddingBottom="10dp">
+
+            <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.m3e.M3Button
+                android:id="@+id/settings_back_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="10dp"
+                android:contentDescription="@string/abc_action_bar_up_description" />
 
             <TextView
                 android:id="@+id/settings_rail_title"
@@ -38,26 +49,11 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:fontFamily="sans-serif-medium"
-                android:maxLines="2"
+                android:includeFontPadding="false"
+                android:singleLine="true"
                 android:ellipsize="end"
                 android:text="@string/settings_hub_title"
                 android:textSize="19sp" />
-
-            <TextView
-                android:id="@+id/settings_rail_badge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:maxWidth="112dp"
-                android:ellipsize="end"
-                android:singleLine="true"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                android:textSize="11sp" />
         </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView

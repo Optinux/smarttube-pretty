@@ -137,6 +137,29 @@ public class M3Button extends LinearLayout {
         }
     }
 
+    /**
+     * Configures this M3Button as a 48dp square icon-only button reusing the exact M3 focus highlight and morph.
+     */
+    public void setIconOnly(@DrawableRes int resId) {
+        float density = getContext().getResources().getDisplayMetrics().density;
+        int targetSize = Math.round(48 * density);
+        int iconSize = Math.round(22 * density);
+        setMinimumWidth(targetSize);
+        setMinimumHeight(targetSize);
+        setGravity(Gravity.CENTER);
+        setPaddingRelative(0, 0, 0, 0);
+        mLabelView.setVisibility(GONE);
+        LayoutParams iconLp = (LayoutParams) mIconView.getLayoutParams();
+        iconLp.width = iconSize;
+        iconLp.height = iconSize;
+        iconLp.setMarginEnd(0);
+        mIconView.setLayoutParams(iconLp);
+        mRestingRadiusPx = 24f * density;
+        mCurrentRadiusPx = hasFocus() ? mMorphedRadiusPx : mRestingRadiusPx;
+        setIcon(resId);
+        applyVisualState(hasFocus(), false);
+    }
+
     public void refreshThemeColors() {
         resolveThemeColors();
         applyVisualState(hasFocus(), false);

@@ -26,8 +26,6 @@
     <LinearLayout android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
                   android:orientation="horizontal"
-                  android:clipChildren="false"
-                  android:clipToPadding="false"
                   android:layout_gravity="center_vertical|start">
         <androidx.leanback.widget.SearchOrbView
             android:id="@+id/title_orb"
@@ -38,56 +36,18 @@
             android:nextFocusLeft="@id/account_orb"
             android:visibility="invisible" />
 
-        <FrameLayout
-            android:id="@+id/account_back_slot"
+        <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.search.LongClickSearchOrbView
+            android:id="@+id/account_orb"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
+            android:transitionGroup="true"
             android:layout_marginStart="@dimen/search_bar_right_items_margin"
-            android:clipChildren="false"
-            android:clipToPadding="false">
-
-            <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.search.LongClickSearchOrbView
-                android:id="@+id/account_orb"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:transitionGroup="true"
-                android:nextFocusRight="@id/title_orb"
-                android:nextFocusLeft="@id/language_orb"
-                app:searchOrbIcon="@drawable/browse_title_account"
-                app:searchOrbColor="?attr/m3OrbBackground"
-                app:searchOrbBrightColor="?attr/m3OrbFocusedBackground"
-                app:searchOrbIconColor="?attr/m3OrbIconColor"
-                android:visibility="gone" />
-
-            <androidx.leanback.widget.SearchOrbView
-                android:id="@+id/back_orb"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:transitionGroup="true"
-                android:nextFocusRight="@id/title_orb"
-                android:nextFocusLeft="@id/language_orb"
-                app:searchOrbIcon="@drawable/ic_m3_arrow_back"
-                app:searchOrbColor="?attr/m3OrbBackground"
-                app:searchOrbBrightColor="?attr/m3OrbFocusedBackground"
-                app:searchOrbIconColor="?attr/m3OrbIconColor"
-                android:visibility="gone" />
-        </FrameLayout>
-
-        <TextView
-            android:id="@+id/settings_header_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_marginStart="14dp"
-            android:fontFamily="sans-serif-medium"
-            android:text="@string/settings_hub_title"
-            android:textColor="?attr/m3OnSurface"
-            android:textSize="20sp"
-            android:singleLine="true"
-            android:ellipsize="end"
-            android:focusable="false"
-            android:clickable="false"
+            android:nextFocusRight="@id/title_orb"
+            android:nextFocusLeft="@id/language_orb"
+            app:searchOrbIcon="@drawable/browse_title_account"
+            app:searchOrbColor="?attr/m3OrbBackground"
+            app:searchOrbBrightColor="?attr/m3OrbFocusedBackground"
+            app:searchOrbIconColor="?attr/m3OrbIconColor"
             android:visibility="gone" />
 
         <androidx.leanback.widget.SearchOrbView

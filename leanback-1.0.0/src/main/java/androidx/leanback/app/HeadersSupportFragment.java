@@ -285,31 +285,72 @@ public class HeadersSupportFragment extends BaseRowSupportFragment {
             lp.width = totalWidthPx;
             fadingView.setLayoutParams(lp);
         }
-        fadingView.setBackground(new SidebarScrimDrawable(backgroundColor, panelWidthPx, fadeLengthPx));
+        boolean initialRtl = ViewCompat.getLayoutDirection(root) == ViewCompat.LAYOUT_DIRECTION_RTL;
+        fadingView.setBackground(new SidebarScrimDrawable(backgroundColor, panelWidthPx, fadeLengthPx, initialRtl));
     }
 
     /**
-     * Draws a continuous overlaid sidebar surface that stays readable over bright backdrops
-     * and fades smoothly across its trailing edge via a multi-stop ease-out gradient.
+     * Draws a continuous overlaid dense frosted-glass sidebar surface that stays readable over
+     * bright backdrops and fades smoothly across its trailing edge via a multi-stop eased curve.
      */
     private static final class SidebarScrimDrawable extends Drawable {
+        // Dense frosted-glass surface alpha (~0.94 in solid area; within 0.85-0.95, not a flat slab)
+        private static final int SURFACE_SOLID_ALPHA = 240;
+        private static final float SURFACE_FROST_TINT_RATIO = 0.035f;
+        private static final int SURFACE_FROST_TINT_COLOR = 0xFFFFFFFF;
+        private static final float BRIGHT_SURFACE_LUMINANCE_THRESHOLD = 0.25f;
+        private static final int DARK_FALLBACK_SURFACE_COLOR = 0xFF0F1115;
+        private static final float DARK_FALLBACK_BLEND_RATIO = 0.72f;
+
+        // 5-stop smoothstep-eased trailing edge fade starting gently from SURFACE_SOLID_ALPHA
+        private static final float[] EDGE_FADE_PROGRESS_STOPS = {0.00f, 0.18f, 0.38f, 0.58f, 0.78f, 1.00f};
+        private static final int[] EDGE_FADE_ALPHAS = {
+                SURFACE_SOLID_ALPHA,
+                219,
+                162,
+                91,
+                30,
+                0
+        };
+
+        // Subtle dark backing scrim behind sidebar labels for contrast over bright backdrops
+        private static final int LABEL_SCRIM_START_ALPHA = 28;
+        private static final int LABEL_SCRIM_EDGE_ALPHA = 18;
+        private static final int LABEL_SCRIM_MID_ALPHA = 6;
+        private static final float LABEL_SCRIM_MID_PROGRESS = 0.35f;
+        private static final float LABEL_SCRIM_END_PROGRESS = 0.72f;
+
+        // Whisper-thin 1px specular hairline along the trailing panel edge (never a hard border)
+        private static final float HAIRLINE_WIDTH_PX = 1f;
+        private static final int HAIRLINE_COLOR = 0xFFFFFFFF;
+        private static final int HAIRLINE_PEAK_ALPHA = 18;
+        private static final float HAIRLINE_VERTICAL_FADE_STOP = 0.14f;
+
         private final Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint mLabelScrimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint mHairlinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final int mBaseColor;
         private final int mPanelWidthPx;
         private final int mFadeLengthPx;
+        private final boolean mInitialRtl;
+        private float mHairlineX;
         private int mLastWidth = -1;
+        private int mLastHeight = -1;
         private int mLastLayoutDirection = -1;
 
-        SidebarScrimDrawable(int brandColor, int panelWidthPx, int fadeLengthPx) {
+        SidebarScrimDrawable(int brandColor, int panelWidthPx, int fadeLengthPx, boolean initialRtl) {
             // Ensure dark surface readability even if a light/bright surface token is active
             int opaque = ColorUtils.setAlphaComponent(brandColor, 255);
-            if (ColorUtils.calculateLuminance(opaque) > 0.25) {
-                opaque = ColorUtils.blendARGB(opaque, 0xFF0F1115, 0.72f);
+            if (ColorUtils.calculateLuminance(opaque) > BRIGHT_SURFACE_LUMINANCE_THRESHOLD) {
+                opaque = ColorUtils.blendARGB(opaque, DARK_FALLBACK_SURFACE_COLOR, DARK_FALLBACK_BLEND_RATIO);
             }
-            mBaseColor = opaque;
+            // Subtle frosted-glass lift derived from the theme surface color
+            mBaseColor = ColorUtils.blendARGB(opaque, SURFACE_FROST_TINT_COLOR, SURFACE_FROST_TINT_RATIO);
             mPanelWidthPx = Math.max(1, panelWidthPx);
             mFadeLengthPx = Math.max(1, fadeLengthPx);
+            mInitialRtl = initialRtl;
+            mHairlinePaint.setStyle(Paint.Style.STROKE);
+            mHairlinePaint.setStrokeWidth(HAIRLINE_WIDTH_PX);
         }
 
         @Override
@@ -319,20 +360,22 @@ public class HeadersSupportFragment extends BaseRowSupportFragment {
                 return;
             }
             int dir = getLayoutDirectionCompat();
-            if (b.width() != mLastWidth || dir != mLastLayoutDirection) {
+            if (b.width() != mLastWidth || b.height() != mLastHeight || dir != mLastLayoutDirection) {
                 mLastWidth = b.width();
+                mLastHeight = b.height();
                 mLastLayoutDirection = dir;
                 rebuildShaders(b, dir == ViewCompat.LAYOUT_DIRECTION_RTL);
             }
             canvas.drawRect(b, mPaint);
             canvas.drawRect(b, mLabelScrimPaint);
+            canvas.drawLine(mHairlineX, b.top, mHairlineX, b.bottom, mHairlinePaint);
         }
 
         private int getLayoutDirectionCompat() {
             if (android.os.Build.VERSION.SDK_INT >= 23) {
                 return getLayoutDirection();
             }
-            return ViewCompat.LAYOUT_DIRECTION_LTR;
+            return mInitialRtl ? ViewCompat.LAYOUT_DIRECTION_RTL : ViewCompat.LAYOUT_DIRECTION_LTR;
         }
 
         private void rebuildShaders(Rect b, boolean rtl) {
@@ -340,50 +383,50 @@ public class HeadersSupportFragment extends BaseRowSupportFragment {
             float edgeStop = Math.min(0.95f, mPanelWidthPx / total);
             float fadeSpan = 1f - edgeStop;
 
-            // Multi-stop ease-out alpha curve: 232 -> 200 -> 148 -> 84 -> 26 -> 0
-            int[] colors = new int[]{
-                    ColorUtils.setAlphaComponent(mBaseColor, 232),
-                    ColorUtils.setAlphaComponent(mBaseColor, 232),
-                    ColorUtils.setAlphaComponent(mBaseColor, 200),
-                    ColorUtils.setAlphaComponent(mBaseColor, 148),
-                    ColorUtils.setAlphaComponent(mBaseColor, 84),
-                    ColorUtils.setAlphaComponent(mBaseColor, 26),
-                    Color.TRANSPARENT
-            };
-            float[] stops = new float[]{
-                    0f,
-                    edgeStop,
-                    edgeStop + fadeSpan * 0.18f,
-                    edgeStop + fadeSpan * 0.38f,
-                    edgeStop + fadeSpan * 0.60f,
-                    edgeStop + fadeSpan * 0.82f,
-                    1f
-            };
+            int[] colors = new int[EDGE_FADE_PROGRESS_STOPS.length + 1];
+            float[] stops = new float[EDGE_FADE_PROGRESS_STOPS.length + 1];
+            colors[0] = ColorUtils.setAlphaComponent(mBaseColor, SURFACE_SOLID_ALPHA);
+            stops[0] = 0f;
+            for (int i = 0; i < EDGE_FADE_PROGRESS_STOPS.length; i++) {
+                int alpha = EDGE_FADE_ALPHAS[i];
+                colors[i + 1] = alpha == 0 ? Color.TRANSPARENT : ColorUtils.setAlphaComponent(mBaseColor, alpha);
+                stops[i + 1] = edgeStop + fadeSpan * EDGE_FADE_PROGRESS_STOPS[i];
+            }
 
             float startX = rtl ? b.right : b.left;
             float endX = rtl ? b.left : b.right;
             mPaint.setShader(new LinearGradient(
                     startX, 0f, endX, 0f, colors, stops, Shader.TileMode.CLAMP));
 
-            // Faint dark backing behind the label column for contrast over bright backdrops
             int[] labelScrimColors = new int[]{
-                    0x38000000,
-                    0x26000000,
+                    Color.argb(LABEL_SCRIM_START_ALPHA, 0, 0, 0),
+                    Color.argb(LABEL_SCRIM_EDGE_ALPHA, 0, 0, 0),
+                    Color.argb(LABEL_SCRIM_MID_ALPHA, 0, 0, 0),
                     Color.TRANSPARENT
             };
             float[] labelScrimStops = new float[]{
                     0f,
                     edgeStop,
-                    Math.min(1f, edgeStop + fadeSpan * 0.5f)
+                    edgeStop + fadeSpan * LABEL_SCRIM_MID_PROGRESS,
+                    Math.min(1f, edgeStop + fadeSpan * LABEL_SCRIM_END_PROGRESS)
             };
             mLabelScrimPaint.setShader(new LinearGradient(
                     startX, 0f, endX, 0f, labelScrimColors, labelScrimStops, Shader.TileMode.CLAMP));
+
+            mHairlineX = rtl ? (b.right - mPanelWidthPx) : (b.left + mPanelWidthPx);
+            int hairlinePeak = ColorUtils.setAlphaComponent(HAIRLINE_COLOR, HAIRLINE_PEAK_ALPHA);
+            mHairlinePaint.setShader(new LinearGradient(
+                    0f, b.top, 0f, b.bottom,
+                    new int[]{Color.TRANSPARENT, hairlinePeak, hairlinePeak, Color.TRANSPARENT},
+                    new float[]{0f, HAIRLINE_VERTICAL_FADE_STOP, 1f - HAIRLINE_VERTICAL_FADE_STOP, 1f},
+                    Shader.TileMode.CLAMP));
         }
 
         @Override
         public void setAlpha(int alpha) {
             mPaint.setAlpha(alpha);
             mLabelScrimPaint.setAlpha(alpha);
+            mHairlinePaint.setAlpha(alpha);
             invalidateSelf();
         }
 
@@ -391,6 +434,7 @@ public class HeadersSupportFragment extends BaseRowSupportFragment {
         public void setColorFilter(@Nullable ColorFilter colorFilter) {
             mPaint.setColorFilter(colorFilter);
             mLabelScrimPaint.setColorFilter(colorFilter);
+            mHairlinePaint.setColorFilter(colorFilter);
             invalidateSelf();
         }
 

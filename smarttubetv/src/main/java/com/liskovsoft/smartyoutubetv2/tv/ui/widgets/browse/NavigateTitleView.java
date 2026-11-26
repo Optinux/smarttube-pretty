@@ -61,8 +61,6 @@ import static androidx.leanback.widget.TitleViewAdapter.SEARCH_VIEW_VISIBLE;
 public class NavigateTitleView extends TitleView implements OnDataChange, AccountChangeListener {
     private static final long SETTINGS_TRANSITION_DURATION_MS = 240L;
     private LongClickSearchOrbView mAccountView;
-    private SearchOrbView mBackOrbView;
-    private TextView mSettingsHeaderTitle;
     private SearchOrbView mLanguageView;
     private SearchOrbView mExitPip;
     private TextView mPipTitle;
@@ -71,8 +69,9 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
     private View mGlobalClockContainer;
     private DateTimeView mGlobalClock;
     private DateTimeView mGlobalDate;
+    private View mTitleBadgeView;
+    private View mTitleTextView;
     private SearchOrbView mSearchOrbView;
-    private OnClickListener mOnBackClickedListener;
     private boolean mInitDone;
     private int mFlags = FULL_VIEW_VISIBLE;
     private int mIconWidth;
@@ -138,11 +137,8 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
 
     @Override
     protected boolean onRequestFocusInDescendants(int direction, Rect previouslyFocusedRect) {
-        if (mInSettingsMode && mBackOrbView != null
-                && mBackOrbView.getVisibility() == View.VISIBLE
-                && mBackOrbView.isFocusable()
-                && mBackOrbView.requestFocus()) {
-            return true;
+        if (mInSettingsMode) {
+            return false;
         }
         // Gives focus to the SearchOrb first....if not...default to normal descendant focus search
         View searchView = getSearchAffordanceView();
@@ -229,17 +225,6 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
         });
         TooltipCompatHandler.setTooltipText(mAccountView, getContext().getString(R.string.settings_accounts));
 
-        mBackOrbView = findViewById(R.id.back_orb);
-        if (mBackOrbView != null) {
-            mBackOrbView.setOnOrbClickedListener(v -> {
-                if (mOnBackClickedListener != null) {
-                    mOnBackClickedListener.onClick(v);
-                }
-            });
-            TooltipCompatHandler.setTooltipText(mBackOrbView, getContext().getString(R.string.settings_hub_title));
-        }
-        mSettingsHeaderTitle = findViewById(R.id.settings_header_title);
-
         mLanguageView = findViewById(R.id.language_orb);
         mLanguageView.setOnOrbClickedListener(v -> LanguageSettingsPresenter.instance(getContext()).show());
         TooltipCompatHandler.setTooltipText(mLanguageView, getContext().getString(R.string.settings_language_country));
@@ -259,6 +244,9 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
         mGlobalDate.showTime(false);
         mGlobalDate.showDate(true);
 
+        mTitleBadgeView = findViewById(R.id.title_badge);
+        mTitleTextView = findViewById(R.id.title_text);
+
         int orbBg = ViewUtil.getThemeColor(getContext(), R.attr.m3OrbBackground, R.color.m3_grey_surface_container_high);
         int orbFocusedBg = ViewUtil.getThemeColor(getContext(), R.attr.m3OrbFocusedBackground, R.color.m3_grey_primary_container);
         int orbIconColor = ViewUtil.getThemeColor(getContext(), R.attr.m3OrbIconColor, R.color.m3_on_surface);
@@ -270,13 +258,6 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
         }
         mAccountView.setOrbColors(orbColors);
         mAccountView.setFocusedStrokeColor(orbStrokeColor);
-        if (mBackOrbView != null) {
-            mBackOrbView.setOrbColors(orbColors);
-            mBackOrbView.setFocusedStrokeColor(orbStrokeColor);
-        }
-        if (mSettingsHeaderTitle != null) {
-            mSettingsHeaderTitle.setTextColor(ViewUtil.getThemeColor(getContext(), R.attr.m3OnSurface, R.color.m3_on_surface));
-        }
         mLanguageView.setOrbColors(orbColors);
         mLanguageView.setFocusedStrokeColor(orbStrokeColor);
         mExitPip.setOrbColors(orbColors);
@@ -335,27 +316,25 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
         updateLanguageIcon();
     }
 
-    public void setOnBackClickedListener(@Nullable OnClickListener listener) {
-        mOnBackClickedListener = listener;
-    }
-
     /**
-     * Smoothly transitions the top bar between Browse mode (profile icon + clock)
-     * and Settings mode (back arrow in profile icon's slot + "Settings" breadcrumb).
-     * Reversible and cancel-safe if toggled mid-animation.
+     * Smoothly fades out top bar elements (profile icon, clock, logo, extra orbs) when entering
+     * full-height Settings, and fades them back in when leaving. Cancel-safe if toggled mid-animation.
      */
     public void setSettingsMode(boolean inSettings, boolean animate) {
         init();
-        if (mInSettingsMode == inSettings && (mSettingsAnimator == null || !mSettingsAnimator.isRunning())) {
-            float target = inSettings ? 1f : 0f;
-            if (Math.abs(mSettingsProgress - target) < 0.001f) {
+        float targetProgress = inSettings ? 1f : 0f;
+        if (mInSettingsMode == inSettings) {
+            if (mSettingsAnimator != null && mSettingsAnimator.isRunning()) {
+                return;
+            }
+            if (Math.abs(mSettingsProgress - targetProgress) < 0.001f) {
+                updateSettingsInteractiveState(inSettings);
                 return;
             }
         }
         mInSettingsMode = inSettings;
         updateSettingsInteractiveState(inSettings);
 
-        float targetProgress = inSettings ? 1f : 0f;
         if (mSettingsAnimator != null) {
             mSettingsAnimator.cancel();
             mSettingsAnimator = null;
@@ -398,10 +377,11 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
     }
 
     private void updateSettingsInteractiveState(boolean inSettings) {
-        setOrbInteractive(mBackOrbView, inSettings);
         setOrbInteractive(mAccountView, !inSettings && mIsAccountViewEnabled);
         setOrbInteractive(mLanguageView, !inSettings && mIsLanguageViewEnabled);
         setOrbInteractive(mSearchOrbView, !inSettings && !mIsSearchOrbEnabled);
+        boolean pipRunning = PlaybackPresenter.instance(getContext()).isRunningInBackground();
+        setOrbInteractive(mExitPip, !inSettings && pipRunning);
         if (mGlobalClockContainer != null) {
             mGlobalClockContainer.setFocusable(false);
             mGlobalClockContainer.setClickable(false);
@@ -431,51 +411,28 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
             return;
         }
         float clamped = Math.max(0f, Math.min(1f, p));
+        float fadeAlpha = 1f - clamped;
         float density = getResources().getDisplayMetrics().density;
         boolean isRtl = ViewCompat.getLayoutDirection(this) == ViewCompat.LAYOUT_DIRECTION_RTL;
         float rtlSign = isRtl ? -1f : 1f;
 
         boolean showBrowseItems = clamped < 0.999f;
-        boolean showSettingsItems = clamped > 0.001f;
 
-        // Profile icon <-> Back arrow crossfade/morph in the exact same slot
+        // Profile icon fade-out (no morph/crossfade into back arrow)
         if (mAccountView != null) {
             if (mIsAccountViewEnabled && mSearchVisibility == View.VISIBLE) {
                 mAccountView.setVisibility(showBrowseItems ? View.VISIBLE : View.INVISIBLE);
-                mAccountView.setAlpha(Math.max(0f, 1f - clamped * 1.45f));
-                float scale = 1f - 0.18f * clamped;
-                mAccountView.setScaleX(scale);
-                mAccountView.setScaleY(scale);
-                mAccountView.setRotation(-40f * rtlSign * clamped);
-                mAccountView.setTranslationX(-4f * density * rtlSign * clamped);
+                mAccountView.setAlpha(fadeAlpha);
             } else {
                 mAccountView.setVisibility(View.GONE);
             }
-        }
-
-        if (mBackOrbView != null) {
-            mBackOrbView.setVisibility(showSettingsItems ? View.VISIBLE : View.GONE);
-            float backAlpha = Math.max(0f, Math.min(1f, (clamped - 0.15f) / 0.85f));
-            mBackOrbView.setAlpha(backAlpha);
-            float scale = 0.82f + 0.18f * clamped;
-            mBackOrbView.setScaleX(scale);
-            mBackOrbView.setScaleY(scale);
-            mBackOrbView.setRotation(40f * rtlSign * (1f - clamped));
-            mBackOrbView.setTranslationX(4f * density * rtlSign * (1f - clamped));
-        }
-
-        // Settings lightweight header / breadcrumb next to the back arrow
-        if (mSettingsHeaderTitle != null) {
-            mSettingsHeaderTitle.setVisibility(showSettingsItems ? View.VISIBLE : View.GONE);
-            mSettingsHeaderTitle.setAlpha(clamped);
-            mSettingsHeaderTitle.setTranslationX(10f * density * rtlSign * (1f - clamped));
         }
 
         // Clock fade out with alpha + slight translate
         if (mGlobalClockContainer != null) {
             if (mIsGlobalClockEnabled && mBrandingVisibility == View.VISIBLE) {
                 mGlobalClockContainer.setVisibility(showBrowseItems ? View.VISIBLE : View.INVISIBLE);
-                mGlobalClockContainer.setAlpha(1f - clamped);
+                mGlobalClockContainer.setAlpha(fadeAlpha);
                 mGlobalClockContainer.setTranslationY(-6f * density * clamped);
                 mGlobalClockContainer.setTranslationX(8f * density * rtlSign * clamped);
             } else {
@@ -483,15 +440,49 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
             }
         }
 
-        // Hide extra browse orbs while in Settings so Up lands cleanly on Back arrow
+        // Fade branding logo/title and top scrim so full-height Settings is unobstructed
+        boolean showBranding = (mFlags & BRANDING_VIEW_VISIBLE) == BRANDING_VIEW_VISIBLE;
+        boolean hasBadge = getBadgeDrawable() != null;
+        if (mTitleBadgeView != null) {
+            if (showBranding && hasBadge) {
+                mTitleBadgeView.setVisibility(showBrowseItems ? View.VISIBLE : View.INVISIBLE);
+                mTitleBadgeView.setAlpha(fadeAlpha);
+            } else {
+                mTitleBadgeView.setVisibility(View.GONE);
+            }
+        }
+        if (mTitleTextView != null) {
+            if (showBranding && !hasBadge) {
+                mTitleTextView.setVisibility(showBrowseItems ? View.VISIBLE : View.INVISIBLE);
+                mTitleTextView.setAlpha(fadeAlpha);
+            } else {
+                mTitleTextView.setVisibility(View.GONE);
+            }
+        }
+
         if (mLanguageView != null && mIsLanguageViewEnabled && mSearchVisibility == View.VISIBLE) {
             mLanguageView.setVisibility(showBrowseItems ? View.VISIBLE : View.GONE);
-            mLanguageView.setAlpha(1f - clamped);
+            mLanguageView.setAlpha(fadeAlpha);
             mLanguageView.setTranslationY(-4f * density * clamped);
         }
         if (mSearchOrbView != null && !mIsSearchOrbEnabled && mSearchVisibility == View.VISIBLE) {
             mSearchOrbView.setVisibility(showBrowseItems ? View.VISIBLE : View.INVISIBLE);
-            mSearchOrbView.setAlpha(1f - clamped);
+            mSearchOrbView.setAlpha(fadeAlpha);
+        }
+        if (mExitPip != null && mPipTitle != null) {
+            boolean pipActive = PlaybackPresenter.instance(getContext()).isRunningInBackground();
+            if (pipActive && mSearchVisibility == View.VISIBLE) {
+                int vis = showBrowseItems ? View.VISIBLE : View.INVISIBLE;
+                mExitPip.setVisibility(vis);
+                mExitPip.setAlpha(fadeAlpha);
+                mPipTitle.setVisibility(vis);
+                mPipTitle.setAlpha(fadeAlpha);
+            }
+        }
+
+        Drawable bg = getBackground();
+        if (bg != null) {
+            bg.mutate().setAlpha(Math.round(255 * fadeAlpha));
         }
 
         updateSettingsInteractiveState(mInSettingsMode);
@@ -539,6 +530,7 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
                 Video video = PlaybackPresenter.instance(getContext()).getVideo();
                 mPipTitle.setText(video != null ? String.format("%s - %s", video.getTitle(), video.getAuthor()) : "");
             }
+            applySettingsProgress(mSettingsProgress);
         }
     }
 
