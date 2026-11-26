@@ -33,6 +33,8 @@ import com.liskovsoft.mediaserviceinterfaces.data.MediaGroup;
 import com.liskovsoft.mediaserviceinterfaces.oauth.Account;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.SettingsGroup;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.SettingsItem;
+import com.liskovsoft.smartyoutubetv2.common.app.models.playback.ui.OptionCategory;
+import com.liskovsoft.smartyoutubetv2.common.app.presenters.AppDialogPresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.BrowsePresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.dialogs.AccountSelectionPresenter;
 import com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager;
@@ -91,6 +93,9 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
 
     private int mSelectedRailPosition = 0;
     private boolean mNeedsRestart;
+    private int mDetailRequestToken;
+    private Runnable mPendingCategoryOnFinish;
+    private boolean mPasswordUnlocked;
 
     // Live preview card views for Quick Controls
     private LinearLayout mPreviewCard;
@@ -155,6 +160,15 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
             mRailAdapter.notifyDataSetChanged();
         }
         renderSelectedDetail(false);
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (getContext() != null) {
+            AppDialogPresenter.instance(getContext()).captureNextDialog(null);
+        }
+        flushPendingCategoryFinish();
+        super.onDestroyView();
     }
 
     private void stylePanes() {
@@ -270,7 +284,11 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         if (entry.type == RailEntry.TYPE_QUICK_CONTROLS) {
             focusDetailPane();
         } else if (entry.type == RailEntry.TYPE_CATEGORY && entry.settingsItem != null) {
-            launchSettingsItem(entry.settingsItem);
+            if (isPasswordProtected()) {
+                promptPasswordAndUnlock(true);
+            } else {
+                focusDetailPane();
+            }
         }
     }
 
@@ -333,13 +351,24 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         if (mSelectedRailPosition < 0 || mSelectedRailPosition >= mRailEntries.size()) {
             return;
         }
+        boolean restoreDetailFocus = !animate && mDetailContainer.hasFocus();
+        mDetailRequestToken++;
+        AppDialogPresenter.instance(getContext()).captureNextDialog(null);
+        flushPendingCategoryFinish();
+
         RailEntry entry = mRailEntries.get(mSelectedRailPosition);
         mDetailContainer.removeAllViews();
+        if (animate && mDetailScroll != null) {
+            mDetailScroll.scrollTo(0, 0);
+        }
 
         if (entry.type == RailEntry.TYPE_QUICK_CONTROLS) {
             buildQuickControlsPane();
+            if (restoreDetailFocus) {
+                focusDetailPane();
+            }
         } else if (entry.type == RailEntry.TYPE_CATEGORY && entry.settingsItem != null) {
-            buildCategoryDetailPane(entry.settingsItem);
+            buildCategoryDetailPane(entry.settingsItem, restoreDetailFocus);
         }
 
         if (animate) {
@@ -731,157 +760,181 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
     }
 
     // =========================================================================
-    // Mode B: Category Detail Panel
+    // Mode B: Inline Category Settings Panel
     // =========================================================================
 
-    private void buildCategoryDetailPane(SettingsItem item) {
+    private void buildCategoryDetailPane(SettingsItem item, boolean restoreFocus) {
         Context ctx = requireContext();
-        float density = ctx.getResources().getDisplayMetrics().density;
 
-        int primaryContainer = ViewUtil.getThemeColor(ctx, R.attr.m3PrimaryContainer, R.color.m3_grey_primary_container);
-        int onPrimaryContainer = ViewUtil.getThemeColor(ctx, R.attr.m3OnPrimaryContainer, R.color.m3_grey_on_primary_container);
-        int secondaryContainer = ViewUtil.getThemeColor(ctx, R.attr.m3SecondaryContainer, R.color.m3_grey_secondary_container);
-        int onSecondaryContainer = ViewUtil.getThemeColor(ctx, R.attr.m3OnSecondaryContainer, R.color.m3_grey_on_secondary_container);
-        int onSurface = ViewUtil.getThemeColor(ctx, R.attr.m3OnSurface, R.color.m3_on_surface);
-        int onSurfaceVariant = ViewUtil.getThemeColor(ctx, R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant);
+        if (isPasswordProtected()) {
+            renderLockedDetailPane(ctx, item, restoreFocus);
+            return;
+        }
+
+        if (item.onClick == null) {
+            InlineOptionsRenderer.renderCategoryHeader(ctx, mDetailContainer, item, null, null);
+            InlineOptionsRenderer.addInfoMessage(ctx, mDetailContainer, getString(R.string.settings_empty_options));
+            return;
+        }
+
+        final int requestToken = mDetailRequestToken;
+        final boolean[] deliveredSync = {false};
+        final TextView[] headerSubtitle = new TextView[1];
+
+        AppDialogPresenter dialogPresenter = AppDialogPresenter.instance(ctx);
+        dialogPresenter.captureNextDialog((title, categories, onFinish) -> {
+            deliveredSync[0] = true;
+            if (!isAdded() || getContext() == null || mDetailContainer == null || requestToken != mDetailRequestToken) {
+                if (onFinish != null) {
+                    onFinish.run();
+                }
+                return;
+            }
+
+            mPendingCategoryOnFinish = onFinish;
+            mDetailContainer.removeAllViews();
+            InlineOptionsRenderer.renderCategoryHeader(getContext(), mDetailContainer, item, title, headerSubtitle);
+            InlineOptionsRenderer.renderCategories(
+                    getContext(),
+                    mDetailContainer,
+                    categories != null ? categories : java.util.Collections.emptyList(),
+                    new InlineOptionsRenderer.Host() {
+                        @Override
+                        public void attachReturnToRailOnLeft(@NonNull View view) {
+                            SettingsGridFragment.this.attachReturnToRailOnLeft(view);
+                        }
+
+                        @Override
+                        public void onOptionsMutated() {
+                            refreshRailAndHeaderSummary(item, headerSubtitle[0]);
+                        }
+                    });
+            if (restoreFocus) {
+                focusDetailPane();
+            }
+        });
+
+        item.onClick.run();
+
+        if (!deliveredSync[0] && isAdded() && getContext() != null && mDetailContainer != null && requestToken == mDetailRequestToken) {
+            InlineOptionsRenderer.renderCategoryHeader(ctx, mDetailContainer, item, null, headerSubtitle);
+            InlineOptionsRenderer.addInfoMessage(ctx, mDetailContainer, getString(R.string.settings_loading_options));
+        }
+    }
+
+    private void renderLockedDetailPane(Context ctx, SettingsItem item, boolean restoreFocus) {
+        float density = ctx.getResources().getDisplayMetrics().density;
         int surfaceHigh = ViewUtil.getThemeColor(ctx, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high);
         int outlineVariant = ViewUtil.getThemeColor(ctx, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
-        float pillRadius = ctx.getResources().getDimension(R.dimen.m3_pill_corner_radius);
-        float heroRadius = ctx.getResources().getDimension(R.dimen.m3_card_large_corner_radius);
+        int onSurface = ViewUtil.getThemeColor(ctx, R.attr.m3OnSurface, R.color.m3_on_surface);
+        int onSurfaceVariant = ViewUtil.getThemeColor(ctx, R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant);
+        float cardRadius = ctx.getResources().getDimension(R.dimen.m3_card_corner_radius);
         int hairlinePx = ctx.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
 
-        // Hero badge + icon
-        LinearLayout headerRow = new LinearLayout(ctx);
-        headerRow.setOrientation(LinearLayout.HORIZONTAL);
-        headerRow.setGravity(Gravity.CENTER_VERTICAL);
-        headerRow.setPadding(Math.round(20 * density), Math.round(20 * density), Math.round(20 * density), Math.round(20 * density));
-        headerRow.setBackground(ViewUtil.createRoundedDrawable(surfaceHigh, outlineVariant, hairlinePx, heroRadius));
+        InlineOptionsRenderer.renderCategoryHeader(ctx, mDetailContainer, item, null, null);
 
-        if (item.imageResId > 0) {
-            FrameLayout iconBox = new FrameLayout(ctx);
-            int boxSize = Math.round(60 * density);
-            LinearLayout.LayoutParams boxLp = new LinearLayout.LayoutParams(boxSize, boxSize);
-            boxLp.setMarginEnd(Math.round(18 * density));
-            iconBox.setBackground(ViewUtil.createRoundedDrawable(primaryContainer, 0, 0, Math.round(18 * density)));
+        LinearLayout lockCard = new LinearLayout(ctx);
+        lockCard.setOrientation(LinearLayout.VERTICAL);
+        int pad = Math.round(18 * density);
+        lockCard.setPadding(pad, pad, pad, pad);
+        lockCard.setClipChildren(false);
+        lockCard.setClipToPadding(false);
+        lockCard.setBackground(ViewUtil.createRoundedDrawable(surfaceHigh, outlineVariant, hairlinePx, cardRadius));
 
-            ImageView icon = new ImageView(ctx);
-            int iconSize = Math.round(30 * density);
-            FrameLayout.LayoutParams iconLp = new FrameLayout.LayoutParams(iconSize, iconSize, Gravity.CENTER);
-            icon.setImageDrawable(ContextCompat.getDrawable(ctx, item.imageResId));
-            icon.setColorFilter(onPrimaryContainer, PorterDuff.Mode.SRC_IN);
-            iconBox.addView(icon, iconLp);
-            headerRow.addView(iconBox, boxLp);
-        }
-
-        LinearLayout titleCol = new LinearLayout(ctx);
-        titleCol.setOrientation(LinearLayout.VERTICAL);
         TextView titleView = new TextView(ctx);
-        titleView.setText(item.title);
+        titleView.setText(R.string.settings_locked_title);
         titleView.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        titleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
+        titleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
         titleView.setTextColor(onSurface);
-        titleCol.addView(titleView);
+        lockCard.addView(titleView);
 
-        String summary = SettingsHubHelper.getSubtitleSummary(ctx, item);
-        if (!TextUtils.isEmpty(summary)) {
-            TextView summaryView = new TextView(ctx);
-            summaryView.setText(summary);
-            summaryView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-            summaryView.setTextColor(onSurfaceVariant);
-            LinearLayout.LayoutParams sLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            sLp.topMargin = Math.round(4 * density);
-            titleCol.addView(summaryView, sLp);
-        }
-        headerRow.addView(titleCol, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-
-        LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(
+        TextView msgView = new TextView(ctx);
+        msgView.setText(R.string.settings_locked_message);
+        msgView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        msgView.setTextColor(onSurfaceVariant);
+        LinearLayout.LayoutParams msgLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        headerLp.bottomMargin = Math.round(16 * density);
-        mDetailContainer.addView(headerRow, headerLp);
+        msgLp.topMargin = Math.round(6 * density);
+        msgLp.bottomMargin = Math.round(14 * density);
+        lockCard.addView(msgView, msgLp);
 
-        // Description
-        String desc = SettingsHubHelper.getCategoryDescription(ctx, item);
-        if (!TextUtils.isEmpty(desc)) {
-            TextView descView = new TextView(ctx);
-            descView.setText(desc);
-            descView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-            descView.setLineSpacing(0f, 1.25f);
-            descView.setTextColor(onSurfaceVariant);
-            LinearLayout.LayoutParams dLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            dLp.bottomMargin = Math.round(16 * density);
-            mDetailContainer.addView(descView, dLp);
+        M3Button unlockBtn = new M3Button(ctx);
+        unlockBtn.setButtonStyle(M3Button.STYLE_FILLED);
+        unlockBtn.setIcon(R.drawable.ic_m3_chevron_right);
+        unlockBtn.setText(getString(R.string.settings_unlock));
+        unlockBtn.setOnClickListener(v -> promptPasswordAndUnlock(true));
+        attachReturnToRailOnLeft(unlockBtn);
+        lockCard.addView(unlockBtn, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        addSpacedRow(lockCard, Math.round(14 * density));
+        if (restoreFocus) {
+            focusDetailPane();
         }
+    }
 
-        // Status chips row
-        List<String> chips = SettingsHubHelper.getDetailChips(ctx, item);
-        if (!chips.isEmpty()) {
-            LinearLayout chipsRow = new LinearLayout(ctx);
-            chipsRow.setOrientation(LinearLayout.HORIZONTAL);
-            for (int i = 0; i < chips.size(); i++) {
-                TextView chip = new TextView(ctx);
-                chip.setText(chips.get(i));
-                chip.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-                chip.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
-                chip.setTextColor(onSecondaryContainer);
-                chip.setIncludeFontPadding(false);
-                chip.setPadding(Math.round(12 * density), Math.round(6 * density), Math.round(12 * density), Math.round(6 * density));
-                chip.setBackground(ViewUtil.createRoundedDrawable(secondaryContainer, 0, 0, pillRadius));
-                LinearLayout.LayoutParams cLp = new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                if (i > 0) cLp.setMarginStart(Math.round(8 * density));
-                chipsRow.addView(chip, cLp);
+    private boolean isPasswordProtected() {
+        if (getContext() == null || mPasswordUnlocked) {
+            return false;
+        }
+        return GeneralData.instance(getContext()).getSettingsPassword() != null;
+    }
+
+    private void promptPasswordAndUnlock(boolean focusAfterUnlock) {
+        if (getContext() == null) {
+            return;
+        }
+        String password = GeneralData.instance(getContext()).getSettingsPassword();
+        if (password == null) {
+            mPasswordUnlocked = true;
+            renderSelectedDetail(false);
+            if (focusAfterUnlock) {
+                focusDetailPane();
             }
-            LinearLayout.LayoutParams rLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            rLp.bottomMargin = Math.round(22 * density);
-            mDetailContainer.addView(chipsRow, rLp);
+            return;
         }
-
-        // Primary & Secondary CTAs
-        LinearLayout actionsRow = new LinearLayout(ctx);
-        actionsRow.setOrientation(LinearLayout.HORIZONTAL);
-        actionsRow.setGravity(Gravity.CENTER_VERTICAL);
-        actionsRow.setClipChildren(false);
-        actionsRow.setClipToPadding(false);
-
-        M3Button openBtn = new M3Button(ctx);
-        openBtn.setButtonStyle(M3Button.STYLE_FILLED);
-        openBtn.setIcon(R.drawable.ic_m3_chevron_right);
-        openBtn.setText(getString(R.string.settings_open_category, item.title));
-        openBtn.setOnClickListener(v -> launchSettingsItem(item));
-        attachReturnToRailOnLeft(openBtn);
-        actionsRow.addView(openBtn);
-
-        if (item.imageResId == R.drawable.settings_account) {
-            M3Button switchAcc = new M3Button(ctx);
-            switchAcc.setButtonStyle(M3Button.STYLE_TONAL);
-            switchAcc.setText(getString(R.string.settings_switch_account));
-            switchAcc.setOnClickListener(v -> AccountSelectionPresenter.instance(ctx).nextAccountOrDialog());
-            LinearLayout.LayoutParams sLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            sLp.setMarginStart(Math.round(12 * density));
-            actionsRow.addView(switchAcc, sLp);
-        } else if (item.imageResId == R.drawable.settings_main_ui) {
-            M3Button pickAccent = new M3Button(ctx);
-            pickAccent.setButtonStyle(M3Button.STYLE_TONAL);
-            pickAccent.setIcon(R.drawable.ic_m3_palette);
-            pickAccent.setText(getString(R.string.accent_color));
-            pickAccent.setOnClickListener(v -> {
-                MainUIData uiData = MainUIData.instance(ctx);
-                AccentColorPickerDialog.show(ctx, uiData.getAccentColor(), newColor -> {
-                    uiData.setAccentColor(newColor);
-                    Utils.post(() -> Toast.makeText(ctx, R.string.msg_restart_app, Toast.LENGTH_LONG).show());
+        SimpleEditDialog.showPassword(
+                getContext(),
+                getContext().getString(R.string.enter_settings_password),
+                null,
+                newValue -> {
+                    if (Utils.passwordMatch(password, newValue)) {
+                        mPasswordUnlocked = true;
+                        renderSelectedDetail(false);
+                        if (focusAfterUnlock) {
+                            focusDetailPane();
+                        }
+                        return true;
+                    }
+                    return false;
                 });
-            });
-            LinearLayout.LayoutParams sLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            sLp.setMarginStart(Math.round(12 * density));
-            actionsRow.addView(pickAccent, sLp);
-        }
+    }
 
-        mDetailContainer.addView(actionsRow);
+    private void refreshRailAndHeaderSummary(SettingsItem item, @Nullable TextView subtitleView) {
+        if (!isAdded() || getContext() == null) {
+            return;
+        }
+        if (subtitleView != null) {
+            String summary = SettingsHubHelper.getSubtitleSummary(getContext(), item);
+            if (!TextUtils.isEmpty(summary)) {
+                subtitleView.setText(summary);
+                subtitleView.setVisibility(View.VISIBLE);
+            } else {
+                subtitleView.setVisibility(View.GONE);
+            }
+        }
+        if (mRailAdapter != null && mRailList != null && !mRailList.hasFocus()
+                && mSelectedRailPosition >= 0 && mSelectedRailPosition < mRailEntries.size()) {
+            mRailAdapter.notifyItemChanged(mSelectedRailPosition);
+        }
+    }
+
+    private void flushPendingCategoryFinish() {
+        if (mPendingCategoryOnFinish != null) {
+            Runnable callback = mPendingCategoryOnFinish;
+            mPendingCategoryOnFinish = null;
+            callback.run();
+        }
     }
 
     private void addSpacedRow(View view, int bottomMarginPx) {
@@ -901,28 +954,6 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
             }
         }
         return SCALE_STEPS[0];
-    }
-
-    private void launchSettingsItem(SettingsItem item) {
-        if (getContext() == null || item == null) {
-            return;
-        }
-        String password = GeneralData.instance(getContext()).getSettingsPassword();
-        if (password == null) {
-            item.onClick.run();
-        } else {
-            SimpleEditDialog.showPassword(
-                    getContext(),
-                    getContext().getString(R.string.enter_settings_password),
-                    null,
-                    newValue -> {
-                        if (Utils.passwordMatch(password, newValue)) {
-                            item.onClick.run();
-                            return true;
-                        }
-                        return false;
-                    });
-        }
     }
 
     // =========================================================================
