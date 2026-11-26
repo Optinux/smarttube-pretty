@@ -86,6 +86,7 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             M3Motion.animateEnter(view, 12f * getResources().getDisplayMetrics().density, 0f);
         }
         if (getVerticalGridView() != null) {
+            getVerticalGridView().setClipChildren(false);
             getVerticalGridView().addOnScrollListener(new RecyclerView.OnScrollListener() {
                 @Override
                 public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -394,13 +395,6 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
                         video.pendingPosMs = Math.max(1L, previewPositionMs);
                     }
                     mMainPresenter.onVideoItemClicked(video);
-                }
-            }
-
-            @Override
-            public void onOptionsClicked(Video video) {
-                if (mMainPresenter != null) {
-                    mMainPresenter.onVideoItemLongClicked(video);
                 }
             }
 

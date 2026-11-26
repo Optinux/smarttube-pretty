@@ -123,20 +123,7 @@ public class M3Button extends LinearLayout {
 
     public void setText(@Nullable CharSequence text) {
         mLabelView.setText(text);
-        mLabelView.setVisibility(TextUtils.isEmpty(text) ? GONE : VISIBLE);
-        if (mIconView.getLayoutParams() instanceof LayoutParams) {
-            float density = getResources().getDisplayMetrics().density;
-            ((LayoutParams) mIconView.getLayoutParams()).setMarginEnd(
-                    TextUtils.isEmpty(text) ? 0 : Math.round(8 * density));
-        }
         setContentDescription(text);
-    }
-
-    public void setCompact(boolean compact) {
-        float density = getResources().getDisplayMetrics().density;
-        int padH = Math.round((compact ? 12 : 18) * density);
-        int padV = Math.round((compact ? 8 : 10) * density);
-        setPaddingRelative(padH, padV, padH, padV);
     }
 
     public void setIcon(@DrawableRes int resId) {
