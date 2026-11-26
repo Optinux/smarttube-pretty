@@ -14,7 +14,7 @@ import java.util.List;
  */
 public class HeroSpotlightRow extends Row {
     public interface OnHeroActionListener {
-        void onWatchClicked(Video video);
+        void onWatchClicked(Video video, long previewPositionMs);
         void onOptionsClicked(Video video);
         void onVideoHighlighted(Video video);
     }

@@ -1,16 +1,19 @@
 package com.liskovsoft.smartyoutubetv2.tv.presenter;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -24,6 +27,7 @@ import androidx.leanback.widget.RowPresenter;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.google.android.exoplayer2.ui.PlayerView;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.common.utils.ClickbaitRemover;
@@ -32,15 +36,18 @@ import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.m3e.M3Button;
 import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
 
 /**
- * Renders the immersive M3 Expressive Hero Spotlight Stage at the top of browse row feeds.
- * Inspired by Apple TV / Google TV / Plex front-ends with edge-blended artwork, rich metadata,
- * M3 shape-morphing action buttons, and gentle idle auto-rotation.
+ * Renders the immersive Netflix-style autoplaying M3 Expressive Hero Spotlight Stage
+ * at the top of the Home feed with muted TextureView preview, thumbnail-to-video crossfade,
+ * 10s actual-playback auto-advance, seamless surface scrims, and click-to-resume handoff.
  */
 public class HeroSpotlightPresenter extends RowPresenter {
-    private static final long AUTO_ROTATE_INTERVAL_MS = 9_000L;
+    private WeakReference<HeroViewHolder> mActiveHolder = new WeakReference<>(null);
+    private boolean mIsHostResumed = true;
+    private boolean mIsRecyclerDragging = false;
 
     public HeroSpotlightPresenter() {
         setSelectEffectEnabled(false);
@@ -49,14 +56,20 @@ public class HeroSpotlightPresenter extends RowPresenter {
     @Override
     protected ViewHolder createRowViewHolder(ViewGroup parent) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.hero_spotlight, parent, false);
-        return new HeroViewHolder(view);
+        HeroViewHolder vh = new HeroViewHolder(view);
+        mActiveHolder = new WeakReference<>(vh);
+        return vh;
     }
 
     @Override
     protected void onBindRowViewHolder(ViewHolder vh, Object item) {
         super.onBindRowViewHolder(vh, item);
         if (vh instanceof HeroViewHolder && item instanceof HeroSpotlightRow) {
-            ((HeroViewHolder) vh).bind((HeroSpotlightRow) item);
+            HeroViewHolder heroVh = (HeroViewHolder) vh;
+            mActiveHolder = new WeakReference<>(heroVh);
+            heroVh.setHostResumed(mIsHostResumed);
+            heroVh.setRecyclerDragging(mIsRecyclerDragging);
+            heroVh.bind((HeroSpotlightRow) item);
         }
     }
 
@@ -64,57 +77,121 @@ public class HeroSpotlightPresenter extends RowPresenter {
     protected void onUnbindRowViewHolder(ViewHolder vh) {
         if (vh instanceof HeroViewHolder) {
             ((HeroViewHolder) vh).unbind();
+            if (mActiveHolder.get() == vh) {
+                mActiveHolder.clear();
+            }
         }
         super.onUnbindRowViewHolder(vh);
     }
 
-    private static final class HeroViewHolder extends RowPresenter.ViewHolder {
+    public void onHostResume() {
+        mIsHostResumed = true;
+        HeroViewHolder vh = mActiveHolder.get();
+        if (vh != null) {
+            vh.setHostResumed(true);
+            vh.updateViewportVisibility();
+        }
+    }
+
+    public void onHostPause() {
+        mIsHostResumed = false;
+        HeroViewHolder vh = mActiveHolder.get();
+        if (vh != null) {
+            vh.setHostResumed(false);
+        }
+    }
+
+    public void onHostStop() {
+        mIsHostResumed = false;
+        HeroViewHolder vh = mActiveHolder.get();
+        if (vh != null) {
+            vh.onHostStop();
+        }
+    }
+
+    public void onHostDestroy() {
+        mIsHostResumed = false;
+        HeroViewHolder vh = mActiveHolder.get();
+        if (vh != null) {
+            vh.onHostDestroy();
+        }
+        mActiveHolder.clear();
+    }
+
+    public void onScrollChanged() {
+        HeroViewHolder vh = mActiveHolder.get();
+        if (vh != null) {
+            vh.updateViewportVisibility();
+        }
+    }
+
+    public void onScrollDragging(boolean dragging) {
+        mIsRecyclerDragging = dragging;
+        HeroViewHolder vh = mActiveHolder.get();
+        if (vh != null) {
+            vh.setRecyclerDragging(dragging);
+        }
+    }
+
+    private static final class HeroViewHolder extends RowPresenter.ViewHolder
+            implements HeroPreviewController.Listener {
         private final FrameLayout mCard;
+        private final FrameLayout mMediaContainer;
         private final ImageView mArtwork;
+        private final PlayerView mPlayerView;
         private final View mScrimHorizontal;
+        private final View mScrimRight;
+        private final View mScrimTop;
         private final View mScrimVertical;
+        private final LinearLayout mContentColumn;
         private final TextView mBadge;
         private final TextView mCounter;
         private final TextView mTitle;
         private final TextView mSubtitle;
         private final ProgressBar mProgress;
+        private final LinearLayout mActionsRow;
         private final M3Button mWatchBtn;
         private final M3Button mOptionsBtn;
         private final M3Button mNextBtn;
         private final LinearLayout mDotsContainer;
-        private final Handler mHandler = new Handler(Looper.getMainLooper());
+
+        private final HeroPreviewController mPreviewController;
         private HeroSpotlightRow mRow;
-        private boolean mAnyButtonFocused;
+        private View mActiveDotProgressFill;
+        private int mActiveDotWidthPx;
+        private int mLastCardWidth = -1;
+        private int mLastCardHeight = -1;
+        private boolean mIsTouchInteracting;
+        private boolean mIsRecyclerDragging;
+        private boolean mScrollListenerAttached;
 
-        private final Runnable mAutoRotateTask = new Runnable() {
-            @Override
-            public void run() {
-                if (mRow == null || mRow.getVideos().size() <= 1 || mAnyButtonFocused) {
-                    return;
-                }
-                if (!mCard.isAttachedToWindow()) {
-                    return;
-                }
-                advanceSlide(1, true);
-                mHandler.postDelayed(this, AUTO_ROTATE_INTERVAL_MS);
-            }
-        };
+        private final ViewTreeObserver.OnScrollChangedListener mScrollChangedListener =
+                this::updateViewportVisibility;
 
+        @SuppressLint("ClickableViewAccessibility")
         HeroViewHolder(View itemView) {
             super(itemView);
             mCard = itemView.findViewById(R.id.hero_spotlight_card);
+            mMediaContainer = itemView.findViewById(R.id.hero_media_container);
             mArtwork = itemView.findViewById(R.id.hero_artwork);
+            mPlayerView = itemView.findViewById(R.id.hero_player_view);
             mScrimHorizontal = itemView.findViewById(R.id.hero_scrim_horizontal);
+            mScrimRight = itemView.findViewById(R.id.hero_scrim_right);
+            mScrimTop = itemView.findViewById(R.id.hero_scrim_top);
             mScrimVertical = itemView.findViewById(R.id.hero_scrim_vertical);
+            mContentColumn = itemView.findViewById(R.id.hero_content_column);
             mBadge = itemView.findViewById(R.id.hero_badge);
             mCounter = itemView.findViewById(R.id.hero_counter);
             mTitle = itemView.findViewById(R.id.hero_title);
             mSubtitle = itemView.findViewById(R.id.hero_subtitle);
             mProgress = itemView.findViewById(R.id.hero_progress);
+            mActionsRow = itemView.findViewById(R.id.hero_actions_row);
             mWatchBtn = itemView.findViewById(R.id.hero_btn_watch);
             mOptionsBtn = itemView.findViewById(R.id.hero_btn_options);
             mNextBtn = itemView.findViewById(R.id.hero_btn_next);
             mDotsContainer = itemView.findViewById(R.id.hero_dots_container);
+
+            mPreviewController = new HeroPreviewController(itemView.getContext(), mPlayerView, this);
 
             applyThemeChrome();
 
@@ -122,16 +199,9 @@ public class HeroSpotlightPresenter extends RowPresenter {
             mWatchBtn.setIcon(R.drawable.ic_m3_play_arrow);
 
             View.OnFocusChangeListener buttonFocusListener = (v, hasFocus) -> {
-                boolean wasInside = mAnyButtonFocused;
                 boolean insideHero = mWatchBtn.hasFocus() || mOptionsBtn.hasFocus() || mNextBtn.hasFocus();
-                mAnyButtonFocused = insideHero;
-                if (insideHero) {
-                    stopAutoRotate();
-                    if (!wasInside && mRow != null && mRow.getListener() != null && mRow.getCurrentVideo() != null) {
-                        mRow.getListener().onVideoHighlighted(mRow.getCurrentVideo());
-                    }
-                } else {
-                    scheduleAutoRotate();
+                if (insideHero && mRow != null && mRow.getListener() != null && mRow.getCurrentVideo() != null) {
+                    mRow.getListener().onVideoHighlighted(mRow.getCurrentVideo());
                 }
             };
             mWatchBtn.addOnFocusChangeListener(buttonFocusListener);
@@ -146,10 +216,23 @@ public class HeroSpotlightPresenter extends RowPresenter {
             mNextBtn.setIcon(R.drawable.ic_m3_chevron_right);
             mNextBtn.setText(itemView.getContext().getString(R.string.hero_next_pick));
 
-            mWatchBtn.setOnClickListener(v -> {
-                if (mRow != null && mRow.getListener() != null && mRow.getCurrentVideo() != null) {
-                    mRow.getListener().onWatchClicked(mRow.getCurrentVideo());
+            mWatchBtn.setOnClickListener(v -> triggerWatch());
+            mCard.setOnClickListener(v -> triggerWatch());
+            // Keep card non-focusable on D-pad so focus moves directly onto the action buttons
+            mCard.setFocusable(false);
+
+            mCard.setOnTouchListener((v, event) -> {
+                switch (event.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                    case MotionEvent.ACTION_MOVE:
+                        setTouchInteracting(true);
+                        break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        setTouchInteracting(false);
+                        break;
                 }
+                return false;
             });
 
             mOptionsBtn.setOnClickListener(v -> {
@@ -159,36 +242,142 @@ public class HeroSpotlightPresenter extends RowPresenter {
             });
 
             mNextBtn.setOnClickListener(v -> advanceSlide(1, true));
+
+            mCard.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                int w = right - left;
+                int h = bottom - top;
+                adaptResponsiveLayout(w, h);
+                updateViewportVisibility();
+            });
+
+            mCard.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+                @Override
+                public void onViewAttachedToWindow(View v) {
+                    attachScrollObserver();
+                    updateViewportVisibility();
+                }
+
+                @Override
+                public void onViewDetachedFromWindow(View v) {
+                    detachScrollObserver();
+                    mPreviewController.setHeroVisible(false);
+                }
+            });
+        }
+
+        private void attachScrollObserver() {
+            if (!mScrollListenerAttached && mCard.getViewTreeObserver().isAlive()) {
+                mCard.getViewTreeObserver().addOnScrollChangedListener(mScrollChangedListener);
+                mScrollListenerAttached = true;
+            }
+        }
+
+        private void detachScrollObserver() {
+            if (mScrollListenerAttached && mCard.getViewTreeObserver().isAlive()) {
+                mCard.getViewTreeObserver().removeOnScrollChangedListener(mScrollChangedListener);
+            }
+            mScrollListenerAttached = false;
+        }
+
+        private void adaptResponsiveLayout(int cardWidth, int cardHeight) {
+            if (cardWidth <= 0 || cardHeight <= 0 || (cardWidth == mLastCardWidth && cardHeight == mLastCardHeight)) {
+                return;
+            }
+            mLastCardWidth = cardWidth;
+            mLastCardHeight = cardHeight;
+
+            Context ctx = mCard.getContext();
+            float density = ctx.getResources().getDisplayMetrics().density;
+
+            // Keep 16:9 content cleanly center-cropped while adapting to narrow phones vs wide TVs
+            int ideal16by9Width = Math.round(cardHeight * (16f / 9f));
+            int targetMediaWidth = Math.min(cardWidth, Math.max(ideal16by9Width, Math.round(cardWidth * 0.66f)));
+            ViewGroup.LayoutParams mediaLp = mMediaContainer.getLayoutParams();
+            if (mediaLp != null && mediaLp.width != targetMediaWidth) {
+                mediaLp.width = targetMediaWidth;
+                mMediaContainer.setLayoutParams(mediaLp);
+            }
+
+            boolean compact = cardWidth < Math.round(520 * density);
+            boolean ultraCompact = cardWidth < Math.round(420 * density);
+
+            int padH = Math.round((compact ? 18 : 28) * density);
+            mContentColumn.setPaddingRelative(
+                    padH, mContentColumn.getPaddingTop(), padH, mContentColumn.getPaddingBottom());
+
+            int maxTextWidth = compact
+                    ? Math.max(0, cardWidth - (padH * 2))
+                    : Math.min(Math.round(440 * density), Math.round(cardWidth * 0.58f));
+            mTitle.setMaxWidth(maxTextWidth);
+            mSubtitle.setMaxWidth(maxTextWidth);
+
+            mWatchBtn.setCompact(compact);
+            mOptionsBtn.setCompact(compact);
+            mNextBtn.setCompact(compact);
+
+            int btnGap = Math.round((compact ? 6 : 10) * density);
+            setMarginStart(mOptionsBtn, btnGap);
+            setMarginStart(mNextBtn, btnGap);
+
+            mNextBtn.setText(ultraCompact ? null : ctx.getString(R.string.hero_next_pick));
+        }
+
+        private static void setMarginStart(View view, int marginStartPx) {
+            ViewGroup.LayoutParams lp = view.getLayoutParams();
+            if (lp instanceof ViewGroup.MarginLayoutParams) {
+                ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) lp;
+                if (mlp.getMarginStart() != marginStartPx) {
+                    mlp.setMarginStart(marginStartPx);
+                    view.setLayoutParams(mlp);
+                }
+            }
         }
 
         private void applyThemeChrome() {
             Context ctx = mCard.getContext();
-            int surfaceContainer = ViewUtil.getThemeColor(ctx, R.attr.m3SurfaceContainer, R.color.m3_grey_surface_container);
-            int outlineVariant = ViewUtil.getThemeColor(ctx, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+            int screenBg = ViewUtil.getThemeColor(ctx, R.attr.m3Surface, R.color.m3_grey_surface);
             int onSurface = ViewUtil.getThemeColor(ctx, R.attr.m3OnSurface, R.color.m3_on_surface);
             int onSurfaceVariant = ViewUtil.getThemeColor(ctx, R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant);
-            float heroRadius = ctx.getResources().getDimension(R.dimen.m3_hero_corner_radius);
-            int hairlinePx = ctx.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
+            // Match neighboring VideoCardPresenter corner treatment (16dp) without a hard hairline border
+            float cardRadius = ctx.getResources().getDimension(R.dimen.m3_card_corner_radius);
 
-            mCard.setBackground(ViewUtil.createRoundedDrawable(surfaceContainer, outlineVariant, hairlinePx, heroRadius));
-            ViewUtil.applyRoundedOutline(mCard, heroRadius);
+            mCard.setBackground(ViewUtil.createRoundedDrawable(screenBg, 0, 0, cardRadius));
+            ViewUtil.applyRoundedOutline(mCard, cardRadius);
 
             GradientDrawable horizScrim = new GradientDrawable(
                     GradientDrawable.Orientation.LEFT_RIGHT,
                     new int[]{
-                            surfaceContainer,
-                            surfaceContainer,
-                            ColorUtils.setAlphaComponent(surfaceContainer, 215),
-                            ColorUtils.setAlphaComponent(surfaceContainer, 85),
+                            screenBg,
+                            screenBg,
+                            ColorUtils.setAlphaComponent(screenBg, 225),
+                            ColorUtils.setAlphaComponent(screenBg, 105),
                             Color.TRANSPARENT
                     });
             mScrimHorizontal.setBackground(horizScrim);
 
+            GradientDrawable rightScrim = new GradientDrawable(
+                    GradientDrawable.Orientation.RIGHT_LEFT,
+                    new int[]{
+                            screenBg,
+                            ColorUtils.setAlphaComponent(screenBg, 145),
+                            Color.TRANSPARENT
+                    });
+            mScrimRight.setBackground(rightScrim);
+
+            GradientDrawable topScrim = new GradientDrawable(
+                    GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[]{
+                            ColorUtils.setAlphaComponent(screenBg, 165),
+                            Color.TRANSPARENT
+                    });
+            mScrimTop.setBackground(topScrim);
+
             GradientDrawable vertScrim = new GradientDrawable(
                     GradientDrawable.Orientation.BOTTOM_TOP,
                     new int[]{
-                            ColorUtils.setAlphaComponent(surfaceContainer, 230),
-                            ColorUtils.setAlphaComponent(surfaceContainer, 70),
+                            screenBg,
+                            ColorUtils.setAlphaComponent(screenBg, 215),
+                            ColorUtils.setAlphaComponent(screenBg, 85),
                             Color.TRANSPARENT
                     });
             mScrimVertical.setBackground(vertScrim);
@@ -203,15 +392,87 @@ public class HeroSpotlightPresenter extends RowPresenter {
 
         void bind(@NonNull HeroSpotlightRow row) {
             mRow = row;
+            if (mCard.isAttachedToWindow()) {
+                attachScrollObserver();
+            }
             renderCurrentSlide(false);
-            scheduleAutoRotate();
+            updateViewportVisibility();
         }
 
         void unbind() {
-            stopAutoRotate();
+            detachScrollObserver();
+            mPreviewController.release();
             Context ctx = mCard.getContext().getApplicationContext();
             Glide.with(ctx).clear(mArtwork);
             mRow = null;
+        }
+
+        void setHostResumed(boolean resumed) {
+            mPreviewController.setResumed(resumed);
+        }
+
+        void onHostStop() {
+            mPreviewController.release();
+        }
+
+        void onHostDestroy() {
+            detachScrollObserver();
+            mPreviewController.release();
+        }
+
+        void setRecyclerDragging(boolean dragging) {
+            mIsRecyclerDragging = dragging;
+            mPreviewController.setUserInteracting(mIsTouchInteracting || mIsRecyclerDragging);
+        }
+
+        private void setTouchInteracting(boolean interacting) {
+            mIsTouchInteracting = interacting;
+            mPreviewController.setUserInteracting(mIsTouchInteracting || mIsRecyclerDragging);
+        }
+
+        void updateViewportVisibility() {
+            boolean visible = isHeroVisibleInViewport();
+            mPreviewController.setHeroVisible(visible);
+        }
+
+        private boolean isHeroVisibleInViewport() {
+            if (!mCard.isAttachedToWindow() || mCard.getVisibility() != View.VISIBLE || mCard.getHeight() <= 0) {
+                return false;
+            }
+            Rect visibleRect = new Rect();
+            if (!mCard.getGlobalVisibleRect(visibleRect)) {
+                return false;
+            }
+            return visibleRect.height() >= mCard.getHeight() * 0.25f;
+        }
+
+        private void triggerWatch() {
+            if (mRow != null && mRow.getListener() != null && mRow.getCurrentVideo() != null) {
+                long previewPosMs = mPreviewController.getCurrentPositionMs();
+                mPreviewController.setResumed(false);
+                mRow.getListener().onWatchClicked(mRow.getCurrentVideo(), previewPosMs);
+            }
+        }
+
+        @Override
+        public void onAutoAdvance() {
+            if (mRow != null && mRow.getVideos().size() > 1 && mCard.isAttachedToWindow()) {
+                advanceSlide(1, true);
+            }
+        }
+
+        @Override
+        public void onPlaybackProgress(float fraction) {
+            if (mActiveDotProgressFill == null || mActiveDotWidthPx <= 0) {
+                return;
+            }
+            float clamped = Math.max(0f, Math.min(1f, fraction));
+            int targetWidth = Math.round(mActiveDotWidthPx * clamped);
+            ViewGroup.LayoutParams lp = mActiveDotProgressFill.getLayoutParams();
+            if (lp != null && lp.width != targetWidth) {
+                lp.width = targetWidth;
+                mActiveDotProgressFill.setLayoutParams(lp);
+            }
         }
 
         private void advanceSlide(int delta, boolean animate) {
@@ -306,7 +567,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
                 M3Motion.animateEnter(mSubtitle, 10f * density, 0f);
             }
 
-            // Artwork loading
+            // Load thumbnail immediately (crossfades to video once first frame renders)
             if (!(ctx instanceof Activity) || (Build.VERSION.SDK_INT < 17 || !((Activity) ctx).isDestroyed())) {
                 int thumbQuality = MainUIData.instance(ctx).getThumbQuality();
                 String primaryUrl = !TextUtils.isEmpty(video.bgImageUrl)
@@ -324,10 +585,19 @@ public class HeroSpotlightPresenter extends RowPresenter {
             }
 
             renderDots(videos.size(), mRow.getSelectedIndex());
+
+            Video nextVideo = null;
+            if (videos.size() > 1) {
+                int nextIdx = (mRow.getSelectedIndex() + 1) % videos.size();
+                nextVideo = videos.get(nextIdx);
+            }
+            mPreviewController.bindVideo(video, nextVideo);
         }
 
         private void renderDots(int count, int activeIndex) {
             mDotsContainer.removeAllViews();
+            mActiveDotProgressFill = null;
+            mActiveDotWidthPx = 0;
             if (count <= 1) {
                 return;
             }
@@ -336,20 +606,39 @@ public class HeroSpotlightPresenter extends RowPresenter {
             int activeColor = ViewUtil.getThemeColor(ctx, R.attr.m3Primary, R.color.m3_grey_primary);
             int inactiveColor = ColorUtils.setAlphaComponent(
                     ViewUtil.getThemeColor(ctx, R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant), 110);
+            int activeTrackColor = ColorUtils.setAlphaComponent(activeColor, 90);
             float pillRadius = ctx.getResources().getDimension(R.dimen.m3_pill_corner_radius);
 
             for (int i = 0; i < count; i++) {
                 final int idx = i;
                 boolean active = i == activeIndex;
-                View dot = new View(ctx);
-                int w = Math.round((active ? 22 : 7) * density);
+                int w = Math.round((active ? 26 : 7) * density);
                 int h = Math.round(7 * density);
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(w, h);
                 if (i > 0) {
                     lp.setMarginStart(Math.round(6 * density));
                 }
-                dot.setBackground(ViewUtil.createRoundedDrawable(active ? activeColor : inactiveColor, 0, 0, pillRadius));
-                dot.setOnClickListener(v -> {
+
+                View dotView;
+                if (active) {
+                    FrameLayout pillTrack = new FrameLayout(ctx);
+                    pillTrack.setBackground(ViewUtil.createRoundedDrawable(activeTrackColor, 0, 0, pillRadius));
+                    ViewUtil.applyRoundedOutline(pillTrack, pillRadius);
+
+                    View fill = new View(ctx);
+                    fill.setBackground(ViewUtil.createRoundedDrawable(activeColor, 0, 0, pillRadius));
+                    pillTrack.addView(fill, new FrameLayout.LayoutParams(0, FrameLayout.LayoutParams.MATCH_PARENT, Gravity.START));
+
+                    mActiveDotProgressFill = fill;
+                    mActiveDotWidthPx = w;
+                    dotView = pillTrack;
+                } else {
+                    View dot = new View(ctx);
+                    dot.setBackground(ViewUtil.createRoundedDrawable(inactiveColor, 0, 0, pillRadius));
+                    dotView = dot;
+                }
+
+                dotView.setOnClickListener(v -> {
                     if (mRow != null) {
                         mRow.setSelectedIndex(idx);
                         renderCurrentSlide(true);
@@ -358,19 +647,8 @@ public class HeroSpotlightPresenter extends RowPresenter {
                         }
                     }
                 });
-                mDotsContainer.addView(dot, lp);
+                mDotsContainer.addView(dotView, lp);
             }
-        }
-
-        private void scheduleAutoRotate() {
-            stopAutoRotate();
-            if (mRow != null && mRow.getVideos().size() > 1 && !mAnyButtonFocused) {
-                mHandler.postDelayed(mAutoRotateTask, AUTO_ROTATE_INTERVAL_MS);
-            }
-        }
-
-        private void stopAutoRotate() {
-            mHandler.removeCallbacks(mAutoRotateTask);
         }
     }
 }

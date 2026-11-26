@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/hero_spotlight_wrapper"
     android:layout_width="match_parent"
@@ -9,30 +10,66 @@
     android:paddingStart="@dimen/lb_browse_padding_start"
     android:paddingEnd="@dimen/lb_browse_padding_end"
     android:paddingTop="4dp"
-    android:paddingBottom="10dp">
+    android:paddingBottom="12dp">
 
     <FrameLayout
         android:id="@+id/hero_spotlight_card"
         android:layout_width="match_parent"
-        android:layout_height="220dp"
+        android:layout_height="@dimen/hero_spotlight_height"
         android:clipChildren="true"
         android:clipToPadding="true"
-        android:descendantFocusability="afterDescendants">
+        android:descendantFocusability="afterDescendants"
+        android:focusable="false">
 
-        <!-- Right-aligned high-res artwork with smooth directional scrim -->
-        <ImageView
-            android:id="@+id/hero_artwork"
-            android:layout_width="460dp"
+        <!-- Right-aligned 16:9 center-cropped media stage: thumbnail underneath, TextureView player above -->
+        <FrameLayout
+            android:id="@+id/hero_media_container"
+            android:layout_width="470dp"
             android:layout_height="match_parent"
-            android:layout_gravity="end"
-            android:alpha="0.92"
-            android:scaleType="centerCrop"
-            tools:ignore="ContentDescription" />
+            android:layout_gravity="end">
 
+            <ImageView
+                android:id="@+id/hero_artwork"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                tools:ignore="ContentDescription" />
+
+            <!--
+                Uses surface_type="texture_view" so the preview video can be alpha-crossfaded,
+                gradient-scrimmed, and clipped to rounded corners smoothly.
+                Tradeoff vs SurfaceView: slightly higher GPU/memory composition cost and no DRM support.
+            -->
+            <com.google.android.exoplayer2.ui.PlayerView
+                android:id="@+id/hero_player_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:alpha="0"
+                android:focusable="false"
+                app:resize_mode="zoom"
+                app:show_buffering="never"
+                app:shutter_background_color="@android:color/transparent"
+                app:surface_type="texture_view"
+                app:use_controller="false" />
+        </FrameLayout>
+
+        <!-- Seamless edge scrims blending the hero media into the screen background color -->
         <View
             android:id="@+id/hero_scrim_horizontal"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+
+        <View
+            android:id="@+id/hero_scrim_right"
+            android:layout_width="56dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end" />
+
+        <View
+            android:id="@+id/hero_scrim_top"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_gravity="top" />
 
         <View
             android:id="@+id/hero_scrim_vertical"
@@ -48,8 +85,8 @@
             android:orientation="vertical"
             android:paddingStart="28dp"
             android:paddingEnd="28dp"
-            android:paddingTop="18dp"
-            android:paddingBottom="18dp">
+            android:paddingTop="20dp"
+            android:paddingBottom="22dp">
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -89,7 +126,7 @@
                 android:id="@+id/hero_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:maxWidth="420dp"
+                android:maxWidth="440dp"
                 android:ellipsize="end"
                 android:fontFamily="sans-serif-medium"
                 android:lineSpacingMultiplier="1.08"
@@ -100,7 +137,7 @@
                 android:id="@+id/hero_subtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:maxWidth="420dp"
+                android:maxWidth="440dp"
                 android:layout_marginTop="5dp"
                 android:ellipsize="end"
                 android:fontFamily="sans-serif"
@@ -154,8 +191,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="top|end"
-            android:layout_marginTop="20dp"
-            android:layout_marginEnd="24dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="20dp"
             android:gravity="center_vertical"
             android:orientation="horizontal" />
     </FrameLayout>

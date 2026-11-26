@@ -34,6 +34,9 @@ import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
+import com.google.android.exoplayer2.upstream.cache.Cache;
+import com.google.android.exoplayer2.upstream.cache.CacheDataSource;
+import com.google.android.exoplayer2.upstream.cache.CacheDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 import com.liskovsoft.mediaserviceinterfaces.data.MediaItemFormatInfo;
 import com.liskovsoft.sharedutils.cronet.CronetManager;
@@ -72,9 +75,15 @@ public class ExoMediaSourceFactory {
     private TrackErrorFixer mTrackErrorFixer;
     private DataSource.Factory mMediaDataSourceFactory;
     private DataSource.Factory mSabrMediaDataSourceFactory;
+    private Cache mCache;
 
     public ExoMediaSourceFactory(Context context) {
         mContext = context;
+    }
+
+    public ExoMediaSourceFactory(Context context, Cache cache) {
+        mContext = context;
+        mCache = cache;
     }
 
     public MediaSource fromSabrFormatInfo(MediaItemFormatInfo formatInfo) {
@@ -398,7 +407,12 @@ public class ExoMediaSourceFactory {
 
     private DataSource.Factory getMediaDataSourceFactory() {
         if (mMediaDataSourceFactory == null) {
-            mMediaDataSourceFactory = buildDataSourceFactory(USE_BANDWIDTH_METER);
+            DataSource.Factory upstream = buildDataSourceFactory(USE_BANDWIDTH_METER);
+            // Wrap GET media streams (DASH/HLS/progressive) in SimpleCache when provided.
+            // SABR uses POST bodies to a single endpoint, so getSabrMediaDataSourceFactory() stays uncached.
+            mMediaDataSourceFactory = mCache != null
+                    ? new CacheDataSourceFactory(mCache, upstream, CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+                    : upstream;
         }
 
         return mMediaDataSourceFactory;

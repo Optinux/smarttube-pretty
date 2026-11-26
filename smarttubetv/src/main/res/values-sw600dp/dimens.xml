@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Larger hero stage (~20% taller than original 220dp) on TV and tablets -->
+    <dimen name="hero_spotlight_height">264dp</dimen>
+</resources>

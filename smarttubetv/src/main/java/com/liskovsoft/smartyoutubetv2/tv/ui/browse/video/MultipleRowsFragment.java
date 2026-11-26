@@ -62,6 +62,7 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
     private int mSelectedRowIndex = -1;
     private ChannelHeaderCallback mChannelHeaderCallback;
     private HeroSpotlightRow mHeroSpotlightRow;
+    private HeroSpotlightPresenter mHeroSpotlightPresenter;
     private ShelfChipRow mShelfChipRow;
 
     @Override
@@ -84,6 +85,55 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
         if (savedInstanceState == null) {
             M3Motion.animateEnter(view, 12f * getResources().getDisplayMetrics().density, 0f);
         }
+        if (getVerticalGridView() != null) {
+            getVerticalGridView().addOnScrollListener(new RecyclerView.OnScrollListener() {
+                @Override
+                public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                    if (mHeroSpotlightPresenter != null) {
+                        mHeroSpotlightPresenter.onScrollChanged();
+                    }
+                }
+
+                @Override
+                public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                    if (mHeroSpotlightPresenter != null) {
+                        mHeroSpotlightPresenter.onScrollDragging(newState == RecyclerView.SCROLL_STATE_DRAGGING);
+                    }
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (mHeroSpotlightPresenter != null) {
+            mHeroSpotlightPresenter.onHostResume();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        if (mHeroSpotlightPresenter != null) {
+            mHeroSpotlightPresenter.onHostPause();
+        }
+        super.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        if (mHeroSpotlightPresenter != null) {
+            mHeroSpotlightPresenter.onHostStop();
+        }
+        super.onStop();
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (mHeroSpotlightPresenter != null) {
+            mHeroSpotlightPresenter.onHostDestroy();
+        }
+        super.onDestroyView();
     }
 
     protected void addHeader(ChannelHeaderCallback callback) {
@@ -124,10 +174,11 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             mRowPresenter = new CustomListRowPresenter();
             mRowPresenter.enableChildRoundedCorners(getMainUIData().isUiTweakEnabled(MainUIData.UI_TWEAK_ROUNDED_CORNERS));
 
+            mHeroSpotlightPresenter = new HeroSpotlightPresenter();
             ClassPresenterSelector presenterSelector = new ClassPresenterSelector();
             presenterSelector.addClassPresenter(ListRow.class, mRowPresenter);
             presenterSelector.addClassPresenter(ChannelHeaderCallback.class, new ChannelHeaderPresenter());
-            presenterSelector.addClassPresenter(HeroSpotlightRow.class, new HeroSpotlightPresenter());
+            presenterSelector.addClassPresenter(HeroSpotlightRow.class, mHeroSpotlightPresenter);
             presenterSelector.addClassPresenter(ShelfChipRow.class, new ShelfChipPresenter());
 
             mRowsAdapter = new ArrayObjectAdapter(presenterSelector);
@@ -335,8 +386,13 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
                 : firstGroup.getTitle();
         HeroSpotlightRow hero = new HeroSpotlightRow(label, firstGroup.getVideos(), new HeroSpotlightRow.OnHeroActionListener() {
             @Override
-            public void onWatchClicked(Video video) {
-                if (mMainPresenter != null) {
+            public void onWatchClicked(Video video, long previewPositionMs) {
+                if (mMainPresenter != null && video != null) {
+                    if (previewPositionMs >= 0L) {
+                        // Seek full playback to exact preview position (floor at 1ms when frame 0 rendered
+                        // so VideoStateController.restorePendingPosition overrides any older saved state)
+                        video.pendingPosMs = Math.max(1L, previewPositionMs);
+                    }
                     mMainPresenter.onVideoItemClicked(video);
                 }
             }
