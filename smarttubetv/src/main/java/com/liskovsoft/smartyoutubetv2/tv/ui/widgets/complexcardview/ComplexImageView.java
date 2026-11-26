@@ -17,6 +17,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
 import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.embedplayer.EmbedPlayerView;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.lang.ref.WeakReference;
@@ -156,7 +157,7 @@ public class ComplexImageView extends RelativeLayout {
                 mPreviewImage.setScaleType(ScaleType.CENTER_CROP);
                 mPreviewImage.setAdjustViewBounds(true);
                 mPreviewContainer.addView(mPreviewImage, new FrameLayout.LayoutParams(mPreviewWidth, mPreviewHeight));
-                mPreviewContainer.setVisibility(View.VISIBLE);
+                revealPreviewContainer();
             }
 
             Glide.with(getContext().getApplicationContext()) // FIX: "You cannot start a load for a destroyed activity"
@@ -184,10 +185,25 @@ public class ComplexImageView extends RelativeLayout {
             mPreviewPlayer.setMute(mMute);
             mPreviewPlayer.setBackgroundColor(Color.BLACK);
             mPreviewContainer.addView(mPreviewPlayer, new FrameLayout.LayoutParams(mPreviewWidth, mPreviewHeight));
-            mPreviewContainer.setVisibility(View.VISIBLE);
+            revealPreviewContainer();
         }
 
         mPreviewPlayer.openVideo(getVideo());
+    }
+
+    private void revealPreviewContainer() {
+        mPreviewContainer.animate().cancel();
+        mPreviewContainer.setVisibility(View.VISIBLE);
+        if (M3Motion.areAnimationsEnabled(getContext())) {
+            mPreviewContainer.setAlpha(0f);
+            mPreviewContainer.animate()
+                    .alpha(1f)
+                    .setDuration(M3Motion.DURATION_FAST_EFFECTS_MS)
+                    .setInterpolator(M3Motion.fastEffects())
+                    .start();
+        } else {
+            mPreviewContainer.setAlpha(1f);
+        }
     }
 
     public void stopPlayback() {

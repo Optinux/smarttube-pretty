@@ -27,6 +27,7 @@ import android.view.View;
 import android.view.ViewParent;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
+import android.view.animation.OvershootInterpolator;
 import android.view.animation.PathInterpolator;
 
 import androidx.leanback.R;
@@ -64,28 +65,42 @@ public class FocusHighlightHelper {
         private final int mDuration;
         private final ShadowOverlayContainer mWrapper;
         private final float mScaleDiff;
+        private final float mElevationLiftPx;
         private float mFocusLevel = 0f;
         private float mFocusLevelStart;
         private float mFocusLevelDelta;
+        private float mSpatialLevel = 0f;
+        private float mSpatialLevelStart;
+        private float mSpatialLevelDelta;
         private final TimeAnimator mAnimator = new TimeAnimator();
-        private final Interpolator mInterpolator = createInterpolator();
+        private final Interpolator mSpatialInterpolator = createSpatialInterpolator();
+        private final Interpolator mEffectsInterpolator = createEffectsInterpolator();
         private final ColorOverlayDimmer mDimmer;
 
-        private static Interpolator createInterpolator() {
+        private static Interpolator createSpatialInterpolator() {
             if (Build.VERSION.SDK_INT >= 21) {
-                return new PathInterpolator(0.2f, 0.0f, 0.0f, 1.0f);
+                return new PathInterpolator(0.42f, 1.67f, 0.21f, 0.90f);
             }
-            return new DecelerateInterpolator(1.5f);
+            return new OvershootInterpolator(0.75f);
+        }
+
+        private static Interpolator createEffectsInterpolator() {
+            if (Build.VERSION.SDK_INT >= 21) {
+                return new PathInterpolator(0.31f, 0.94f, 0.34f, 1.00f);
+            }
+            return new DecelerateInterpolator();
         }
 
         void animateFocus(boolean select, boolean immediate) {
             endAnimation();
             final float end = select ? 1 : 0;
             if (immediate) {
-                setFocusLevel(end);
-            } else if (mFocusLevel != end) {
+                setFocusLevels(end, end);
+            } else if (mFocusLevel != end || mSpatialLevel != end) {
                 mFocusLevelStart = mFocusLevel;
                 mFocusLevelDelta = end - mFocusLevelStart;
+                mSpatialLevelStart = mSpatialLevel;
+                mSpatialLevelDelta = end - mSpatialLevelStart;
                 mAnimator.start();
             }
         }
@@ -94,6 +109,7 @@ public class FocusHighlightHelper {
             mView = view;
             mDuration = duration;
             mScaleDiff = scale - 1f;
+            mElevationLiftPx = 4f * view.getResources().getDisplayMetrics().density;
             if (view instanceof ShadowOverlayContainer) {
                 mWrapper = (ShadowOverlayContainer) view;
             } else {
@@ -108,17 +124,25 @@ public class FocusHighlightHelper {
         }
 
         void setFocusLevel(float level) {
-            mFocusLevel = level;
-            float scale = 1f + mScaleDiff * level;
+            setFocusLevels(level, level);
+        }
+
+        void setFocusLevels(float effectsLevel, float spatialLevel) {
+            mFocusLevel = effectsLevel;
+            mSpatialLevel = spatialLevel;
+            float scale = 1f + mScaleDiff * spatialLevel;
             mView.setScaleX(scale);
             mView.setScaleY(scale);
             if (mWrapper != null) {
-                mWrapper.setShadowFocusLevel(level);
+                mWrapper.setShadowFocusLevel(effectsLevel);
             } else {
-                ShadowOverlayHelper.setNoneWrapperShadowFocusLevel(mView, level);
+                ShadowOverlayHelper.setNoneWrapperShadowFocusLevel(mView, effectsLevel);
+                if (mScaleDiff > 0f && Build.VERSION.SDK_INT >= 21) {
+                    mView.setTranslationZ(mElevationLiftPx * Math.max(0f, Math.min(1f, effectsLevel)));
+                }
             }
             if (mDimmer != null) {
-                mDimmer.setActiveLevel(level);
+                mDimmer.setActiveLevel(effectsLevel);
                 int color = mDimmer.getPaint().getColor();
                 if (mWrapper != null) {
                     mWrapper.setOverlayColor(color);
@@ -140,20 +164,25 @@ public class FocusHighlightHelper {
         public void onTimeUpdate(TimeAnimator animation, long totalTime, long deltaTime) {
             float fraction;
             if (totalTime >= mDuration) {
-                fraction = 1;
+                fraction = 1f;
                 mAnimator.end();
+                setFocusLevels(mFocusLevelStart + mFocusLevelDelta, mSpatialLevelStart + mSpatialLevelDelta);
+                return;
             } else {
                 fraction = (float) (totalTime / (double) mDuration);
             }
-            if (mInterpolator != null) {
-                fraction = mInterpolator.getInterpolation(fraction);
-            }
-            setFocusLevel(mFocusLevelStart + fraction * mFocusLevelDelta);
+            float effectsFraction = mEffectsInterpolator != null
+                    ? mEffectsInterpolator.getInterpolation(fraction) : fraction;
+            float spatialFraction = mSpatialInterpolator != null
+                    ? mSpatialInterpolator.getInterpolation(fraction) : fraction;
+            setFocusLevels(
+                    mFocusLevelStart + effectsFraction * mFocusLevelDelta,
+                    mSpatialLevelStart + spatialFraction * mSpatialLevelDelta);
         }
     }
 
     static class BrowseItemFocusHighlight implements FocusHighlightHandler {
-        private static final int DURATION_MS = 150;
+        private static final int DURATION_MS = 180;
 
         private int mScaleIndex;
         private final boolean mUseDimmer;
@@ -318,13 +347,13 @@ public class FocusHighlightHelper {
             }
 
             @Override
-            void setFocusLevel(float level) {
+            void setFocusLevels(float effectsLevel, float spatialLevel) {
                 Presenter presenter = mViewHolder.getPresenter();
                 if (presenter instanceof RowHeaderPresenter) {
                     ((RowHeaderPresenter) presenter).setSelectLevel(
-                            ((RowHeaderPresenter.ViewHolder) mViewHolder.getViewHolder()), level);
+                            ((RowHeaderPresenter.ViewHolder) mViewHolder.getViewHolder()), effectsLevel);
                 }
-                super.setFocusLevel(level);
+                super.setFocusLevels(effectsLevel, spatialLevel);
             }
 
         }

@@ -44,6 +44,7 @@ import com.liskovsoft.sharedutils.helpers.MessageHelpers;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.SearchPresenter;
 import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.smartyoutubetv2.tv.BuildConfig;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.util.ArrayList;
@@ -359,22 +360,16 @@ public class SearchSupportFragment extends Fragment {
         mSearchTextEditor = mSearchBar.findViewById(R.id.lb_search_text_editor);
         if (searchBarItems != null) {
             boolean initiallyFocused = mSearchTextEditor.hasFocus();
-            searchBarItems.setBackground(ViewUtil.createRoundedDrawable(
-                    initiallyFocused ? surfaceHighest : surfaceHigh,
-                    initiallyFocused ? outline : outlineVariant,
-                    initiallyFocused ? focusStrokePx : hairlineStrokePx,
-                    pillRadius));
+            applySearchBarFocus(searchBarItems, initiallyFocused, surfaceHigh, surfaceHighest,
+                    outlineVariant, outline, hairlineStrokePx, focusStrokePx, pillRadius, false);
         }
         mSearchTextEditor.setSelectAllOnFocus(true); // Select all on focus (easy clear previous search)
         mSearchTextEditor.setOnFocusChangeListener((v, focused) -> {
             Log.d(TAG, "on search field focused");
 
             if (searchBarItems != null) {
-                searchBarItems.setBackground(ViewUtil.createRoundedDrawable(
-                        focused ? surfaceHighest : surfaceHigh,
-                        focused ? outline : outlineVariant,
-                        focused ? focusStrokePx : hairlineStrokePx,
-                        pillRadius));
+                applySearchBarFocus(searchBarItems, focused, surfaceHigh, surfaceHighest,
+                        outlineVariant, outline, hairlineStrokePx, focusStrokePx, pillRadius, true);
             }
 
             // User clicked on tag and tries to edit search query
@@ -490,6 +485,34 @@ public class SearchSupportFragment extends Fragment {
             onSetSearchResultProvider();
         }
         return root;
+    }
+
+    private static void applySearchBarFocus(
+            View searchBarItems,
+            boolean focused,
+            int surfaceHigh,
+            int surfaceHighest,
+            int outlineVariant,
+            int outline,
+            int hairlineStrokePx,
+            int focusStrokePx,
+            float pillRadius,
+            boolean animate) {
+        if (!animate) {
+            M3Motion.cancelFocusAnimations(searchBarItems);
+        }
+        M3Motion.applyCardFocusTransition(
+                searchBarItems,
+                focused,
+                focused ? surfaceHigh : surfaceHighest,
+                focused ? surfaceHighest : surfaceHigh,
+                focused ? outlineVariant : outline,
+                focused ? outline : outlineVariant,
+                focused ? hairlineStrokePx : focusStrokePx,
+                focused ? focusStrokePx : hairlineStrokePx,
+                pillRadius,
+                null);
+        M3Motion.animateFocusScale(searchBarItems, focused, 1.015f);
     }
 
     private void resultsAvailable() {

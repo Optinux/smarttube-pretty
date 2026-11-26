@@ -196,6 +196,8 @@ public class ThumbsBar extends LinearLayout {
                 child.setBackground(ViewUtil.createRoundedDrawable(
                         Color.TRANSPARENT, mHeroBorderColor, mHeroBorderWidthPx, mCornerRadiusPx));
                 child.setAlpha(1.0f);
+                child.setScaleX(1.04f);
+                child.setScaleY(1.04f);
                 if (VERSION.SDK_INT >= 21) {
                     child.setElevation(mHeroElevationPx);
                 }
@@ -204,7 +206,9 @@ public class ThumbsBar extends LinearLayout {
                 lp.height = mThumbHeightInPixel;
                 child.setPadding(0, 0, 0, 0);
                 child.setBackground(null);
-                child.setAlpha(0.88f);
+                child.setAlpha(0.84f);
+                child.setScaleX(1.0f);
+                child.setScaleY(1.0f);
                 if (VERSION.SDK_INT >= 21) {
                     child.setElevation(0f);
                 }

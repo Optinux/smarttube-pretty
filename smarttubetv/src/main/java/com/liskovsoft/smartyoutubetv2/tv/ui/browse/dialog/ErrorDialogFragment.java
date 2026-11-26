@@ -20,6 +20,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.errors.ErrorFragmentData
 import com.liskovsoft.smartyoutubetv2.common.app.models.errors.SignInError;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.fragments.ErrorSupportFragment;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class ErrorDialogFragment extends ErrorSupportFragment implements BrowseSupportFragment.MainFragmentAdapterProvider {
@@ -58,6 +59,9 @@ public class ErrorDialogFragment extends ErrorSupportFragment implements BrowseS
         super.onStart();
 
         setDialogContent();
+        if (getView() != null) {
+            M3Motion.animateEnter(getView(), 0f, 12f * getResources().getDisplayMetrics().density);
+        }
     }
 
     private void setDialogContent() {
@@ -130,6 +134,7 @@ public class ErrorDialogFragment extends ErrorSupportFragment implements BrowseS
         }
         button.setBackground(ViewUtil.createFocusSelectorDrawable(
                 fill, fill, Color.TRANSPARENT, outline, 0, strokeWidthPx, pillRadius));
+        button.setOnFocusChangeListener((v, hasFocus) -> M3Motion.animateFocusScale(v, hasFocus, 1.05f));
     }
 
     @Override

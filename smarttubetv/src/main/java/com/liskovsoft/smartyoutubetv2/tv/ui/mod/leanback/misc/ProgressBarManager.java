@@ -12,6 +12,7 @@ import androidx.leanback.app.VerticalGridFragment;
 
 import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 
 /**
  * Manager for showing/hiding progress bar widget. This class lets user specify an initial
@@ -42,8 +43,10 @@ public final class ProgressBarManager {
             if (mIsShowing) {
                 if (mProgressBarView == null) {
                     mProgressBarView = createProgressBar(rootView, mPosition);
+                    animateShow(mProgressBarView);
                 } else if (mUserProvidedProgressBar) {
                     mProgressBarView.setVisibility(View.VISIBLE);
+                    animateShow(mProgressBarView);
                 }
             }
         }
@@ -52,14 +55,62 @@ public final class ProgressBarManager {
     private final Runnable hideRunnable = new Runnable() {
         @Override
         public void run() {
+            if (mProgressBarView == null) {
+                return;
+            }
+            if (!M3Motion.areAnimationsEnabled(mProgressBarView.getContext())) {
+                finishHide();
+                return;
+            }
+            mProgressBarView.animate().cancel();
+            mProgressBarView.animate()
+                    .alpha(0f)
+                    .scaleX(0.92f)
+                    .scaleY(0.92f)
+                    .setDuration(120L)
+                    .setInterpolator(M3Motion.fastEffects())
+                    .withEndAction(() -> finishHide())
+                    .start();
+        }
+
+        private void finishHide() {
+            if (mIsShowing || mProgressBarView == null) {
+                return;
+            }
             if (mUserProvidedProgressBar) {
                 mProgressBarView.setVisibility(View.INVISIBLE);
-            } else if (mProgressBarView != null) {
+                mProgressBarView.setAlpha(1f);
+                mProgressBarView.setScaleX(1f);
+                mProgressBarView.setScaleY(1f);
+            } else {
                 rootView.removeView(mProgressBarView);
                 mProgressBarView = null;
             }
         }
     };
+
+    private static void animateShow(View view) {
+        if (view == null) {
+            return;
+        }
+        view.animate().cancel();
+        if (!M3Motion.areAnimationsEnabled(view.getContext())) {
+            view.setAlpha(1f);
+            view.setScaleX(1f);
+            view.setScaleY(1f);
+            return;
+        }
+        view.setAlpha(0f);
+        view.setScaleX(0.92f);
+        view.setScaleY(0.92f);
+        view.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(M3Motion.DURATION_FAST_SPATIAL_MS)
+                .setInterpolator(M3Motion.fastSpatial())
+                .start();
+    }
 
     private static View createProgressBar(ViewGroup rootView, int position) {
         ProgressBar progressBarView = new ProgressBar(

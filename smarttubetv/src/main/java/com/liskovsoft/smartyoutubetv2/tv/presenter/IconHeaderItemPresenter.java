@@ -3,6 +3,7 @@ package com.liskovsoft.smartyoutubetv2.tv.presenter;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -160,11 +161,15 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
         if (label != null) {
             label.setTextColor(ColorUtils.blendARGB(mOnSurfaceVariantColor, mOnSecondaryContainerColor, level));
             label.setAlpha(contentAlpha);
+            label.setTypeface(Typeface.create("sans-serif-medium", level > 0.5f ? Typeface.BOLD : Typeface.NORMAL));
         }
 
         ImageView iconView = holder.view.findViewById(R.id.header_icon);
         if (iconView != null) {
             iconView.setAlpha(contentAlpha);
+            float iconScale = 1.0f + 0.08f * level;
+            iconView.setScaleX(iconScale);
+            iconView.setScaleY(iconScale);
             if (mIconUrl == null && mResId > 0) {
                 int iconTint = ColorUtils.blendARGB(mOnSurfaceVariantColor, mPrimaryColor, level);
                 ImageViewCompat.setImageTintList(iconView, ColorStateList.valueOf(iconTint));

@@ -17,6 +17,7 @@ import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.ui.browse.video.GridFragmentHelper;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class SearchFieldPresenter extends Presenter {
@@ -65,11 +66,36 @@ public class SearchFieldPresenter extends Presenter {
         int focusStrokePx = Math.round(TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, 2f, context.getResources().getDisplayMetrics()));
 
-        editField.setBackground(ViewUtil.createFocusSelectorDrawable(
-                bgUnfocused, bgFocused, strokeUnfocused, strokeFocused, hairlineStrokePx, focusStrokePx, pillRadius));
+        M3Motion.cancelFocusAnimations(editField);
+        M3Motion.applyCardFocusTransition(
+                editField,
+                false,
+                bgFocused,
+                bgUnfocused,
+                strokeFocused,
+                strokeUnfocused,
+                focusStrokePx,
+                hairlineStrokePx,
+                pillRadius,
+                null);
         editField.setTextColor(textColor);
         editField.setHintTextColor(hintColor);
         ViewUtil.applyRoundedOutline(editField, pillRadius);
+
+        editField.setOnFocusChangeListener((v, hasFocus) -> {
+            M3Motion.applyCardFocusTransition(
+                    editField,
+                    hasFocus,
+                    hasFocus ? bgUnfocused : bgFocused,
+                    hasFocus ? bgFocused : bgUnfocused,
+                    hasFocus ? strokeUnfocused : strokeFocused,
+                    hasFocus ? strokeFocused : strokeUnfocused,
+                    hasFocus ? hairlineStrokePx : focusStrokePx,
+                    hasFocus ? focusStrokePx : hairlineStrokePx,
+                    pillRadius,
+                    null);
+            M3Motion.animateFocusScale(editField, hasFocus, 1.015f);
+        });
 
         contentView.setOnFocusChangeListener((v, hasFocus) -> {
             Log.d(TAG, "On edit field focused");

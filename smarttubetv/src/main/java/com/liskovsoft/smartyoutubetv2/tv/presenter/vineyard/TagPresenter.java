@@ -3,12 +3,14 @@ package com.liskovsoft.smartyoutubetv2.tv.presenter.vineyard;
 import android.content.Context;
 import android.util.TypedValue;
 import android.view.ViewGroup;
+import androidx.core.graphics.ColorUtils;
 
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.common.app.models.search.vineyard.Tag;
 import com.liskovsoft.smartyoutubetv2.common.app.models.search.vineyard.User;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.base.LongClickPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.vineyard.TagCardView;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class TagPresenter extends LongClickPresenter {
@@ -60,12 +62,26 @@ public class TagPresenter extends LongClickPresenter {
     }
 
     private void updateCardAppearance(TagCardView view, boolean selected) {
-        int bgColor = selected ? mSelectedBackgroundColor : mDefaultBackgroundColor;
-        int textColor = selected ? mSelectedTextColor : mDefaultTextColor;
-        view.setBackground(ViewUtil.createRoundedDrawable(bgColor, 0, 0, mPillRadius));
-        ViewUtil.updateCardFocusForeground(
-                view, selected, mOutlineColor, mHairlineColor, mFocusStrokePx, mHairlineStrokePx, mPillRadius);
-        view.setTextColor(textColor);
+        int fromBg = selected ? mDefaultBackgroundColor : mSelectedBackgroundColor;
+        int toBg = selected ? mSelectedBackgroundColor : mDefaultBackgroundColor;
+        int fromStroke = selected ? mHairlineColor : mOutlineColor;
+        int toStroke = selected ? mOutlineColor : mHairlineColor;
+        int fromStrokePx = selected ? mHairlineStrokePx : mFocusStrokePx;
+        int toStrokePx = selected ? mFocusStrokePx : mHairlineStrokePx;
+        int fromText = selected ? mDefaultTextColor : mSelectedTextColor;
+        int toText = selected ? mSelectedTextColor : mDefaultTextColor;
+
+        M3Motion.applyCardFocusTransition(
+                view,
+                selected,
+                fromBg,
+                toBg,
+                fromStroke,
+                toStroke,
+                fromStrokePx,
+                toStrokePx,
+                mPillRadius,
+                (fraction, currentFill) -> view.setTextColor(ColorUtils.blendARGB(fromText, toText, fraction)));
     }
 
     @Override
@@ -93,7 +109,7 @@ public class TagPresenter extends LongClickPresenter {
 
     @Override
     public void onUnbindViewHolder(ViewHolder viewHolder) {
-
+        M3Motion.cancelFocusAnimations(viewHolder.view);
     }
 
 }

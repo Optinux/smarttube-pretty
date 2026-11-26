@@ -758,7 +758,7 @@ public class PlayerTweaksData implements ProfileChangeListener {
         mIsSectionPlaylistEnabled = Helpers.parseBoolean(split, 31, Utils.isEnoughRam());
         mIsScreenOffTimeoutEnabled = Helpers.parseBoolean(split, 32, false);
         mScreenOffTimeoutSec = Helpers.parseInt(split, 33, 0);
-        mIsUIAnimationsEnabled = Helpers.parseBoolean(split, 34, false);
+        mIsUIAnimationsEnabled = Helpers.parseBoolean(split, 34, true);
         mIsLikesCounterEnabled = Helpers.parseBoolean(split, 35, true);
         mIsChapterNotificationEnabled = Helpers.parseBoolean(split, 36, false);
         mScreenOffDimmingPercents = Helpers.parseInt(split, 37, 100);

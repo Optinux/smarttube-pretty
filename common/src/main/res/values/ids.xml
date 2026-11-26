@@ -24,4 +24,7 @@
     <item name="action_afr" type="id"/>
     <item name="channel_new_content" type="id"/>
     <item name="linkify_click_handler" type="id"/>
+    <item name="m3_focus_color_animator" type="id"/>
+    <item name="m3_focus_state_tag" type="id"/>
+    <item name="m3_elevation_animator" type="id"/>
 </resources>

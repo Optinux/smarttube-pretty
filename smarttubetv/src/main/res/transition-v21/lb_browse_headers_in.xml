@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<transitionSet
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="@integer/lb_browse_headers_transition_duration">
+    <changeBounds
+        android:startDelay="@integer/lb_browse_headers_transition_delay"
+        android:interpolator="@interpolator/m3_default_spatial" />
+    <changeTransform
+        android:startDelay="@integer/lb_browse_headers_transition_delay"
+        android:interpolator="@interpolator/m3_default_spatial">
+        <targets>
+            <target android:targetId="@id/container_list" />
+        </targets>
+    </changeTransform>
+    <fade
+        android:transitionVisibilityMode="mode_in"
+        android:startDelay="@integer/lb_browse_headers_transition_delay"
+        android:interpolator="@interpolator/m3_fast_effects" />
+    <fade
+        android:transitionVisibilityMode="mode_out"
+        android:interpolator="@interpolator/m3_fast_effects" />
+</transitionSet>

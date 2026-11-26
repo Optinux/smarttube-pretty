@@ -23,6 +23,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.presenters.SignInPresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.views.SignInView;
 import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.util.List;
@@ -74,9 +75,16 @@ public class SignInFragment extends GuidedStepSupportFragment implements SignInV
             float density = getResources().getDisplayMetrics().density;
             float radiusPx = 16f * density;
             int padPx = Math.round(12 * density);
+            int outlineColor = ViewUtil.getThemeColor(
+                    getContext(), R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+            int strokePx = getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
             iconView.setPadding(padPx, padPx, padPx, padPx);
-            iconView.setBackground(ViewUtil.createRoundedDrawable(Color.WHITE, 0, 0, radiusPx));
+            iconView.setBackground(ViewUtil.createRoundedDrawable(Color.WHITE, outlineColor, strokePx, radiusPx));
             ViewUtil.applyRoundedOutline(iconView, radiusPx);
+        }
+
+        if (getView() != null) {
+            M3Motion.animateEnter(getView(), 0f, 12f * getResources().getDisplayMetrics().density);
         }
     }
 

@@ -12,6 +12,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.ColorUtils;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
@@ -23,6 +24,7 @@ import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.base.LongClickPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.ui.browse.video.GridFragmentHelper;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class ChannelCardPresenter extends LongClickPresenter {
@@ -81,8 +83,7 @@ public class ChannelCardPresenter extends LongClickPresenter {
         ViewUtil.applyRoundedOutline(container, mCornerRadius);
 
         ImageView imageView = container.findViewById(R.id.channel_image);
-        float avatarRadius = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, 14f, context.getResources().getDisplayMetrics());
+        float avatarRadius = context.getResources().getDimension(R.dimen.m3_pill_corner_radius);
         ViewUtil.applyRoundedOutline(imageView, avatarRadius);
 
         View newDot = container.findViewById(R.id.channel_new_indicator);
@@ -92,7 +93,7 @@ public class ChannelCardPresenter extends LongClickPresenter {
         }
 
         TextView textView = container.findViewById(R.id.channel_title);
-        updateCardStyle(container, textView, false, false);
+        updateCardStyle(container, textView, false, false, false);
 
         boolean autoScrollEnabled = isCardTextAutoScrollEnabled(context);
         if (autoScrollEnabled) {
@@ -101,7 +102,7 @@ public class ChannelCardPresenter extends LongClickPresenter {
 
         container.setOnFocusChangeListener((v, hasFocus) -> {
             boolean hasNew = textView.getTag(R.id.channel_new_content) != null;
-            updateCardStyle(container, textView, hasFocus, hasNew);
+            updateCardStyle(container, textView, hasFocus, hasNew, true);
 
             if (!autoScrollEnabled) {
                 return;
@@ -117,20 +118,35 @@ public class ChannelCardPresenter extends LongClickPresenter {
         return new ViewHolder(container);
     }
 
-    private void updateCardStyle(FrameLayout container, TextView textView, boolean hasFocus, boolean hasNew) {
-        int backgroundColor = hasFocus
-                ? mSelectedBackgroundColor
-                : (hasNew ? mNewContentBackgroundColor : mDefaultBackgroundColor);
-        int textColor = hasFocus
-                ? mSelectedTextColor
-                : (hasNew ? mNewContentTextColor : mDefaultTextColor);
+    private void updateCardStyle(FrameLayout container, TextView textView, boolean hasFocus, boolean hasNew, boolean allowAnimation) {
+        if (!allowAnimation) {
+            M3Motion.cancelFocusAnimations(container);
+        }
+        int unfocusedBg = hasNew ? mNewContentBackgroundColor : mDefaultBackgroundColor;
+        int unfocusedText = hasNew ? mNewContentTextColor : mDefaultTextColor;
         int unfocusedStrokeColor = hasNew ? mPrimaryColor : mHairlineColor;
         int unfocusedStrokeWidth = hasNew ? mNewStrokePx : mHairlineStrokePx;
 
-        container.setBackground(ViewUtil.createRoundedDrawable(backgroundColor, 0, 0, mCornerRadius));
-        ViewUtil.updateCardFocusForeground(
-                container, hasFocus, mOutlineColor, unfocusedStrokeColor, mFocusStrokePx, unfocusedStrokeWidth, mCornerRadius);
-        textView.setTextColor(textColor);
+        int fromBg = hasFocus ? unfocusedBg : mSelectedBackgroundColor;
+        int toBg = hasFocus ? mSelectedBackgroundColor : unfocusedBg;
+        int fromStroke = hasFocus ? unfocusedStrokeColor : mOutlineColor;
+        int toStroke = hasFocus ? mOutlineColor : unfocusedStrokeColor;
+        int fromStrokePx = hasFocus ? unfocusedStrokeWidth : mFocusStrokePx;
+        int toStrokePx = hasFocus ? mFocusStrokePx : unfocusedStrokeWidth;
+        int fromText = hasFocus ? unfocusedText : mSelectedTextColor;
+        int toText = hasFocus ? mSelectedTextColor : unfocusedText;
+
+        M3Motion.applyCardFocusTransition(
+                container,
+                hasFocus,
+                fromBg,
+                toBg,
+                fromStroke,
+                toStroke,
+                fromStrokePx,
+                toStrokePx,
+                mCornerRadius,
+                (fraction, currentFill) -> textView.setTextColor(ColorUtils.blendARGB(fromText, toText, fraction)));
     }
 
     @Override
@@ -147,7 +163,7 @@ public class ChannelCardPresenter extends LongClickPresenter {
 
         // We should setup props each time because object may be reused by the underlying RecyclerView
         textView.setTag(R.id.channel_new_content, video.hasNewContent ? true : null);
-        updateCardStyle((FrameLayout) viewHolder.view, textView, viewHolder.view.hasFocus(), video.hasNewContent);
+        updateCardStyle((FrameLayout) viewHolder.view, textView, viewHolder.view.hasFocus(), video.hasNewContent, false);
 
         View newDot = viewHolder.view.findViewById(R.id.channel_new_indicator);
         if (newDot != null) {
@@ -167,6 +183,7 @@ public class ChannelCardPresenter extends LongClickPresenter {
 
     @Override
     public void onUnbindViewHolder(ViewHolder viewHolder) {
+        M3Motion.cancelFocusAnimations(viewHolder.view);
         // Remove references to images so that the garbage collector can free up memory.
         ImageView imageView = viewHolder.view.findViewById(R.id.channel_image);
         imageView.setImageDrawable(null);

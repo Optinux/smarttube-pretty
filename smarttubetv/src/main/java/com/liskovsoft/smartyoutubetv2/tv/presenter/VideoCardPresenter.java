@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.ColorUtils;
 import androidx.leanback.widget.Presenter;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
@@ -26,6 +27,7 @@ import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.base.LongClickPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.ui.browse.video.GridFragmentHelper;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.complexcardview.ComplexImageCardView;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 /*
@@ -108,27 +110,43 @@ public class VideoCardPresenter extends LongClickPresenter {
     }
 
     private void updateCardBackgroundColor(ComplexImageCardView view, boolean selected) {
-        int backgroundColor = selected ? mSelectedBackgroundColor : mDefaultBackgroundColor;
-        int titleColor = selected ? mSelectedTextColor : mDefaultTextColor;
-        int subtitleColor = selected ? mSelectedSubtitleColor : mDefaultSubtitleColor;
+        int fromBg = selected ? mDefaultBackgroundColor : mSelectedBackgroundColor;
+        int toBg = selected ? mSelectedBackgroundColor : mDefaultBackgroundColor;
+        int fromStroke = selected ? mHairlineColor : mOutlineColor;
+        int toStroke = selected ? mOutlineColor : mHairlineColor;
+        int fromStrokePx = selected ? mHairlineStrokePx : mFocusStrokePx;
+        int toStrokePx = selected ? mFocusStrokePx : mHairlineStrokePx;
 
-        view.setBackground(ViewUtil.createRoundedDrawable(backgroundColor, 0, 0, mCornerRadius));
-        ViewUtil.updateCardFocusForeground(
-                view, selected, mOutlineColor, mHairlineColor, mFocusStrokePx, mHairlineStrokePx, mCornerRadius);
+        int fromTitle = selected ? mDefaultTextColor : mSelectedTextColor;
+        int toTitle = selected ? mSelectedTextColor : mDefaultTextColor;
+        int fromSubtitle = selected ? mDefaultSubtitleColor : mSelectedSubtitleColor;
+        int toSubtitle = selected ? mSelectedSubtitleColor : mDefaultSubtitleColor;
 
         View infoField = view.findViewById(R.id.info_field);
-        if (infoField != null) {
-            infoField.setBackgroundColor(backgroundColor);
-        }
-
         TextView titleText = view.findViewById(R.id.title_text);
-        if (titleText != null) {
-            titleText.setTextColor(titleColor);
-        }
         TextView contentText = view.findViewById(R.id.content_text);
-        if (contentText != null) {
-            contentText.setTextColor(subtitleColor);
-        }
+
+        M3Motion.applyCardFocusTransition(
+                view,
+                selected,
+                fromBg,
+                toBg,
+                fromStroke,
+                toStroke,
+                fromStrokePx,
+                toStrokePx,
+                mCornerRadius,
+                (fraction, currentFill) -> {
+                    if (infoField != null) {
+                        infoField.setBackgroundColor(currentFill);
+                    }
+                    if (titleText != null) {
+                        titleText.setTextColor(ColorUtils.blendARGB(fromTitle, toTitle, fraction));
+                    }
+                    if (contentText != null) {
+                        contentText.setTextColor(ColorUtils.blendARGB(fromSubtitle, toSubtitle, fraction));
+                    }
+                });
     }
 
     @Override
@@ -197,6 +215,7 @@ public class VideoCardPresenter extends LongClickPresenter {
         super.onUnbindViewHolder(viewHolder);
 
         ComplexImageCardView cardView = (ComplexImageCardView) viewHolder.view;
+        M3Motion.cancelFocusAnimations(cardView);
 
         // Remove references to images so that the garbage collector can free up memory.
         cardView.setBadgeImage(null);

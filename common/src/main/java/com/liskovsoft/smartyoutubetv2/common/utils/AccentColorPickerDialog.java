@@ -11,6 +11,10 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.Interpolator;
+import android.view.animation.OvershootInterpolator;
+import android.view.animation.PathInterpolator;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
@@ -171,6 +175,20 @@ public final class AccentColorPickerDialog {
             states.addState(new int[]{}, normal);
             btn.setBackground(states);
 
+            Interpolator spatial = Build.VERSION.SDK_INT >= 21
+                    ? new PathInterpolator(0.42f, 1.67f, 0.21f, 0.90f)
+                    : new OvershootInterpolator(0.75f);
+            btn.setOnFocusChangeListener((v, hasFocus) -> {
+                float targetScale = hasFocus ? 1.18f : 1.0f;
+                v.animate().cancel();
+                v.animate()
+                        .scaleX(targetScale)
+                        .scaleY(targetScale)
+                        .setDuration(180L)
+                        .setInterpolator(spatial)
+                        .start();
+            });
+
             btn.setOnClickListener(v -> {
                 ColorUtils.colorToHSL(swatchColor, hsl);
                 syncSlidersFromHsl.run();
@@ -251,6 +269,24 @@ public final class AccentColorPickerDialog {
 
         try {
             dialog.show();
+            if (dialog.getWindow() != null) {
+                GradientDrawable dialogBg = new GradientDrawable();
+                dialogBg.setCornerRadius(28f * density);
+                dialogBg.setColor(0xFF1D212A);
+                dialogBg.setStroke(Math.max(1, Math.round(1f * density)), 0xFF343A48);
+                dialog.getWindow().setBackgroundDrawable(dialogBg);
+            }
+            if (contentView != null) {
+                Interpolator decelerate = Build.VERSION.SDK_INT >= 21
+                        ? new PathInterpolator(0.05f, 0.70f, 0.10f, 1.00f)
+                        : new DecelerateInterpolator(1.8f);
+                contentView.setAlpha(0f);
+                contentView.animate()
+                        .alpha(1f)
+                        .setDuration(180L)
+                        .setInterpolator(decelerate)
+                        .start();
+            }
         } catch (RuntimeException e) {
             e.printStackTrace();
             MessageHelpers.showMessage(context, e.getMessage());

@@ -3,6 +3,7 @@
 <!-- Title Logo with embedded clock -->
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:layout_gravity="center_vertical|end"
@@ -18,6 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-medium"
+            android:fontFeatureSettings="tnum"
             android:textSize="@dimen/pip_title_size"
             android:textColor="@color/m3_on_surface"
             android:shadowColor="#66000000"
@@ -25,12 +27,14 @@
             android:shadowDy="1"
             android:shadowRadius="1.2"
             style="?attr/browseTitleTextStyle"
+            tools:targetApi="21"
             android:visibility="gone" />
         <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.time.DateTimeView
             android:id="@+id/global_date"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-medium"
+            android:fontFeatureSettings="tnum"
             android:textSize="@dimen/pip_title_date_size"
             android:textColor="@color/m3_on_surface_variant"
             android:shadowColor="#66000000"
@@ -38,6 +42,7 @@
             android:shadowDy="1"
             android:shadowRadius="1.2"
             style="?attr/browseTitleTextStyle"
+            tools:targetApi="21"
             android:visibility="gone" />
     </LinearLayout>
 

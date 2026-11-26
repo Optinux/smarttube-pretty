@@ -21,6 +21,7 @@ import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -33,6 +34,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.PathInterpolator;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -547,8 +550,12 @@ public class PlaybackSupportFragment extends Fragment {
         mBgFadeOutAnimator.addListener(mFadeListener);
     }
 
-    private TimeInterpolator mLogDecelerateInterpolator = new LogDecelerateInterpolator(100, 0);
-    private TimeInterpolator mLogAccelerateInterpolator = new LogAccelerateInterpolator(100, 0);
+    private TimeInterpolator mLogDecelerateInterpolator = Build.VERSION.SDK_INT >= 21
+            ? new PathInterpolator(0.05f, 0.70f, 0.10f, 1.00f)
+            : new DecelerateInterpolator(1.8f);
+    private TimeInterpolator mLogAccelerateInterpolator = Build.VERSION.SDK_INT >= 21
+            ? new PathInterpolator(0.30f, 0.00f, 0.80f, 0.15f)
+            : new AccelerateInterpolator();
 
     private void loadControlRowAnimator() {
         final AnimatorUpdateListener updateListener = new AnimatorUpdateListener() {
@@ -609,7 +616,7 @@ public class PlaybackSupportFragment extends Fragment {
 
         mOtherRowFadeOutAnimator = loadAnimator(context, R.animator.lb_playback_controls_fade_out);
         mOtherRowFadeOutAnimator.addUpdateListener(updateListener);
-        mOtherRowFadeOutAnimator.setInterpolator(new AccelerateInterpolator());
+        mOtherRowFadeOutAnimator.setInterpolator(mLogAccelerateInterpolator);
     }
 
     /**

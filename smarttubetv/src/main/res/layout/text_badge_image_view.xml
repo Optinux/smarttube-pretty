@@ -24,6 +24,8 @@
                     android:layout_alignParentBottom="true"
                     android:layoutDirection="ltr"
                     android:orientation="vertical"
+                    android:paddingTop="14dp"
+                    android:background="@drawable/card_thumb_scrim"
                     tools:ignore="RtlHardcoded" >
         <TextView android:visibility="invisible"
                   android:id="@+id/extra_text_badge"

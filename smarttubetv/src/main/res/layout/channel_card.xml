@@ -39,8 +39,8 @@
             android:textAlignment="textStart"/>
         <View
             android:id="@+id/channel_new_indicator"
-            android:layout_width="6dp"
-            android:layout_height="6dp"
+            android:layout_width="7dp"
+            android:layout_height="7dp"
             android:layout_marginStart="6dp"
             android:layout_gravity="center_vertical"
             android:visibility="gone" />

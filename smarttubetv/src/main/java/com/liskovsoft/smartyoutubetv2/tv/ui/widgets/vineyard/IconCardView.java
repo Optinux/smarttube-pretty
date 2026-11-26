@@ -12,8 +12,10 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import androidx.core.graphics.ColorUtils;
 import androidx.leanback.widget.BaseCardView;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class IconCardView extends BaseCardView {
@@ -98,17 +100,38 @@ public class IconCardView extends BaseCardView {
     }
 
     private void updateSelectedAppearance(boolean selected) {
-        if (mDetailLayout != null) {
-            mDetailLayout.setBackgroundColor(selected ? mPrimaryContainer : mSurfaceContainer);
-        }
-        if (mTitle != null) {
-            mTitle.setTextColor(selected ? mOnPrimaryContainer : mOnSurface);
-        }
-        if (mValue != null) {
-            mValue.setTextColor(selected ? mOnPrimaryContainer : mOnSurfaceVariant);
-        }
-        ViewUtil.updateCardFocusForeground(
-                this, selected, mOutlineColor, mHairlineColor, mFocusStrokePx, mHairlineStrokePx, mCornerRadius);
+        int fromBg = selected ? mSurfaceContainer : mPrimaryContainer;
+        int toBg = selected ? mPrimaryContainer : mSurfaceContainer;
+        int fromStroke = selected ? mHairlineColor : mOutlineColor;
+        int toStroke = selected ? mOutlineColor : mHairlineColor;
+        int fromStrokePx = selected ? mHairlineStrokePx : mFocusStrokePx;
+        int toStrokePx = selected ? mFocusStrokePx : mHairlineStrokePx;
+        int fromTitle = selected ? mOnSurface : mOnPrimaryContainer;
+        int toTitle = selected ? mOnPrimaryContainer : mOnSurface;
+        int fromValue = selected ? mOnSurfaceVariant : mOnPrimaryContainer;
+        int toValue = selected ? mOnPrimaryContainer : mOnSurfaceVariant;
+
+        M3Motion.applyCardFocusTransition(
+                this,
+                selected,
+                fromBg,
+                toBg,
+                fromStroke,
+                toStroke,
+                fromStrokePx,
+                toStrokePx,
+                mCornerRadius,
+                (fraction, currentFill) -> {
+                    if (mDetailLayout != null) {
+                        mDetailLayout.setBackgroundColor(currentFill);
+                    }
+                    if (mTitle != null) {
+                        mTitle.setTextColor(ColorUtils.blendARGB(fromTitle, toTitle, fraction));
+                    }
+                    if (mValue != null) {
+                        mValue.setTextColor(ColorUtils.blendARGB(fromValue, toValue, fraction));
+                    }
+                });
     }
 
     public void setMainImageDimensions(int width, int height) {

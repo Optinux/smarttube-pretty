@@ -51,6 +51,7 @@ import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.tweaks.Contr
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.tweaks.ControlBarPresenter.OnControlSelectedListener;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.seekpreview.ThumbsBar;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.widget.OnActionLongClickedListener;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.lang.ref.WeakReference;
@@ -652,29 +653,64 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
         }
 
         // MOD: seek ui tweaks
+        private int mControlsMode = CONTROLS_MODE_FULL;
+
         void setControlsMode(int mode) {
+            if (mControlsMode == mode) {
+                return;
+            }
+            mControlsMode = mode;
+            boolean animate = M3Motion.areAnimationsEnabled(mThumbsBarWrapper.getContext());
+            float slidePx = 8f * mThumbsBarWrapper.getResources().getDisplayMetrics().density;
+
             switch (mode) {
                 case CONTROLS_MODE_FULL:
-                    mControlsVh.view.setVisibility(View.VISIBLE);
-                    mSecondaryControlsVh.view.setVisibility(View.VISIBLE);
-                    mDescriptionViewHolder.view.setVisibility(View.VISIBLE);
-                    mAdditionalInfo.setVisibility(View.VISIBLE);
-                    //mTimeInfo.setVisibility(View.VISIBLE);
+                    revealOverlayGroup(mControlsVh.view, animate, 0f);
+                    revealOverlayGroup(mSecondaryControlsVh.view, animate, 0f);
+                    revealOverlayGroup(mDescriptionViewHolder.view, animate, 0f);
+                    revealOverlayGroup(mAdditionalInfo, animate, 0f);
                     // Don't set to GONE or carousel will crash (can't properly calculate length)
+                    mThumbsBarWrapper.animate().cancel();
                     mThumbsBarWrapper.setVisibility(View.INVISIBLE);
+                    mThumbsBarWrapper.setAlpha(1f);
+                    mThumbsBarWrapper.setTranslationY(0f);
                     // MOD: fix old preview image on seek start
                     mThumbsBar.clearThumbBitmaps();
                     break;
                 case CONTROLS_MODE_COMPACT:
+                    mControlsVh.view.animate().cancel();
+                    mSecondaryControlsVh.view.animate().cancel();
+                    mDescriptionViewHolder.view.animate().cancel();
+                    mAdditionalInfo.animate().cancel();
                     mControlsVh.view.setVisibility(View.GONE);
                     // MOD: use GONE to move previews closer to seek bar
                     mSecondaryControlsVh.view.setVisibility(View.GONE);
                     mDescriptionViewHolder.view.setVisibility(View.GONE);
                     mAdditionalInfo.setVisibility(View.GONE);
-                    //mTimeInfo.setVisibility(View.GONE);
-                    mThumbsBarWrapper.setVisibility(View.VISIBLE);
+                    revealOverlayGroup(mThumbsBarWrapper, animate, slidePx);
                     break;
             }
+        }
+
+        private void revealOverlayGroup(View view, boolean animate, float startTranslationY) {
+            if (view == null) {
+                return;
+            }
+            view.animate().cancel();
+            view.setVisibility(View.VISIBLE);
+            if (!animate) {
+                view.setAlpha(1f);
+                view.setTranslationY(0f);
+                return;
+            }
+            view.setAlpha(0f);
+            view.setTranslationY(startTranslationY);
+            view.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setDuration(M3Motion.DURATION_FAST_EFFECTS_MS)
+                    .setInterpolator(M3Motion.fastEffects())
+                    .start();
         }
 
         void dispatchItemSelection() {

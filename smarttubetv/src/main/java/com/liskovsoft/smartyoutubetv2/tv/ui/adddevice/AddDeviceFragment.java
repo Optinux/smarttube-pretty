@@ -11,6 +11,7 @@ import androidx.leanback.widget.GuidedAction;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.AddDevicePresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.views.AddDeviceView;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.util.List;
@@ -52,6 +53,10 @@ public class AddDeviceFragment extends GuidedStepSupportFragment implements AddD
             descriptionView.setTextColor(ViewUtil.getThemeColor(
                     getContext(), R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant));
             descriptionView.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
+        }
+
+        if (getView() != null) {
+            M3Motion.animateEnter(getView(), 0f, 12f * getResources().getDisplayMetrics().density);
         }
     }
 

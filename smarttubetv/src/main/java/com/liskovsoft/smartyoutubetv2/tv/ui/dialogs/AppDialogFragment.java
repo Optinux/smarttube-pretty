@@ -37,6 +37,7 @@ import com.liskovsoft.smartyoutubetv2.tv.ui.dialogs.other.RadioListPreferenceDia
 import com.liskovsoft.smartyoutubetv2.tv.ui.dialogs.other.StringListPreference;
 import com.liskovsoft.smartyoutubetv2.tv.ui.dialogs.other.StringListPreferenceDialogFragment;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.preference.LeanbackListPreferenceDialogFragment;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.util.List;
@@ -231,11 +232,19 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
                 getChildFragmentManager().findFragmentByTag(PREFERENCE_FRAGMENT_TAG);
         if (prevFragment != null) {
             transaction
+                    .setCustomAnimations(
+                            R.animator.m3_shared_axis_x_enter,
+                            R.animator.m3_shared_axis_x_exit,
+                            R.animator.m3_shared_axis_x_enter,
+                            R.animator.m3_shared_axis_x_exit)
                     .addToBackStack(null)
                     .replace(R.id.settings_preference_fragment_container, fragment,
                             PREFERENCE_FRAGMENT_TAG);
         } else {
             transaction
+                    .setCustomAnimations(
+                            R.animator.m3_side_sheet_enter,
+                            R.animator.m3_side_sheet_exit)
                     .add(R.id.settings_preference_fragment_container, fragment,
                             PREFERENCE_FRAGMENT_TAG);
         }
@@ -368,14 +377,37 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
 
             gridView.setOnChildLaidOutListener((parent, child, position, id) -> {
                 if (child != null) {
-                    child.setBackground(ViewUtil.createFocusSelectorDrawable(
-                            Color.TRANSPARENT,
-                            focusedFill,
-                            Color.TRANSPARENT,
-                            focusedStroke,
-                            0,
-                            strokeWidthPx,
-                            itemCornerRadius));
+                    boolean initiallyFocused = child.hasFocus();
+                    M3Motion.cancelFocusAnimations(child);
+                    M3Motion.applyCardFocusTransition(
+                            child,
+                            initiallyFocused,
+                            initiallyFocused ? Color.TRANSPARENT : focusedFill,
+                            initiallyFocused ? focusedFill : Color.TRANSPARENT,
+                            initiallyFocused ? Color.TRANSPARENT : focusedStroke,
+                            initiallyFocused ? focusedStroke : Color.TRANSPARENT,
+                            initiallyFocused ? 0 : strokeWidthPx,
+                            initiallyFocused ? strokeWidthPx : 0,
+                            itemCornerRadius,
+                            null);
+                    final View.OnFocusChangeListener prevListener = child.getOnFocusChangeListener();
+                    child.setOnFocusChangeListener((v, hasFocus) -> {
+                        if (prevListener != null) {
+                            prevListener.onFocusChange(v, hasFocus);
+                        }
+                        M3Motion.applyCardFocusTransition(
+                                v,
+                                hasFocus,
+                                hasFocus ? Color.TRANSPARENT : focusedFill,
+                                hasFocus ? focusedFill : Color.TRANSPARENT,
+                                hasFocus ? Color.TRANSPARENT : focusedStroke,
+                                hasFocus ? focusedStroke : Color.TRANSPARENT,
+                                hasFocus ? 0 : strokeWidthPx,
+                                hasFocus ? strokeWidthPx : 0,
+                                itemCornerRadius,
+                                null);
+                        M3Motion.animateFocusScale(v, hasFocus, 1.015f);
+                    });
                     tintCompoundButtons(child, buttonTint);
                 }
             });

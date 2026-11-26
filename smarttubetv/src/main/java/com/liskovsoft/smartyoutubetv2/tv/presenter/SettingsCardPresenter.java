@@ -11,10 +11,12 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.ColorUtils;
 import androidx.leanback.widget.Presenter;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.SettingsItem;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class SettingsCardPresenter extends Presenter {
@@ -56,12 +58,13 @@ public class SettingsCardPresenter extends Presenter {
 
         TextView textView = container.findViewById(R.id.settings_title);
         ImageView imageView = container.findViewById(R.id.settings_image);
-        updateCardStyle(container, textView, imageView, false);
+        updateCardStyle(container, textView, imageView, false, false);
 
         ViewUtil.setTextScrollSpeed(textView, getCardTextScrollSpeed(context));
 
         container.setOnFocusChangeListener((v, hasFocus) -> {
-            updateCardStyle(container, textView, imageView, hasFocus);
+            updateCardStyle(container, textView, imageView, hasFocus, true);
+            M3Motion.animateFocusScale(imageView, hasFocus, 1.08f);
 
             if (hasFocus) {
                 ViewUtil.enableMarquee(textView);
@@ -73,17 +76,36 @@ public class SettingsCardPresenter extends Presenter {
         return new ViewHolder(container);
     }
 
-    private void updateCardStyle(FrameLayout container, TextView textView, ImageView imageView, boolean hasFocus) {
-        int backgroundColor = hasFocus ? mSelectedBackgroundColor : mDefaultBackgroundColor;
-        int contentColor = hasFocus ? mSelectedTextColor : mDefaultTextColor;
-
-        container.setBackground(ViewUtil.createRoundedDrawable(backgroundColor, 0, 0, mCornerRadius));
-        ViewUtil.updateCardFocusForeground(
-                container, hasFocus, mOutlineColor, mHairlineColor, mFocusStrokePx, mHairlineStrokePx, mCornerRadius);
-        textView.setTextColor(contentColor);
-        if (imageView != null) {
-            imageView.setColorFilter(contentColor, PorterDuff.Mode.SRC_IN);
+    private void updateCardStyle(FrameLayout container, TextView textView, ImageView imageView, boolean hasFocus, boolean allowAnimation) {
+        if (!allowAnimation) {
+            M3Motion.cancelFocusAnimations(container);
         }
+        int fromBg = hasFocus ? mDefaultBackgroundColor : mSelectedBackgroundColor;
+        int toBg = hasFocus ? mSelectedBackgroundColor : mDefaultBackgroundColor;
+        int fromStroke = hasFocus ? mHairlineColor : mOutlineColor;
+        int toStroke = hasFocus ? mOutlineColor : mHairlineColor;
+        int fromStrokePx = hasFocus ? mHairlineStrokePx : mFocusStrokePx;
+        int toStrokePx = hasFocus ? mFocusStrokePx : mHairlineStrokePx;
+        int fromContent = hasFocus ? mDefaultTextColor : mSelectedTextColor;
+        int toContent = hasFocus ? mSelectedTextColor : mDefaultTextColor;
+
+        M3Motion.applyCardFocusTransition(
+                container,
+                hasFocus,
+                fromBg,
+                toBg,
+                fromStroke,
+                toStroke,
+                fromStrokePx,
+                toStrokePx,
+                mCornerRadius,
+                (fraction, currentFill) -> {
+                    int blended = ColorUtils.blendARGB(fromContent, toContent, fraction);
+                    textView.setTextColor(blended);
+                    if (imageView != null) {
+                        imageView.setColorFilter(blended, PorterDuff.Mode.SRC_IN);
+                    }
+                });
     }
 
     @Override
@@ -105,6 +127,13 @@ public class SettingsCardPresenter extends Presenter {
 
     @Override
     public void onUnbindViewHolder(ViewHolder viewHolder) {
+        M3Motion.cancelFocusAnimations(viewHolder.view);
+        ImageView imageView = viewHolder.view.findViewById(R.id.settings_image);
+        if (imageView != null) {
+            imageView.animate().cancel();
+            imageView.setScaleX(1f);
+            imageView.setScaleY(1f);
+        }
     }
 
     protected boolean isCardTextAutoScrollEnabled(Context context) {

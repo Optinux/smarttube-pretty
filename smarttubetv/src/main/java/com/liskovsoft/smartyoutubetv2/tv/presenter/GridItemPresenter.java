@@ -7,9 +7,11 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import androidx.core.graphics.ColorUtils;
 import androidx.fragment.app.Fragment;
 import androidx.leanback.widget.Presenter;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class GridItemPresenter extends Presenter {
@@ -43,15 +45,56 @@ public class GridItemPresenter extends Presenter {
         view.setLayoutParams(new ViewGroup.LayoutParams(width, height));
         view.setFocusable(true);
         view.setFocusableInTouchMode(true);
-        view.setBackground(ViewUtil.createFocusSelectorDrawable(
-                defaultBg, focusedBg, defaultStroke, focusedStroke, hairlineStrokePx, focusStrokePx, cornerRadius));
-        view.setTextColor(ViewUtil.createFocusColorStateList(defaultText, focusedText));
         ViewUtil.applyRoundedOutline(view, cornerRadius);
         view.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
         view.setPadding(paddingPx, paddingPx, paddingPx, paddingPx);
         view.setGravity(Gravity.CENTER);
+
+        applyItemStyle(view, false, false, defaultBg, focusedBg, defaultStroke, focusedStroke,
+                hairlineStrokePx, focusStrokePx, defaultText, focusedText, cornerRadius);
+        view.setOnFocusChangeListener((v, hasFocus) -> applyItemStyle(
+                view, hasFocus, true, defaultBg, focusedBg, defaultStroke, focusedStroke,
+                hairlineStrokePx, focusStrokePx, defaultText, focusedText, cornerRadius));
         return new ViewHolder(view);
+    }
+
+    private static void applyItemStyle(
+            TextView view,
+            boolean focused,
+            boolean allowAnimation,
+            int defaultBg,
+            int focusedBg,
+            int defaultStroke,
+            int focusedStroke,
+            int hairlineStrokePx,
+            int focusStrokePx,
+            int defaultText,
+            int focusedText,
+            float cornerRadius) {
+        if (!allowAnimation) {
+            M3Motion.cancelFocusAnimations(view);
+        }
+        int fromBg = focused ? defaultBg : focusedBg;
+        int toBg = focused ? focusedBg : defaultBg;
+        int fromStroke = focused ? defaultStroke : focusedStroke;
+        int toStroke = focused ? focusedStroke : defaultStroke;
+        int fromStrokePx = focused ? hairlineStrokePx : focusStrokePx;
+        int toStrokePx = focused ? focusStrokePx : hairlineStrokePx;
+        int fromText = focused ? defaultText : focusedText;
+        int toText = focused ? focusedText : defaultText;
+
+        M3Motion.applyCardFocusTransition(
+                view,
+                focused,
+                fromBg,
+                toBg,
+                fromStroke,
+                toStroke,
+                fromStrokePx,
+                toStrokePx,
+                cornerRadius,
+                (fraction, currentFill) -> view.setTextColor(ColorUtils.blendARGB(fromText, toText, fraction)));
     }
 
     @Override
@@ -61,5 +104,6 @@ public class GridItemPresenter extends Presenter {
 
     @Override
     public void onUnbindViewHolder(ViewHolder viewHolder) {
+        M3Motion.cancelFocusAnimations(viewHolder.view);
     }
 }

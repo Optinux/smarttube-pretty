@@ -233,7 +233,17 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
 
         int onSurface = ViewUtil.getThemeColor(getContext(), R.attr.m3OnSurface, R.color.m3_on_surface);
         int onSurfaceVariant = ViewUtil.getThemeColor(getContext(), R.attr.m3OnSurfaceVariant, R.color.m3_on_surface_variant);
+        int surfaceContainerHigh = ViewUtil.getThemeColor(getContext(), R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high);
+        int outlineVariant = ViewUtil.getThemeColor(getContext(), R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+        float pillRadius = getResources().getDimension(R.dimen.m3_pill_corner_radius);
+        int hairlinePx = getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
+        float density = getResources().getDisplayMetrics().density;
+        int padH = Math.round(14 * density);
+        int padV = Math.round(6 * density);
+
         mPipTitle.setTextColor(onSurface);
+        mPipTitle.setBackground(ViewUtil.createRoundedDrawable(surfaceContainerHigh, outlineVariant, hairlinePx, pillRadius));
+        mPipTitle.setPaddingRelative(padH, padV, padH, padV);
         mGlobalClock.setTextColor(onSurface);
         mGlobalDate.setTextColor(onSurfaceVariant);
 

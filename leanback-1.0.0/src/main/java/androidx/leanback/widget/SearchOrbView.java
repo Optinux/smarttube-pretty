@@ -25,13 +25,19 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.Interpolator;
+import android.view.animation.OvershootInterpolator;
+import android.view.animation.PathInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import androidx.annotation.ColorInt;
+import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
 import androidx.leanback.R;
 
@@ -55,6 +61,11 @@ public class SearchOrbView extends FrameLayout implements View.OnClickListener {
     private ValueAnimator mColorAnimator;
     private boolean mColorAnimationEnabled;
     private boolean mAttachedToWindow;
+    private int mCurrentOrbColor;
+    private final int mUnfocusedStrokePx;
+    private final int mFocusedStrokePx;
+    private final Interpolator mSpatialInterpolator;
+    private final Interpolator mEffectsInterpolator;
 
     /**
      * A set of colors used to display the search orb.
@@ -181,6 +192,15 @@ public class SearchOrbView extends FrameLayout implements View.OnClickListener {
                 R.dimen.lb_search_orb_focused_z);
         mUnfocusedZ = context.getResources().getDimensionPixelSize(
                 R.dimen.lb_search_orb_unfocused_z);
+        float density = res.getDisplayMetrics().density;
+        mUnfocusedStrokePx = Math.max(1, Math.round(1f * density));
+        mFocusedStrokePx = Math.max(2, Math.round(2f * density));
+        mSpatialInterpolator = Build.VERSION.SDK_INT >= 21
+                ? new PathInterpolator(0.42f, 1.67f, 0.21f, 0.90f)
+                : new OvershootInterpolator(0.75f);
+        mEffectsInterpolator = Build.VERSION.SDK_INT >= 21
+                ? new PathInterpolator(0.31f, 0.94f, 0.34f, 1.00f)
+                : new DecelerateInterpolator();
 
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.lbSearchOrbView,
                 defStyleAttr, 0);
@@ -233,13 +253,14 @@ public class SearchOrbView extends FrameLayout implements View.OnClickListener {
         if (mShadowFocusAnimator == null) {
             mShadowFocusAnimator = ValueAnimator.ofFloat(0f, 1f);
             mShadowFocusAnimator.addUpdateListener(mFocusUpdateListener);
+            mShadowFocusAnimator.setInterpolator(mEffectsInterpolator);
         }
+        mShadowFocusAnimator.setDuration(duration);
         if (gainFocus) {
             mShadowFocusAnimator.start();
         } else {
             mShadowFocusAnimator.reverse();
         }
-        mShadowFocusAnimator.setDuration(duration);
     }
 
     @Override
@@ -250,7 +271,12 @@ public class SearchOrbView extends FrameLayout implements View.OnClickListener {
 
     void animateOnFocus(boolean hasFocus) {
         final float zoom = hasFocus ? mFocusedZoom : 1f;
-        mRootView.animate().scaleX(zoom).scaleY(zoom).setDuration(mScaleDurationMs).start();
+        mRootView.animate()
+                .scaleX(zoom)
+                .scaleY(zoom)
+                .setDuration(mScaleDurationMs)
+                .setInterpolator(mSpatialInterpolator)
+                .start();
         startShadowFocusAnimation(hasFocus, mScaleDurationMs);
         enableOrbColorAnimation(hasFocus);
     }
@@ -346,21 +372,42 @@ public class SearchOrbView extends FrameLayout implements View.OnClickListener {
 
     private void updateColorAnimator() {
         if (mColorAnimator != null) {
-            mColorAnimator.end();
+            mColorAnimator.cancel();
             mColorAnimator = null;
         }
-        if (mColorAnimationEnabled && mAttachedToWindow) {
-            // TODO: set interpolator (material if available)
-            mColorAnimator = ValueAnimator.ofObject(mColorEvaluator,
-                    mColors.color, mColors.brightColor, mColors.color);
-            mColorAnimator.setRepeatCount(ValueAnimator.INFINITE);
-            mColorAnimator.setDuration(mPulseDurationMs * 2);
-            mColorAnimator.addUpdateListener(mUpdateListener);
-            mColorAnimator.start();
+        if (mColors == null) {
+            return;
+        }
+        final int targetColor = mColorAnimationEnabled ? mColors.brightColor : mColors.color;
+        updateOrbStroke(mColorAnimationEnabled);
+        if (!mAttachedToWindow) {
+            setOrbViewColor(targetColor);
+            return;
+        }
+        final int startColor = mCurrentOrbColor != 0 ? mCurrentOrbColor : mColors.color;
+        if (startColor == targetColor) {
+            setOrbViewColor(targetColor);
+            return;
+        }
+        mColorAnimator = ValueAnimator.ofObject(mColorEvaluator, startColor, targetColor);
+        mColorAnimator.setDuration(150);
+        mColorAnimator.setInterpolator(mEffectsInterpolator);
+        mColorAnimator.addUpdateListener(mUpdateListener);
+        mColorAnimator.start();
+    }
+
+    private void updateOrbStroke(boolean focused) {
+        if (mSearchOrbView != null && mSearchOrbView.getBackground() instanceof GradientDrawable && mColors != null) {
+            GradientDrawable bg = (GradientDrawable) mSearchOrbView.getBackground();
+            int baseStrokeColor = mColors.iconColor != Color.TRANSPARENT ? mColors.iconColor : Color.WHITE;
+            int strokeAlpha = focused ? 204 : 46;
+            int strokeColor = ColorUtils.setAlphaComponent(baseStrokeColor, strokeAlpha);
+            bg.setStroke(focused ? mFocusedStrokePx : mUnfocusedStrokePx, strokeColor);
         }
     }
 
     void setOrbViewColor(int color) {
+        mCurrentOrbColor = color;
         if (mSearchOrbView.getBackground() instanceof GradientDrawable) {
             ((GradientDrawable) mSearchOrbView.getBackground()).setColor(color);
         }

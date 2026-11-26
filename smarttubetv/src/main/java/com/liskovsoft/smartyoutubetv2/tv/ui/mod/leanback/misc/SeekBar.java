@@ -16,6 +16,7 @@
 
 package com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.misc;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -31,9 +32,11 @@ import android.view.MotionEvent;
 import android.view.View;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.leanback.R;
 import com.liskovsoft.smartyoutubetv2.common.app.models.playback.ui.SeekBarSegment;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.util.ArrayList;
@@ -82,6 +85,7 @@ public final class SeekBar extends View {
     private final Paint mKnobPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mKnobHaloPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mKnobShadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint mStopIndicatorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     private int mProgress;
     private int mSecondProgress;
@@ -93,6 +97,10 @@ public final class SeekBar extends View {
     private int mActiveBarHeight;
     private final float mShadowOffsetPx;
     private final float mShadowRadiusExtraPx;
+    private final float mStopIndicatorRadiusPx;
+    private final int mHaloBaseColor;
+    private float mFocusFraction;
+    private ValueAnimator mFocusAnimator;
     private final List<SeekBarRectangle> mSeekBarRectangles = new ArrayList<>();
     private List<SeekBarSegment> mSegments;
 
@@ -111,15 +119,17 @@ public final class SeekBar extends View {
                 com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_accent_red));
         mKnobPaint.setColor(ContextCompat.getColor(
                 context, com.liskovsoft.smartyoutubetv2.tv.R.color.m3_seekbar_knob));
-        int haloBaseColor = ViewUtil.getThemeColor(
+        mHaloBaseColor = ViewUtil.getThemeColor(
                 context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3Primary,
                 com.liskovsoft.smartyoutubetv2.tv.R.color.m3_seekbar_knob);
         mKnobHaloPaint.setColor(Color.argb(
-                76, Color.red(haloBaseColor), Color.green(haloBaseColor), Color.blue(haloBaseColor)));
+                0, Color.red(mHaloBaseColor), Color.green(mHaloBaseColor), Color.blue(mHaloBaseColor)));
+        mStopIndicatorPaint.setColor(mProgressPaint.getColor());
         mKnobShadowPaint.setColor(0x4D000000);
         float density = context.getResources().getDisplayMetrics().density;
         mShadowOffsetPx = 0.75f * density;
         mShadowRadiusExtraPx = 1f * density;
+        mStopIndicatorRadiusPx = 2f * density; // 4dp M3 Expressive end stop indicator
         mBarHeight = context.getResources().getDimensionPixelSize(
                 R.dimen.lb_playback_transport_progressbar_bar_height);
         mActiveBarHeight = context.getResources().getDimensionPixelSize(
@@ -156,8 +166,37 @@ public final class SeekBar extends View {
     protected void onFocusChanged(boolean gainFocus,
             int direction, Rect previouslyFocusedRect) {
         super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
-        calculate();
-        //calculateSegments();
+        animateFocus(gainFocus);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        if (mFocusAnimator != null) {
+            mFocusAnimator.cancel();
+            mFocusAnimator = null;
+        }
+        super.onDetachedFromWindow();
+    }
+
+    private void animateFocus(boolean gainFocus) {
+        if (mFocusAnimator != null) {
+            mFocusAnimator.cancel();
+            mFocusAnimator = null;
+        }
+        float target = gainFocus ? 1f : 0f;
+        if (!M3Motion.areAnimationsEnabled(getContext()) || !ViewCompat.isAttachedToWindow(this)) {
+            mFocusFraction = target;
+            calculate();
+            return;
+        }
+        mFocusAnimator = ValueAnimator.ofFloat(mFocusFraction, target);
+        mFocusAnimator.setDuration(M3Motion.DURATION_FAST_SPATIAL_MS);
+        mFocusAnimator.setInterpolator(M3Motion.fastSpatial());
+        mFocusAnimator.addUpdateListener(animation -> {
+            mFocusFraction = (float) animation.getAnimatedValue();
+            calculate();
+        });
+        mFocusAnimator.start();
     }
 
     @Override
@@ -172,7 +211,9 @@ public final class SeekBar extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        final float barRadius = (isFocused() ? mActiveBarHeight : mBarHeight) / 2f;
+        final float clampedFraction = Math.max(0f, Math.min(1f, mFocusFraction));
+        final float barHeight = mBarHeight + (mActiveBarHeight - mBarHeight) * clampedFraction;
+        final float barRadius = barHeight / 2f;
         canvas.drawRoundRect(mBackgroundRect, barRadius, barRadius, mBackgroundPaint);
 
         mTrackClipPath.reset();
@@ -191,15 +232,28 @@ public final class SeekBar extends View {
         canvas.restoreToCount(saveCount);
 
         final float centerY = getHeight() / 2f;
-        if (isFocused()) {
-            final float haloRadius = Math.min(mActiveRadius * 1.6f, centerY);
-            canvas.drawCircle(mKnobx, centerY, haloRadius, mKnobHaloPaint);
-            canvas.drawCircle(mKnobx, centerY + mShadowOffsetPx, mActiveRadius + mShadowRadiusExtraPx, mKnobShadowPaint);
-            canvas.drawCircle(mKnobx, centerY, mActiveRadius, mKnobPaint);
-        } else {
-            final float minimalRadius = mBarHeight / 2f + 1f;
-            canvas.drawCircle(mKnobx, centerY, minimalRadius, mKnobPaint);
+        // M3 Expressive 4dp end stop indicator when progress has not reached the trailing end
+        if (mMax > 0 && mProgress < mMax * 0.985f) {
+            float stopX = mBackgroundRect.right - barRadius;
+            if (stopX > mKnobx + mActiveRadius) {
+                canvas.drawCircle(stopX, centerY, mStopIndicatorRadiusPx, mStopIndicatorPaint);
+            }
         }
+
+        final float minimalRadius = mBarHeight / 2f + 1f;
+        final float knobRadius = Math.max(minimalRadius * 0.8f,
+                minimalRadius + (mActiveRadius - minimalRadius) * mFocusFraction);
+        if (clampedFraction > 0.01f) {
+            final float haloRadius = Math.min(knobRadius * 1.6f, centerY);
+            int haloAlpha = Math.round(76 * clampedFraction);
+            mKnobHaloPaint.setColor(Color.argb(
+                    haloAlpha, Color.red(mHaloBaseColor), Color.green(mHaloBaseColor), Color.blue(mHaloBaseColor)));
+            canvas.drawCircle(mKnobx, centerY, haloRadius, mKnobHaloPaint);
+            int shadowAlpha = Math.round(77 * clampedFraction);
+            mKnobShadowPaint.setColor(Color.argb(shadowAlpha, 0, 0, 0));
+            canvas.drawCircle(mKnobx, centerY + mShadowOffsetPx, knobRadius + mShadowRadiusExtraPx, mKnobShadowPaint);
+        }
+        canvas.drawCircle(mKnobx, centerY, knobRadius, mKnobPaint);
     }
 
     /**
@@ -262,6 +316,7 @@ public final class SeekBar extends View {
      */
     public void setProgressColor(int color) {
         mProgressPaint.setColor(color);
+        mStopIndicatorPaint.setColor(color);
     }
 
     /**
@@ -279,19 +334,20 @@ public final class SeekBar extends View {
     }
 
     private void calculate() {
-        final int barHeight = isFocused() ? mActiveBarHeight : mBarHeight;
+        final float clampedFraction = Math.max(0f, Math.min(1f, mFocusFraction));
+        final float barHeight = mBarHeight + (mActiveBarHeight - mBarHeight) * clampedFraction;
 
         final int width = getWidth();
         final int height = getHeight();
-        final int verticalPadding = (height - barHeight) / 2;
+        final float verticalPadding = (height - barHeight) / 2f;
 
         mBackgroundRect.set(mBarHeight / 2f, verticalPadding,
                 width - mBarHeight / 2f, height - verticalPadding);
 
-        final int radius = isFocused() ? mActiveRadius : mBarHeight / 2;
-        final int progressWidth = Math.max(0, width - radius * 2);
+        final float radius = (mBarHeight / 2f) + (mActiveRadius - mBarHeight / 2f) * clampedFraction;
+        final float progressWidth = Math.max(0f, width - radius * 2f);
         final float progressPixels = mMax > 0 ? mProgress / (float) mMax * progressWidth : 0f;
-        mKnobx = radius + (int) progressPixels;
+        mKnobx = Math.round(radius + progressPixels);
         mProgressRect.set(mBarHeight / 2f, verticalPadding,
                 mProgress > 0 ? Math.max(mBarHeight / 2f, mKnobx) : mBarHeight / 2f,
                 height - verticalPadding);

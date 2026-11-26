@@ -31,6 +31,7 @@ import com.liskovsoft.smartyoutubetv2.common.misc.MotherActivity;
 import com.liskovsoft.smartyoutubetv2.common.prefs.SearchData;
 import com.liskovsoft.smartyoutubetv2.tv.BuildConfig;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import net.gotev.speech.GoogleVoiceTypingDisabledException;
@@ -124,11 +125,18 @@ public class ChannelHeaderPresenter extends RowPresenter {
         int hairlineStrokePx = context.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
         if (searchBarItems != null) {
             boolean initiallyFocused = searchTextEditor.hasFocus();
-            searchBarItems.setBackground(ViewUtil.createRoundedDrawable(
+            M3Motion.cancelFocusAnimations(searchBarItems);
+            M3Motion.applyCardFocusTransition(
+                    searchBarItems,
+                    initiallyFocused,
+                    initiallyFocused ? surfaceHigh : surfaceHighest,
                     initiallyFocused ? surfaceHighest : surfaceHigh,
+                    initiallyFocused ? outlineVariant : outline,
                     initiallyFocused ? outline : outlineVariant,
+                    initiallyFocused ? hairlineStrokePx : focusStrokePx,
                     initiallyFocused ? focusStrokePx : hairlineStrokePx,
-                    pillRadius));
+                    pillRadius,
+                    null);
         }
 
         // Default recognizer. Used when there's no speech callbacks specified.
@@ -142,11 +150,18 @@ public class ChannelHeaderPresenter extends RowPresenter {
             Log.d(TAG, "on search field focused");
 
             if (searchBarItems != null) {
-                searchBarItems.setBackground(ViewUtil.createRoundedDrawable(
+                M3Motion.applyCardFocusTransition(
+                        searchBarItems,
+                        focused,
+                        focused ? surfaceHigh : surfaceHighest,
                         focused ? surfaceHighest : surfaceHigh,
+                        focused ? outlineVariant : outline,
                         focused ? outline : outlineVariant,
+                        focused ? hairlineStrokePx : focusStrokePx,
                         focused ? focusStrokePx : hairlineStrokePx,
-                        pillRadius));
+                        pillRadius,
+                        null);
+                M3Motion.animateFocusScale(searchBarItems, focused, 1.015f);
             }
 
             if (mIsKeyboardAutoShowEnabled && focused) {

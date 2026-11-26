@@ -33,4 +33,6 @@
     <color name="magenta">#FF00FF</color>
     <color name="brown">#964B00</color>
     <color name="light_pink">#FF1684</color>
+    <color name="dialog_bg_color">#1D212A</color>
+    <color name="dialog_text_color">#ECEDF2</color>
 </resources>
