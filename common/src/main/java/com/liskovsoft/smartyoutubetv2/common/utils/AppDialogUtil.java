@@ -1021,7 +1021,7 @@ public class AppDialogUtil {
 
         List<OptionItem> options = new ArrayList<>();
 
-        options.add(UiOptionItem.from(context.getString(R.string.cancel),
+        options.add(UiOptionItem.from(context.getString(android.R.string.cancel),
                 option -> {
                     settingsPresenter.goBack();
                     onCancel.run();
