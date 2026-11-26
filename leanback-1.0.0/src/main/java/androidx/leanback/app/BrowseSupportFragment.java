@@ -15,11 +15,14 @@ package androidx.leanback.app;
 
 import static androidx.recyclerview.widget.RecyclerView.NO_POSITION;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -724,6 +727,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
     boolean mShowingHeaders = true;
     boolean mCanShowHeaders = true;
     private int mContainerListMarginStart;
+    private int mHeadersTotalWidth;
     private int mContainerListAlignTop;
     private boolean mMainFragmentScaleEnabled = true;
     OnItemViewSelectedListener mExternalOnItemViewSelectedListener;
@@ -981,7 +985,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
         if (!mCanShowHeaders) {
             throw new IllegalStateException("Cannot start headers transition");
         }
-        if (isInHeadersTransition() || mShowingHeaders == withHeaders) {
+        if (mShowingHeaders == withHeaders) {
             return;
         }
         startHeadersTransitionInternal(withHeaders);
@@ -1032,31 +1036,64 @@ public class BrowseSupportFragment extends BaseSupportFragment {
         mMainFragmentScaleEnabled = enable;
     }
 
+    private static boolean areAnimationsEnabled(Context context) {
+        if (Build.VERSION.SDK_INT >= 26 && !ValueAnimator.areAnimatorsEnabled()) {
+            return false;
+        }
+        if (context != null && Build.VERSION.SDK_INT >= 17) {
+            try {
+                return Settings.Global.getFloat(
+                        context.getContentResolver(),
+                        Settings.Global.ANIMATOR_DURATION_SCALE,
+                        1.0f) > 0f;
+            } catch (Exception ignored) {
+            }
+        }
+        return true;
+    }
+
+    protected void onHeadersStateChanged(boolean showingHeaders) {
+    }
+
     void startHeadersTransitionInternal(final boolean withHeaders) {
-        if (getFragmentManager().isDestroyed()) {
+        if (getFragmentManager() == null || getFragmentManager().isDestroyed()) {
             return;
         }
         if (!isHeadersDataReady()) {
             return;
         }
         mShowingHeaders = withHeaders;
+        if (mShowingHeaders && getTitleView() != null && getTitleView().hasFocus()
+                && mHeadersSupportFragment != null && mHeadersSupportFragment.getVerticalGridView() != null) {
+            mHeadersSupportFragment.getVerticalGridView().requestFocus();
+        }
+        onHeadersStateChanged(mShowingHeaders);
         mMainFragmentAdapter.onTransitionPrepare();
         mMainFragmentAdapter.onTransitionStart();
         onExpandTransitionStart(!withHeaders, new Runnable() {
             @Override
             public void run() {
+                if (mHeadersSupportFragment == null || getContext() == null) {
+                    return;
+                }
                 mHeadersSupportFragment.onTransitionPrepare();
                 mHeadersSupportFragment.onTransitionStart();
-                createHeadersTransition();
-                if (mBrowseTransitionListener != null) {
-                    mBrowseTransitionListener.onHeadersTransitionStart(withHeaders);
+                if (!areAnimationsEnabled(getContext())) {
+                    mHeadersTransition = null;
+                    showHeaders(withHeaders);
+                    finishHeadersTransition(withHeaders);
+                } else {
+                    createHeadersTransition();
+                    if (mBrowseTransitionListener != null) {
+                        mBrowseTransitionListener.onHeadersTransitionStart(withHeaders);
+                    }
+                    TransitionHelper.runTransition(
+                            withHeaders ? mSceneWithHeaders : mSceneWithoutHeaders, mHeadersTransition);
                 }
-                TransitionHelper.runTransition(
-                        withHeaders ? mSceneWithHeaders : mSceneWithoutHeaders, mHeadersTransition);
                 if (mHeadersBackStackEnabled) {
                     if (!withHeaders) {
                         getFragmentManager().beginTransaction()
-                                .addToBackStack(mWithHeadersBackStackName).commit();
+                                .addToBackStack(mWithHeadersBackStackName).commitAllowingStateLoss();
                     } else {
                         int index = mBackStackChangedListener.mIndexOfHeadersBackStack;
                         if (index >= 0) {
@@ -1086,7 +1123,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
             }
             if (DEBUG) Log.v(TAG, "onFocusSearch focused " + focused + " + direction " + direction);
 
-            if (getTitleView() != null && focused != getTitleView()
+            if (getTitleView() != null && !getTitleView().hasFocus()
                     && direction == View.FOCUS_UP) {
                 return getTitleView();
             }
@@ -1185,6 +1222,8 @@ public class BrowseSupportFragment extends BaseSupportFragment {
         mContainerListMarginStart = (int) ta.getDimension(
                 R.styleable.LeanbackTheme_browseRowsMarginStart, context.getResources()
                 .getDimensionPixelSize(R.dimen.lb_browse_rows_margin_start));
+        mHeadersTotalWidth = context.getResources().getDimensionPixelSize(R.dimen.lb_browse_headers_width)
+                + context.getResources().getDimensionPixelSize(R.dimen.lb_browse_header_fading_length);
         mContainerListAlignTop = (int) ta.getDimension(
                 R.styleable.LeanbackTheme_browseRowsMarginTop, context.getResources()
                 .getDimensionPixelSize(R.dimen.lb_browse_rows_margin_top));
@@ -1331,44 +1370,60 @@ public class BrowseSupportFragment extends BaseSupportFragment {
     }
 
     void createHeadersTransition() {
-        mHeadersTransition = TransitionHelper.loadTransition(getContext(),
+        final Object transition = TransitionHelper.loadTransition(getContext(),
                 mShowingHeaders
                         ? R.transition.lb_browse_headers_in : R.transition.lb_browse_headers_out);
+        mHeadersTransition = transition;
 
-        TransitionHelper.addTransitionListener(mHeadersTransition, new TransitionListener() {
+        TransitionHelper.addTransitionListener(transition, new TransitionListener() {
             @Override
-            public void onTransitionStart(Object transition) {
+            public void onTransitionStart(Object t) {
             }
+
             @Override
-            public void onTransitionEnd(Object transition) {
+            public void onTransitionCancel(Object t) {
+                if (mHeadersTransition == transition) {
+                    mHeadersTransition = null;
+                }
+            }
+
+            @Override
+            public void onTransitionEnd(Object t) {
+                if (mHeadersTransition != transition) {
+                    return;
+                }
                 mHeadersTransition = null;
-                if (mMainFragmentAdapter != null) {
-                    mMainFragmentAdapter.onTransitionEnd();
-                    if (!mShowingHeaders && mMainFragment != null) {
-                        View mainFragmentView = mMainFragment.getView();
-                        if (mainFragmentView != null && !mainFragmentView.hasFocus()) {
-                            mainFragmentView.requestFocus();
-                        }
-                    }
-                }
-                if (mHeadersSupportFragment != null) {
-                    mHeadersSupportFragment.onTransitionEnd();
-                    if (mShowingHeaders) {
-                        VerticalGridView headerGridView = mHeadersSupportFragment.getVerticalGridView();
-                        if (headerGridView != null && !headerGridView.hasFocus()) {
-                            headerGridView.requestFocus();
-                        }
-                    }
-                }
-
-                // Animate TitleView once header animation is complete.
-                updateTitleViewVisibility();
-
-                if (mBrowseTransitionListener != null) {
-                    mBrowseTransitionListener.onHeadersTransitionStop(mShowingHeaders);
-                }
+                finishHeadersTransition(mShowingHeaders);
             }
         });
+    }
+
+    private void finishHeadersTransition(boolean showingHeaders) {
+        if (mMainFragmentAdapter != null) {
+            mMainFragmentAdapter.onTransitionEnd();
+            if (!showingHeaders && mMainFragment != null) {
+                View mainFragmentView = mMainFragment.getView();
+                if (mainFragmentView != null && !mainFragmentView.hasFocus()) {
+                    mainFragmentView.requestFocus();
+                }
+            }
+        }
+        if (mHeadersSupportFragment != null) {
+            mHeadersSupportFragment.onTransitionEnd();
+            if (showingHeaders) {
+                VerticalGridView headerGridView = mHeadersSupportFragment.getVerticalGridView();
+                if (headerGridView != null && !headerGridView.hasFocus()) {
+                    headerGridView.requestFocus();
+                }
+            }
+        }
+
+        // Animate TitleView once header animation is complete.
+        updateTitleViewVisibility();
+
+        if (mBrowseTransitionListener != null) {
+            mBrowseTransitionListener.onHeadersTransitionStop(showingHeaders);
+        }
     }
 
     void updateTitleViewVisibility() {
@@ -1451,7 +1506,8 @@ public class BrowseSupportFragment extends BaseSupportFragment {
         View containerList;
         containerList = mHeadersSupportFragment.getView();
         lp = (MarginLayoutParams) containerList.getLayoutParams();
-        lp.setMarginStart(onScreen ? 0 : -mContainerListMarginStart);
+        int offset = mHeadersTotalWidth > 0 ? mHeadersTotalWidth : mContainerListMarginStart;
+        lp.setMarginStart(onScreen ? 0 : -offset);
         containerList.setLayoutParams(lp);
     }
 
@@ -1463,9 +1519,13 @@ public class BrowseSupportFragment extends BaseSupportFragment {
     }
 
     private void expandMainFragment(boolean expand) {
+        // Keep main fragment & backdrop full-bleed (marginStart = 0) so the sidebar overlays
+        // without resizing or shifting the backdrop on expand/collapse.
         MarginLayoutParams params = (MarginLayoutParams) mScaleFrameLayout.getLayoutParams();
-        params.setMarginStart(!expand ? mContainerListMarginStart : 0);
-        mScaleFrameLayout.setLayoutParams(params);
+        if (params.getMarginStart() != 0) {
+            params.setMarginStart(0);
+            mScaleFrameLayout.setLayoutParams(params);
+        }
         mMainFragmentAdapter.setExpand(expand);
 
         setMainFragmentAlignment();
@@ -1556,6 +1616,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
         if (createMainFragment(mAdapter, position)) {
             swapToMainFragment();
             expandMainFragment(!(mCanShowHeaders && mShowingHeaders));
+            onHeadersStateChanged(mShowingHeaders);
         }
     }
 
@@ -1566,6 +1627,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
             fm.beginTransaction()
                     .replace(R.id.scale_frame, mMainFragment).commit();
         }
+        onHeadersStateChanged(mShowingHeaders);
     }
 
     private final RecyclerView.OnScrollListener mWaitScrollFinishAndCommitMainFragment =
@@ -1677,6 +1739,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
         if (mCanShowHeaders) {
             showHeaders(mShowingHeaders);
         }
+        onHeadersStateChanged(mShowingHeaders);
 
         mStateMachine.fireEvent(EVT_HEADER_VIEW_CREATED);
 

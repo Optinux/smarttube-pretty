@@ -7,6 +7,10 @@ on:
       - master
     tags:
       - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 permissions:
@@ -31,6 +35,7 @@ jobs:
           cache: 'gradle'
 
       - name: Configure Signing Keystore
+        if: github.event_name != 'pull_request'
         env:
           KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
@@ -99,10 +104,16 @@ jobs:
       - name: Grant Gradle permissions
         run: chmod +x gradlew
 
+      - name: Build Debug APK (Pull Request Check)
+        if: github.event_name == 'pull_request'
+        run: ./gradlew clean assembleStstableDebug --stacktrace
+
       - name: Build Signed Release APKs
-        run: ./gradlew clean assembleStstableRelease
+        if: github.event_name != 'pull_request'
+        run: ./gradlew clean assembleStstableRelease --stacktrace
 
       - name: Compute Checksums and Generate Update Manifest
+        if: github.event_name != 'pull_request'
         run: |
           APK_DIR="./smarttubetv/build/outputs/apk/ststable/release"
           DIST_DIR="${{ runner.temp }}/dist"
@@ -179,6 +190,7 @@ jobs:
           PY
 
       - name: Publish GitHub Release
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -202,5 +214,5 @@ jobs:
           fi
 
       - name: Clean up temporary signing key
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         run: rm -f "${{ runner.temp }}/release.keystore"

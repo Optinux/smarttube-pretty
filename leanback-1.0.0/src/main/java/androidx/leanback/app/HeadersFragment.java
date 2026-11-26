@@ -261,8 +261,9 @@ public class HeadersFragment extends BaseRowFragment {
     }
 
     private void updateFadingEdgeToBrandColor(int backgroundColor) {
-        View fadingView = getView().findViewById(R.id.fade_out_edge);
-        Drawable background = fadingView.getBackground();
+        View root = getView();
+        View fadingView = root != null ? root.findViewById(R.id.fade_out_edge) : null;
+        Drawable background = fadingView != null ? fadingView.getBackground() : null;
         if (background instanceof GradientDrawable) {
             background.mutate();
             ((GradientDrawable) background).setColors(

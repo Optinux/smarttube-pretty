@@ -2,6 +2,8 @@ package com.liskovsoft.smartyoutubetv2.tv.ui.browse;
 
 import android.os.Bundle;
 
+import androidx.fragment.app.Fragment;
+
 import com.liskovsoft.sharedutils.helpers.MessageHelpers;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.tv.R;
@@ -19,6 +21,15 @@ public class BrowseActivity extends LeanbackActivity {
             // Failed resolution of: Landroidx/lifecycle/ViewTreeLifecycleOwner;
             MessageHelpers.showMessage(this, e.getMessage());
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.main_frame);
+        if (fragment instanceof BrowseFragment && ((BrowseFragment) fragment).onBackPressed()) {
+            return;
+        }
+        super.onBackPressed();
     }
 
     @Override

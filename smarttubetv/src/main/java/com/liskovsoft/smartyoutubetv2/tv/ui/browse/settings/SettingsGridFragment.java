@@ -13,6 +13,8 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
+import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -24,6 +26,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.leanback.app.BrowseSupportFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -55,6 +58,7 @@ import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 import com.liskovsoft.youtubeapi.service.internal.MediaServiceData;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -83,6 +87,8 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
     private final List<SettingsItem> mRawItems = new ArrayList<>();
     private final List<RailEntry> mRailEntries = new ArrayList<>();
 
+    private LinearLayout mRootLayout;
+    private View mPaneSpacer;
     private RecyclerView mRailList;
     private RailAdapter mRailAdapter;
     private LinearLayout mDetailContainer;
@@ -91,11 +97,19 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
     private TextView mRailTitle;
     private TextView mRailBadge;
 
+    private static final String STATE_SELECTED_RAIL_POS = "state_selected_rail_pos";
     private int mSelectedRailPosition = 0;
+    private int mLastLayoutWidth = -1;
+    private int mLastLayoutHeight = -1;
+    private int mLastTitleBottom = -1;
     private boolean mNeedsRestart;
     private int mDetailRequestToken;
     private Runnable mPendingCategoryOnFinish;
     private boolean mPasswordUnlocked;
+    private View.OnLayoutChangeListener mTitleLayoutListener;
+    private ViewTreeObserver.OnGlobalFocusChangeListener mGlobalFocusListener;
+    private boolean mLastFocusInDetail;
+    private WeakReference<View> mLastFocusedDetailView = new WeakReference<>(null);
 
     // Live preview card views for Quick Controls
     private LinearLayout mPreviewCard;
@@ -117,9 +131,18 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (savedInstanceState != null) {
+            mSelectedRailPosition = savedInstanceState.getInt(STATE_SELECTED_RAIL_POS, 0);
+        }
         if (getMainFragmentAdapter().getFragmentHost() != null) {
             getMainFragmentAdapter().getFragmentHost().notifyDataReady(getMainFragmentAdapter());
         }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(STATE_SELECTED_RAIL_POS, mSelectedRailPosition);
     }
 
     @Nullable
@@ -132,6 +155,8 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        mRootLayout = (LinearLayout) view;
+        mPaneSpacer = view.findViewById(R.id.settings_pane_spacer);
         mRailPane = view.findViewById(R.id.settings_rail_pane);
         mRailTitle = view.findViewById(R.id.settings_rail_title);
         mRailBadge = view.findViewById(R.id.settings_rail_badge);
@@ -141,6 +166,8 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
 
         stylePanes();
         setupRailList();
+        setupResponsiveLayout();
+        setupFocusRestoration(view);
         applyPendingUpdates();
 
         if (getMainFragmentAdapter().getFragmentHost() != null) {
@@ -153,6 +180,132 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         }
     }
 
+    private void setupResponsiveLayout() {
+        if (mRootLayout == null) {
+            return;
+        }
+        mLastLayoutWidth = -1;
+        mLastLayoutHeight = -1;
+        mLastTitleBottom = -1;
+        mRootLayout.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            int width = right - left;
+            int height = bottom - top;
+            if (width > 0 && (width != mLastLayoutWidth || height != mLastLayoutHeight)) {
+                mRootLayout.post(() -> applyResponsiveLayout(width, height));
+            }
+        });
+
+        View titleView = getParentBrowseTitleView();
+        if (titleView != null) {
+            mTitleLayoutListener = (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                if (mRootLayout != null && mRootLayout.getWidth() > 0 && bottom != mLastTitleBottom) {
+                    int w = mRootLayout.getWidth();
+                    int h = mRootLayout.getHeight();
+                    mRootLayout.post(() -> applyResponsiveLayout(w, h));
+                }
+            };
+            titleView.addOnLayoutChangeListener(mTitleLayoutListener);
+        }
+    }
+
+    @Nullable
+    private View getParentBrowseTitleView() {
+        Fragment parent = getParentFragment();
+        if (parent instanceof BrowseSupportFragment) {
+            return ((BrowseSupportFragment) parent).getTitleView();
+        }
+        return null;
+    }
+
+    private void applyResponsiveLayout(int widthPx, int heightPx) {
+        if (!isAdded() || getContext() == null || mRootLayout == null || widthPx <= 0) {
+            return;
+        }
+        float density = getResources().getDisplayMetrics().density;
+        float widthDp = widthPx / density;
+        View titleView = getParentBrowseTitleView();
+        int titleBottom = (titleView != null && titleView.getVisibility() == View.VISIBLE)
+                ? titleView.getBottom()
+                : 0;
+        if (widthPx == mLastLayoutWidth && heightPx == mLastLayoutHeight && titleBottom == mLastTitleBottom) {
+            return;
+        }
+        mLastLayoutWidth = widthPx;
+        mLastLayoutHeight = heightPx;
+        mLastTitleBottom = titleBottom;
+
+        int topPad = Math.max(Math.round(92 * density), titleBottom + Math.round(12 * density));
+        int sidePad;
+        int bottomPad;
+        boolean stacked = widthDp < 600f;
+
+        if (stacked) {
+            sidePad = Math.round(16 * density);
+            bottomPad = Math.round(16 * density);
+            mRootLayout.setOrientation(LinearLayout.VERTICAL);
+
+            LinearLayout.LayoutParams railLp = (LinearLayout.LayoutParams) mRailPane.getLayoutParams();
+            railLp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            int maxRailH = Math.max(Math.round(112 * density), Math.round((heightPx - topPad) * 0.34f));
+            railLp.height = Math.min(Math.round(176 * density), maxRailH);
+            mRailPane.setLayoutParams(railLp);
+
+            if (mPaneSpacer != null) {
+                LinearLayout.LayoutParams spLp = (LinearLayout.LayoutParams) mPaneSpacer.getLayoutParams();
+                spLp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                spLp.height = Math.round(10 * density);
+                mPaneSpacer.setLayoutParams(spLp);
+            }
+
+            LinearLayout.LayoutParams detLp = (LinearLayout.LayoutParams) mDetailScroll.getLayoutParams();
+            detLp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            detLp.height = 0;
+            detLp.weight = 1f;
+            mDetailScroll.setLayoutParams(detLp);
+
+            int detailPad = Math.round(14 * density);
+            mDetailContainer.setPadding(detailPad, detailPad, detailPad, detailPad);
+        } else {
+            boolean medium = widthDp < 840f;
+            sidePad = Math.round((medium ? 24 : 44) * density);
+            bottomPad = Math.round((medium ? 18 : 22) * density);
+            int railWidthPx = Math.round((medium ? 216 : 260) * density);
+            int spacerWidthPx = Math.round((medium ? 12 : 18) * density);
+            int maxDetailPx = Math.round(860 * density);
+
+            mRootLayout.setOrientation(LinearLayout.HORIZONTAL);
+
+            LinearLayout.LayoutParams railLp = (LinearLayout.LayoutParams) mRailPane.getLayoutParams();
+            railLp.width = railWidthPx;
+            railLp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            mRailPane.setLayoutParams(railLp);
+
+            if (mPaneSpacer != null) {
+                LinearLayout.LayoutParams spLp = (LinearLayout.LayoutParams) mPaneSpacer.getLayoutParams();
+                spLp.width = spacerWidthPx;
+                spLp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+                mPaneSpacer.setLayoutParams(spLp);
+            }
+
+            int availDetailPx = widthPx - (sidePad * 2) - railWidthPx - spacerWidthPx;
+            LinearLayout.LayoutParams detLp = (LinearLayout.LayoutParams) mDetailScroll.getLayoutParams();
+            detLp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            if (availDetailPx > maxDetailPx) {
+                detLp.width = maxDetailPx;
+                detLp.weight = 0f;
+            } else {
+                detLp.width = 0;
+                detLp.weight = 1f;
+            }
+            mDetailScroll.setLayoutParams(detLp);
+
+            int detailPad = Math.round((medium ? 16 : 20) * density);
+            mDetailContainer.setPadding(detailPad, detailPad, detailPad, detailPad);
+        }
+
+        mRootLayout.setPaddingRelative(sidePad, topPad, sidePad, bottomPad);
+    }
+
     @Override
     public void onResume() {
         super.onResume();
@@ -162,8 +315,71 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         renderSelectedDetail(false);
     }
 
+    private void setupFocusRestoration(@NonNull View rootView) {
+        if (rootView instanceof SettingsHubRootLayout) {
+            ((SettingsHubRootLayout) rootView).setOnRestoreFocusListener((direction, previouslyFocusedRect) -> {
+                if (mLastFocusInDetail && mDetailContainer != null) {
+                    View last = mLastFocusedDetailView.get();
+                    if (last != null && last.isAttachedToWindow() && last.isFocusable() && last.getVisibility() == View.VISIBLE) {
+                        return last.requestFocus();
+                    }
+                    View first = findFirstFocusable(mDetailContainer);
+                    if (first != null) {
+                        return first.requestFocus();
+                    }
+                }
+                if (mRailList != null) {
+                    RecyclerView.ViewHolder vh = mRailList.findViewHolderForAdapterPosition(mSelectedRailPosition);
+                    if (vh != null && vh.itemView.requestFocus()) {
+                        return true;
+                    }
+                    return mRailList.requestFocus();
+                }
+                return false;
+            });
+        }
+
+        mGlobalFocusListener = (oldFocus, newFocus) -> {
+            if (newFocus == null || mRootLayout == null) {
+                return;
+            }
+            if (isDescendant(newFocus, mDetailContainer)) {
+                mLastFocusInDetail = true;
+                mLastFocusedDetailView = new WeakReference<>(newFocus);
+            } else if (isDescendant(newFocus, mRailList)) {
+                mLastFocusInDetail = false;
+            }
+        };
+        rootView.getViewTreeObserver().addOnGlobalFocusChangeListener(mGlobalFocusListener);
+    }
+
+    private static boolean isDescendant(@Nullable View child, @Nullable View parent) {
+        if (child == null || parent == null) {
+            return false;
+        }
+        ViewParent p = child.getParent();
+        while (p != null) {
+            if (p == parent) {
+                return true;
+            }
+            p = p.getParent();
+        }
+        return false;
+    }
+
     @Override
     public void onDestroyView() {
+        if (mGlobalFocusListener != null && mRootLayout != null && mRootLayout.getViewTreeObserver().isAlive()) {
+            mRootLayout.getViewTreeObserver().removeOnGlobalFocusChangeListener(mGlobalFocusListener);
+            mGlobalFocusListener = null;
+        }
+        if (mTitleLayoutListener != null) {
+            View titleView = getParentBrowseTitleView();
+            if (titleView != null) {
+                titleView.removeOnLayoutChangeListener(mTitleLayoutListener);
+            }
+            mTitleLayoutListener = null;
+        }
         if (getContext() != null) {
             AppDialogPresenter.instance(getContext()).captureNextDialog(null);
         }
@@ -336,9 +552,13 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
 
     private void attachReturnToRailOnLeft(View view) {
         view.setOnKeyListener((v, keyCode, event) -> {
-            if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-                returnFocusToRail();
-                return true;
+            if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                boolean isRtl = ViewCompat.getLayoutDirection(v) == ViewCompat.LAYOUT_DIRECTION_RTL;
+                int towardStartKey = isRtl ? KeyEvent.KEYCODE_DPAD_RIGHT : KeyEvent.KEYCODE_DPAD_LEFT;
+                if (keyCode == towardStartKey) {
+                    returnFocusToRail();
+                    return true;
+                }
             }
             return false;
         });
@@ -1112,9 +1332,13 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
 
                 itemView.setOnClickListener(v -> onRailEntryClicked(position));
                 itemView.setOnKeyListener((v, keyCode, event) -> {
-                    if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-                        focusDetailPane();
-                        return true;
+                    if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                        boolean isRtl = ViewCompat.getLayoutDirection(v) == ViewCompat.LAYOUT_DIRECTION_RTL;
+                        int towardEndKey = isRtl ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT;
+                        if (keyCode == towardEndKey) {
+                            focusDetailPane();
+                            return true;
+                        }
                     }
                     return false;
                 });

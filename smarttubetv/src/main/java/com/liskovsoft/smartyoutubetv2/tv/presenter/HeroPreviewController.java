@@ -663,7 +663,7 @@ final class HeroPreviewController implements Player.EventListener, VideoListener
                     return true;
                 }
             }
-        } catch (SecurityException | RuntimeException ignored) {
+        } catch (RuntimeException ignored) {
         }
         return false;
     }

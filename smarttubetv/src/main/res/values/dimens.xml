@@ -114,7 +114,8 @@
     <dimen name="grid_item_vertical_spacing">18dp</dimen>
     <dimen name="grid_horizontal_margin">25dp</dimen>
 
-    <!-- Browse headers spacing -->
+    <!-- Browse headers fading scrim & spacing -->
+    <dimen name="lb_browse_header_fading_length">52dp</dimen>
     <dimen name="browse_headers_vertical_spacing">6dp</dimen>
 
     <!-- Vine card widget values -->

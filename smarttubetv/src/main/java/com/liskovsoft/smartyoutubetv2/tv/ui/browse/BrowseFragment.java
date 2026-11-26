@@ -37,8 +37,10 @@ import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.IconHeaderItemPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.ui.browse.dialog.ErrorDialogFragment;
+import com.liskovsoft.smartyoutubetv2.tv.ui.browse.interfaces.SettingsSection;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.headers.ExtendedHeadersSupportFragment;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.misc.ProgressBarManager;
+import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.browse.NavigateTitleView;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.util.HashMap;
@@ -57,6 +59,7 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
     private ProgressBarManager mProgressBarManager;
     private boolean mIsFragmentCreated;
     private boolean mFocusOnContent;
+    private boolean mIsTitleModeInitialized;
     private CrashRestorer mCrashRestorer;
 
     @Override
@@ -97,6 +100,14 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
         View root = super.onCreateView(inflater, container, savedInstanceState);
 
         mProgressBarManager.setRootView((ViewGroup) root);
+
+        if (getTitleView() instanceof NavigateTitleView) {
+            ((NavigateTitleView) getTitleView()).setOnBackClickedListener(v -> {
+                if (getActivity() != null) {
+                    getActivity().onBackPressed();
+                }
+            });
+        }
 
         return root;
     }
@@ -472,6 +483,30 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
         }
 
         mIsFragmentCreated = false;
+        syncTitleSettingsMode(isShowingHeaders(), false);
+    }
+
+    @Override
+    protected void onHeadersStateChanged(boolean showingHeaders) {
+        syncTitleSettingsMode(showingHeaders, mIsTitleModeInitialized);
+        mIsTitleModeInitialized = true;
+    }
+
+    private void syncTitleSettingsMode(boolean showingHeaders, boolean animate) {
+        if (getTitleView() instanceof NavigateTitleView) {
+            boolean inSettings = (getMainFragment() instanceof SettingsSection) && !showingHeaders;
+            ((NavigateTitleView) getTitleView()).setSettingsMode(inSettings, animate);
+        }
+    }
+
+    public boolean onBackPressed() {
+        if (!isShowingHeaders()) {
+            if (getFragmentManager() == null || getFragmentManager().getBackStackEntryCount() == 0) {
+                startHeadersTransitionSafe(true);
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

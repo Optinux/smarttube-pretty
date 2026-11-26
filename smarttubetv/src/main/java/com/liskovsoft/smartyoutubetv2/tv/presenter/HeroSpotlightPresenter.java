@@ -23,6 +23,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.view.ViewCompat;
 import androidx.leanback.widget.RowPresenter;
 
 import com.bumptech.glide.Glide;
@@ -392,7 +393,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
 
         void bind(@NonNull HeroSpotlightRow row) {
             mRow = row;
-            if (mCard.isAttachedToWindow()) {
+            if (ViewCompat.isAttachedToWindow(mCard)) {
                 attachScrollObserver();
             }
             renderCurrentSlide(false);
@@ -436,7 +437,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
         }
 
         private boolean isHeroVisibleInViewport() {
-            if (!mCard.isAttachedToWindow() || mCard.getVisibility() != View.VISIBLE || mCard.getHeight() <= 0) {
+            if (!ViewCompat.isAttachedToWindow(mCard) || mCard.getVisibility() != View.VISIBLE || mCard.getHeight() <= 0) {
                 return false;
             }
             Rect visibleRect = new Rect();
@@ -456,7 +457,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
 
         @Override
         public void onAutoAdvance() {
-            if (mRow != null && mRow.getVideos().size() > 1 && mCard.isAttachedToWindow()) {
+            if (mRow != null && mRow.getVideos().size() > 1 && ViewCompat.isAttachedToWindow(mCard)) {
                 advanceSlide(1, true);
             }
         }

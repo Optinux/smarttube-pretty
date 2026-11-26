@@ -41,12 +41,12 @@
 
         </androidx.leanback.widget.BrowseRowsFrameLayout>
 
-        <!-- Padding needed for shadow -->
+        <!-- Overlaid sidebar dock (no hard shadow padding) -->
         <FrameLayout
             android:id="@+id/browse_headers_dock"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingEnd="50dp" />
+            android:clipChildren="false"
+            android:clipToPadding="false" />
     </androidx.leanback.widget.BrowseFrameLayout>
 </FrameLayout>

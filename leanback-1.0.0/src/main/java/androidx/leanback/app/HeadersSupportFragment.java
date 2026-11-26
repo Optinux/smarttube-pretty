@@ -15,10 +15,16 @@
 package androidx.leanback.app;
 
 import android.content.Context;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.LinearGradient;
+import android.graphics.Paint;
+import android.graphics.PixelFormat;
+import android.graphics.Rect;
+import android.graphics.Shader;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnLayoutChangeListener;
@@ -27,6 +33,8 @@ import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.ColorUtils;
+import androidx.core.view.ViewCompat;
 import androidx.leanback.R;
 import androidx.leanback.widget.ClassPresenterSelector;
 import androidx.leanback.widget.DividerPresenter;
@@ -169,13 +177,15 @@ public class HeadersSupportFragment extends BaseRowSupportFragment {
         if (listView == null) {
             return;
         }
+        listView.setBackground(null);
         if (mBackgroundColorSet) {
-            listView.setBackgroundColor(mBackgroundColor);
             updateFadingEdgeToBrandColor(mBackgroundColor);
         } else {
             Drawable d = listView.getBackground();
             if (d instanceof ColorDrawable) {
                 updateFadingEdgeToBrandColor(((ColorDrawable) d).getColor());
+            } else {
+                updateFadingEdgeToBrandColor(0xFF161920);
             }
         }
         updateListViewVisibility();
@@ -185,11 +195,18 @@ public class HeadersSupportFragment extends BaseRowSupportFragment {
         final VerticalGridView listView = getVerticalGridView();
         if (listView != null) {
             getView().setVisibility(mHeadersGone ? View.GONE : View.VISIBLE);
+            View fadingView = getView().findViewById(R.id.fade_out_edge);
             if (!mHeadersGone) {
                 if (mHeadersEnabled) {
                     listView.setChildrenVisibility(View.VISIBLE);
+                    if (fadingView != null) {
+                        fadingView.setVisibility(View.VISIBLE);
+                    }
                 } else {
                     listView.setChildrenVisibility(View.INVISIBLE);
+                    if (fadingView != null) {
+                        fadingView.setVisibility(View.INVISIBLE);
+                    }
                 }
             }
         }
@@ -246,18 +263,140 @@ public class HeadersSupportFragment extends BaseRowSupportFragment {
         mBackgroundColorSet = true;
 
         if (getVerticalGridView() != null) {
-            getVerticalGridView().setBackgroundColor(mBackgroundColor);
+            getVerticalGridView().setBackground(null);
             updateFadingEdgeToBrandColor(mBackgroundColor);
         }
     }
 
     private void updateFadingEdgeToBrandColor(int backgroundColor) {
-        View fadingView = getView().findViewById(R.id.fade_out_edge);
-        Drawable background = fadingView.getBackground();
-        if (background instanceof GradientDrawable) {
-            background.mutate();
-            ((GradientDrawable) background).setColors(
-                    new int[] {Color.TRANSPARENT, backgroundColor});
+        View root = getView();
+        if (root == null) {
+            return;
+        }
+        View fadingView = root.findViewById(R.id.fade_out_edge);
+        if (fadingView == null) {
+            return;
+        }
+        int panelWidthPx = root.getResources().getDimensionPixelSize(R.dimen.lb_browse_headers_width);
+        int fadeLengthPx = root.getResources().getDimensionPixelSize(R.dimen.lb_browse_header_fading_length);
+        int totalWidthPx = panelWidthPx + fadeLengthPx;
+        ViewGroup.LayoutParams lp = fadingView.getLayoutParams();
+        if (lp != null && lp.width != totalWidthPx) {
+            lp.width = totalWidthPx;
+            fadingView.setLayoutParams(lp);
+        }
+        fadingView.setBackground(new SidebarScrimDrawable(backgroundColor, panelWidthPx, fadeLengthPx));
+    }
+
+    /**
+     * Draws a continuous overlaid sidebar surface that stays readable over bright backdrops
+     * and fades smoothly across its trailing edge via a multi-stop ease-out gradient.
+     */
+    private static final class SidebarScrimDrawable extends Drawable {
+        private final Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint mLabelScrimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final int mBaseColor;
+        private final int mPanelWidthPx;
+        private final int mFadeLengthPx;
+        private int mLastWidth = -1;
+        private int mLastLayoutDirection = -1;
+
+        SidebarScrimDrawable(int brandColor, int panelWidthPx, int fadeLengthPx) {
+            // Ensure dark surface readability even if a light/bright surface token is active
+            int opaque = ColorUtils.setAlphaComponent(brandColor, 255);
+            if (ColorUtils.calculateLuminance(opaque) > 0.25) {
+                opaque = ColorUtils.blendARGB(opaque, 0xFF0F1115, 0.72f);
+            }
+            mBaseColor = opaque;
+            mPanelWidthPx = Math.max(1, panelWidthPx);
+            mFadeLengthPx = Math.max(1, fadeLengthPx);
+        }
+
+        @Override
+        public void draw(@NonNull Canvas canvas) {
+            Rect b = getBounds();
+            if (b.isEmpty()) {
+                return;
+            }
+            int dir = getLayoutDirectionCompat();
+            if (b.width() != mLastWidth || dir != mLastLayoutDirection) {
+                mLastWidth = b.width();
+                mLastLayoutDirection = dir;
+                rebuildShaders(b, dir == ViewCompat.LAYOUT_DIRECTION_RTL);
+            }
+            canvas.drawRect(b, mPaint);
+            canvas.drawRect(b, mLabelScrimPaint);
+        }
+
+        private int getLayoutDirectionCompat() {
+            if (android.os.Build.VERSION.SDK_INT >= 23) {
+                return getLayoutDirection();
+            }
+            return ViewCompat.LAYOUT_DIRECTION_LTR;
+        }
+
+        private void rebuildShaders(Rect b, boolean rtl) {
+            float total = Math.max(1f, (float) (mPanelWidthPx + mFadeLengthPx));
+            float edgeStop = Math.min(0.95f, mPanelWidthPx / total);
+            float fadeSpan = 1f - edgeStop;
+
+            // Multi-stop ease-out alpha curve: 232 -> 200 -> 148 -> 84 -> 26 -> 0
+            int[] colors = new int[]{
+                    ColorUtils.setAlphaComponent(mBaseColor, 232),
+                    ColorUtils.setAlphaComponent(mBaseColor, 232),
+                    ColorUtils.setAlphaComponent(mBaseColor, 200),
+                    ColorUtils.setAlphaComponent(mBaseColor, 148),
+                    ColorUtils.setAlphaComponent(mBaseColor, 84),
+                    ColorUtils.setAlphaComponent(mBaseColor, 26),
+                    Color.TRANSPARENT
+            };
+            float[] stops = new float[]{
+                    0f,
+                    edgeStop,
+                    edgeStop + fadeSpan * 0.18f,
+                    edgeStop + fadeSpan * 0.38f,
+                    edgeStop + fadeSpan * 0.60f,
+                    edgeStop + fadeSpan * 0.82f,
+                    1f
+            };
+
+            float startX = rtl ? b.right : b.left;
+            float endX = rtl ? b.left : b.right;
+            mPaint.setShader(new LinearGradient(
+                    startX, 0f, endX, 0f, colors, stops, Shader.TileMode.CLAMP));
+
+            // Faint dark backing behind the label column for contrast over bright backdrops
+            int[] labelScrimColors = new int[]{
+                    0x38000000,
+                    0x26000000,
+                    Color.TRANSPARENT
+            };
+            float[] labelScrimStops = new float[]{
+                    0f,
+                    edgeStop,
+                    Math.min(1f, edgeStop + fadeSpan * 0.5f)
+            };
+            mLabelScrimPaint.setShader(new LinearGradient(
+                    startX, 0f, endX, 0f, labelScrimColors, labelScrimStops, Shader.TileMode.CLAMP));
+        }
+
+        @Override
+        public void setAlpha(int alpha) {
+            mPaint.setAlpha(alpha);
+            mLabelScrimPaint.setAlpha(alpha);
+            invalidateSelf();
+        }
+
+        @Override
+        public void setColorFilter(@Nullable ColorFilter colorFilter) {
+            mPaint.setColorFilter(colorFilter);
+            mLabelScrimPaint.setColorFilter(colorFilter);
+            invalidateSelf();
+        }
+
+        @Override
+        public int getOpacity() {
+            return PixelFormat.TRANSLUCENT;
         }
     }
 

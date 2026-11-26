@@ -14,25 +14,25 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<RelativeLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/browse_headers_root"
     android:transitionGroup="true"
-    android:layout_width="@dimen/lb_browse_headers_width"
+    android:layout_width="wrap_content"
     android:layout_height="match_parent"
-    android:paddingEnd="@dimen/lb_browse_header_padding_end"
-    android:elevation="@dimen/lb_browse_headers_z"
+    android:clipChildren="false"
+    android:clipToPadding="false"
     >
+    <View
+        android:id="@+id/fade_out_edge"
+        android:layout_width="322dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@drawable/lb_headers_right_fading" />
     <androidx.leanback.widget.VerticalGridView
         android:id="@+id/browse_headers"
         android:layout_width="@dimen/lb_browse_headers_width"
         android:layout_height="match_parent"
+        android:layout_gravity="start"
         style="?attr/headersVerticalGridStyle"/>
-    <View
-        android:id="@+id/fade_out_edge"
-        android:layout_alignParentEnd="true"
-        android:layout_width="@dimen/lb_browse_header_fading_length"
-        android:layout_height="match_parent"
-        android:background="@drawable/lb_headers_right_fading" >
-    </View>
-</RelativeLayout>
+</FrameLayout>
