@@ -48,6 +48,7 @@ public class TooltipCompatHandler implements View.OnLongClickListener, View.OnHo
     private final View mAnchor;
     private final CharSequence mTooltipText;
     private final int mHoverSlop;
+    private final View.OnFocusChangeListener mWrappedFocusListener;
 
     private final Runnable mShowRunnable = new Runnable() {
         @Override
@@ -92,7 +93,8 @@ public class TooltipCompatHandler implements View.OnLongClickListener, View.OnHo
             return;
         }
 
-        if (sPendingHandler != null && sPendingHandler.mAnchor == view) {
+        boolean wasPending = sPendingHandler != null && sPendingHandler.mAnchor == view;
+        if (wasPending) {
             setPendingHandler(null);
         }
 
@@ -102,28 +104,33 @@ public class TooltipCompatHandler implements View.OnLongClickListener, View.OnHo
             sActiveHandler.hide();
         }
 
-        // MOD: listener already added in ControlBarPresenter
-        //view.setOnLongClickListener(null);
-        //view.setLongClickable(false);
-
-        // Invisible controls bar can react on mouse pointer
-        //view.setOnHoverListener(null);
-
-        view.setOnFocusChangeListener(null);
+        // Preserve any existing focus listener (e.g. button highlight/scale) instead of wiping it out.
+        View.OnFocusChangeListener currentListener = view.getOnFocusChangeListener();
+        View.OnFocusChangeListener wrappedListener = (currentListener instanceof TooltipCompatHandler)
+                ? ((TooltipCompatHandler) currentListener).mWrappedFocusListener
+                : currentListener;
 
         if (!TextUtils.isEmpty(tooltipText)) {
-            TooltipCompatHandler handler = new TooltipCompatHandler(view, tooltipText);
+            TooltipCompatHandler handler = new TooltipCompatHandler(view, tooltipText, wrappedListener);
 
             // Circle through the button states
             if (sameAnchor) {
                 handler.show(false);
+            } else if (wasPending && view.hasFocus()) {
+                setPendingHandler(handler);
             }
+        } else {
+            view.setOnFocusChangeListener(wrappedListener);
         }
     }
 
-    private TooltipCompatHandler(View anchor, CharSequence tooltipText) {
+    private TooltipCompatHandler(
+            View anchor,
+            CharSequence tooltipText,
+            View.OnFocusChangeListener wrappedFocusListener) {
         mAnchor = anchor;
         mTooltipText = tooltipText;
+        mWrappedFocusListener = wrappedFocusListener;
         mHoverSlop = ViewConfigurationCompat.getScaledHoverSlop(
                 ViewConfiguration.get(mAnchor.getContext()));
         clearAnchorPos();
@@ -172,6 +179,9 @@ public class TooltipCompatHandler implements View.OnLongClickListener, View.OnHo
 
     @Override
     public void onFocusChange(View v, boolean hasFocus) {
+        if (mWrappedFocusListener != null) {
+            mWrappedFocusListener.onFocusChange(v, hasFocus);
+        }
         if (hasFocus) {
             // Wait till probable animation complete (button is moving)
             setPendingHandler(this);

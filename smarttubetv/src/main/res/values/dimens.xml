@@ -71,10 +71,14 @@
     <dimen name="lb_playback_transport_progressbar_active_radius">8dp</dimen>
     <dimen name="lb_playback_major_fade_translate_y">28dp</dimen>
     <dimen name="lb_playback_minor_fade_translate_y">12dp</dimen>
-    <dimen name="lb_control_button_diameter">80dp</dimen>
-    <dimen name="lb_control_button_height">52dp</dimen>
-    <dimen name="lb_control_button_secondary_diameter">48dp</dimen>
-    <dimen name="lb_control_button_secondary_height">48dp</dimen>
+    <dimen name="lb_playback_transport_controlbar_margin_start">-4dp</dimen>
+    <dimen name="lb_control_button_diameter">48dp</dimen>
+    <dimen name="lb_control_button_height">48dp</dimen>
+    <dimen name="lb_control_button_secondary_diameter">44dp</dimen>
+    <dimen name="lb_control_button_secondary_height">44dp</dimen>
+    <dimen name="lb_control_icon_width">26dp</dimen>
+    <dimen name="lb_control_icon_height">26dp</dimen>
+    <dimen name="player_control_button_gap">10dp</dimen>
 
     <!-- Multiline description in the player -->
     <integer name="lb_details_description_subtitle_max_lines">2</integer>

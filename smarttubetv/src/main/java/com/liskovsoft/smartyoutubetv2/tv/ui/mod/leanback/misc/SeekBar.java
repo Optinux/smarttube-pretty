@@ -104,6 +104,7 @@ public final class SeekBar extends View {
     private final float mHandleWidthPx;
     private final float mHandleHeightPx;
     private final float mHandleGapPx;
+    private final float mRestingDotRadiusPx;
     private final int mUnfocusedKnobColor;
     private final int mFocusedKnobColor;
     private int mHaloBaseColor;
@@ -121,7 +122,7 @@ public final class SeekBar extends View {
                 context, com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OnSurfaceVariant,
                 com.liskovsoft.smartyoutubetv2.tv.R.color.m3_seekbar_track);
         mBackgroundPaint.setColor(Color.argb(
-                84, Color.red(trackBase), Color.green(trackBase), Color.blue(trackBase)));
+                102, Color.red(trackBase), Color.green(trackBase), Color.blue(trackBase)));
         mSecondProgressPaint.setColor(ViewUtil.getThemeColor(
                 context, R.attr.playbackProgressSecondaryColor,
                 com.liskovsoft.smartyoutubetv2.tv.R.color.m3_seekbar_buffer));
@@ -153,6 +154,7 @@ public final class SeekBar extends View {
                 R.dimen.lb_playback_transport_progressbar_active_bar_height);
         mActiveRadius = context.getResources().getDimensionPixelSize(
                 R.dimen.lb_playback_transport_progressbar_active_radius);
+        mRestingDotRadiusPx = mBarHeight / 2f + 1.5f * density;
     }
 
     /**
@@ -228,14 +230,16 @@ public final class SeekBar extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        if (getWidth() <= 0 || getHeight() <= 0) {
+            return;
+        }
         final float clampedFraction = Math.max(0f, Math.min(1f, mFocusFraction));
         final float barHeight = mBarHeight + (mActiveBarHeight - mBarHeight) * clampedFraction;
         final float barRadius = barHeight / 2f;
         final float centerY = getHeight() / 2f;
 
         // Morph resting dot -> tall M3 Expressive vertical pill handle with track-handle gap
-        final float minimalRadius = mBarHeight / 2f + 1f;
-        final float restingDiameter = minimalRadius * 2f;
+        final float restingDiameter = mRestingDotRadiusPx * 2f;
         final float halfW = (restingDiameter + (mHandleWidthPx - restingDiameter) * clampedFraction) / 2f;
         final float halfH = Math.min(
                 centerY - mShadowRadiusExtraPx,
@@ -245,16 +249,25 @@ public final class SeekBar extends View {
         final float gapLeft = mKnobx - halfW - gapSize;
         final float gapRight = mKnobx + halfW + gapSize;
 
-        // Draw track layers, carving a transparent cutout gap around the focused vertical pill handle
-        drawTrackSlice(canvas, mBackgroundRect.left, Math.min(mBackgroundRect.right, gapLeft), barRadius);
-        if (gapSize > 0.5f && gapRight < mBackgroundRect.right) {
-            drawTrackSlice(canvas, Math.max(mBackgroundRect.left, gapRight), mBackgroundRect.right, barRadius);
+        if (gapSize > 0.5f) {
+            // Draw track layers, carving a transparent cutout gap around the focused vertical pill handle
+            drawTrackSlice(canvas, mBackgroundRect.left, Math.min(mBackgroundRect.right, gapLeft), barRadius);
+            if (gapRight < mBackgroundRect.right) {
+                drawTrackSlice(canvas, Math.max(mBackgroundRect.left, gapRight), mBackgroundRect.right, barRadius);
+            }
+        } else {
+            // Resting state: draw the full continuous track so the bar is always visible
+            drawTrackSlice(canvas, mBackgroundRect.left, mBackgroundRect.right, barRadius);
         }
 
-        // M3 Expressive 4dp end stop indicator when progress has not reached the trailing end
-        if (mMax > 0 && mProgress < mMax * 0.985f) {
+        // M3 Expressive 4dp end stop indicator when focused and progress has not reached the trailing end
+        if (clampedFraction > 0.05f && mMax > 0 && mProgress < mMax * 0.985f) {
             float stopX = mBackgroundRect.right - barRadius;
             if (stopX > gapRight + mStopIndicatorRadiusPx) {
+                int progressColor = mProgressPaint.getColor();
+                mStopIndicatorPaint.setColor(Color.argb(
+                        Math.round(200 * clampedFraction),
+                        Color.red(progressColor), Color.green(progressColor), Color.blue(progressColor)));
                 canvas.drawCircle(stopX, centerY, mStopIndicatorRadiusPx, mStopIndicatorPaint);
             }
         }
@@ -401,9 +414,10 @@ public final class SeekBar extends View {
         final float progressWidth = Math.max(0f, width - radius * 2f);
         final float progressPixels = mMax > 0 ? mProgress / (float) mMax * progressWidth : 0f;
         mKnobx = Math.round(radius + progressPixels);
-        mProgressRect.set(mBarHeight / 2f, verticalPadding,
-                mProgress > 0 ? Math.max(mBarHeight / 2f, mKnobx) : mBarHeight / 2f,
-                height - verticalPadding);
+        float progressRight = mProgress > 0
+                ? (mProgress >= mMax && mMax > 0 ? mBackgroundRect.right : Math.max(mBarHeight / 2f, mKnobx))
+                : mBarHeight / 2f;
+        mProgressRect.set(mBarHeight / 2f, verticalPadding, progressRight, height - verticalPadding);
 
         final float secondProgressPixels = mMax > 0 ? mSecondProgress / (float) mMax * progressWidth : 0f;
         final float secondRight = mSecondProgress > 0

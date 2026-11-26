@@ -30,6 +30,7 @@ class ControlBar extends LinearLayout {
     }
 
     private int mChildMarginFromCenter;
+    private int mMinChildGap;
     private OnChildFocusedListener mOnChildFocusedListener;
     // Can't set to static. Because we have two control bars.
     private int mLastFocusIndex = -1;
@@ -114,6 +115,10 @@ class ControlBar extends LinearLayout {
         mChildMarginFromCenter = marginFromCenter;
     }
 
+    public void setMinChildGap(int minChildGap) {
+        mMinChildGap = minChildGap;
+    }
+
     @Override
     public void requestChildFocus(View child, View focused) {
         super.requestChildFocus(child, focused);
@@ -128,23 +133,36 @@ class ControlBar extends LinearLayout {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        if (mChildMarginFromCenter <= 0) {
+        if (mChildMarginFromCenter <= 0 && mMinChildGap <= 0) {
             return;
         }
 
         int totalExtraMargin = 0;
-        for (int i = 0; i < getChildCount() - 1; i++) {
-            View first = getChildAt(i);
-            View second = getChildAt(i+1);
-            int measuredWidth = first.getMeasuredWidth() + second.getMeasuredWidth();
-            int marginStart = mChildMarginFromCenter - measuredWidth / 2;
-            LayoutParams lp = (LayoutParams) second.getLayoutParams();
-            int extraMargin = marginStart - lp.getMarginStart();
-            lp.setMarginStart(marginStart);
-            second.setLayoutParams(lp);
-            totalExtraMargin += extraMargin;
+        for (int i = 0; i < getChildCount(); i++) {
+            View child = getChildAt(i);
+            LayoutParams lp = (LayoutParams) child.getLayoutParams();
+            int targetMarginStart = 0;
+            if (i > 0) {
+                View prev = getChildAt(i - 1);
+                if (mChildMarginFromCenter > 0) {
+                    int measuredWidth = prev.getMeasuredWidth() + child.getMeasuredWidth();
+                    targetMarginStart = Math.max(mMinChildGap, mChildMarginFromCenter - measuredWidth / 2);
+                } else {
+                    targetMarginStart = mMinChildGap;
+                }
+            }
+            int extraMargin = targetMarginStart - lp.getMarginStart();
+            if (extraMargin != 0) {
+                lp.setMarginStart(targetMarginStart);
+                if (android.os.Build.VERSION.SDK_INT >= 17) {
+                    lp.resolveLayoutDirection(getLayoutDirection());
+                }
+                totalExtraMargin += extraMargin;
+            }
         }
-        setMeasuredDimension(getMeasuredWidth() + totalExtraMargin, getMeasuredHeight());
+        if (totalExtraMargin != 0) {
+            setMeasuredDimension(getMeasuredWidth() + totalExtraMargin, getMeasuredHeight());
+        }
     }
 
     private void setFocusIndex(int index) {

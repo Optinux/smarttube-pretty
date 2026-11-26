@@ -141,18 +141,19 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
                     context,
                     com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OnPrimaryContainer,
                     com.liskovsoft.smartyoutubetv2.tv.R.color.m3_on_surface);
-            int onSecondaryContainer = ViewUtil.getThemeColor(
-                    context,
-                    com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OnSecondaryContainer,
-                    com.liskovsoft.smartyoutubetv2.tv.R.color.m3_on_surface);
             int onSurface = ViewUtil.getThemeColor(
                     context,
                     com.liskovsoft.smartyoutubetv2.tv.R.attr.m3OnSurface,
                     com.liskovsoft.smartyoutubetv2.tv.R.color.m3_on_surface);
+            int outline = ViewUtil.getThemeColor(
+                    context,
+                    com.liskovsoft.smartyoutubetv2.tv.R.attr.m3Outline,
+                    com.liskovsoft.smartyoutubetv2.tv.R.color.m3_grey_outline);
 
             int defaultFill = ColorUtils.setAlphaComponent(surfaceColor, isPrimary ? 195 : 170);
-            int focusedFill = ColorUtils.setAlphaComponent(secondaryContainer, 242);
-            int heroDefaultFill = ColorUtils.setAlphaComponent(primaryContainer, 224);
+            int activeDefaultFill = ColorUtils.setAlphaComponent(secondaryContainer, 224);
+            int focusedFill = ColorUtils.setAlphaComponent(primaryContainer, 242);
+            int heroDefaultFill = ColorUtils.setAlphaComponent(primaryContainer, 232);
             int heroFocusedFill = ColorUtils.setAlphaComponent(primary, 248);
 
             int focusedStrokePx = context.getResources().getDimensionPixelSize(
@@ -160,7 +161,7 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
             float pillRadius = context.getResources().getDimension(
                     com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_pill_corner_radius);
             float squircleRadius = context.getResources().getDimension(
-                    com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_card_large_corner_radius);
+                    com.liskovsoft.smartyoutubetv2.tv.R.dimen.m3_card_corner_radius);
 
             FocusScaleListener listener = new FocusScaleListener(
                     vh.view,
@@ -168,10 +169,11 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
                     vh.mIcon,
                     vh.mLabel,
                     defaultFill,
+                    activeDefaultFill,
                     focusedFill,
-                    primary,
+                    outline,
                     onSurface,
-                    onSecondaryContainer,
+                    onPrimaryContainer,
                     heroDefaultFill,
                     heroFocusedFill,
                     onPrimaryContainer,
@@ -248,6 +250,7 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
             if (vh.mLabel != null) {
                 vh.mLabel.setText(null);
             }
+            TooltipCompatHandler.setTooltipText(vh.mFocusableView, null);
             vh.mFocusableView.setContentDescription(null);
         }
 
@@ -270,6 +273,7 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
             private final ImageView mIconView;
             private final TextView mLabelView;
             private final int mNormalDefaultFill;
+            private final int mActiveDefaultFill;
             private final int mNormalFocusedFill;
             private final int mNormalFocusedStroke;
             private final int mNormalDefaultTint;
@@ -291,6 +295,7 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
                     ImageView iconView,
                     TextView labelView,
                     int normalDefaultFill,
+                    int activeDefaultFill,
                     int normalFocusedFill,
                     int normalFocusedStroke,
                     int normalDefaultTint,
@@ -307,6 +312,7 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
                 mIconView = iconView;
                 mLabelView = labelView;
                 mNormalDefaultFill = normalDefaultFill;
+                mActiveDefaultFill = activeDefaultFill;
                 mNormalFocusedFill = normalFocusedFill;
                 mNormalFocusedStroke = normalFocusedStroke;
                 mNormalDefaultTint = normalDefaultTint;
@@ -355,11 +361,9 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
             private void applyTransition(boolean hasFocus) {
                 int defaultFill = mIsHero
                         ? mHeroDefaultFill
-                        : (mIsActiveToggle
-                                ? ColorUtils.setAlphaComponent(mNormalFocusedFill, 200)
-                                : mNormalDefaultFill);
+                        : (mIsActiveToggle ? mActiveDefaultFill : mNormalDefaultFill);
                 int focusedFill = mIsHero ? mHeroFocusedFill : mNormalFocusedFill;
-                int focusedStroke = mIsHero ? mHeroDefaultTint : mNormalFocusedStroke;
+                int focusedStroke = mNormalFocusedStroke;
                 int defaultTint = mIsHero ? mHeroDefaultTint : mNormalDefaultTint;
                 int focusedTint = mIsHero ? mHeroFocusedTint : mNormalFocusedTint;
                 float cornerRadius = mIsHero ? mSquircleRadius : mPillRadius;

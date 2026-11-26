@@ -133,12 +133,13 @@ class ControlBarPresenter extends Presenter {
         }
 
         int getChildMarginFromCenter(Context context, int numControls) {
-            // Includes margin between icons plus two times half the icon width.
-            //return getChildMarginDefault(context) + getControlIconWidth(context);
+            // Use explicit edge-to-edge gap via getMinChildGap so varying button widths never overlap.
+            return 0;
+        }
 
-            // TODO: modified
-            // Decrease margin between player's buttons
-            return getChildMarginDefault(context) + getControlIconWidth(context) / 3;
+        int getMinChildGap(Context context) {
+            return context.getResources().getDimensionPixelSize(
+                    com.liskovsoft.smartyoutubetv2.tv.R.dimen.player_control_button_gap);
         }
 
         void showControls(Presenter presenter) {
@@ -157,6 +158,7 @@ class ControlBarPresenter extends Presenter {
                     position++) {
                 bindControlToAction(position, adapter, presenter);
             }
+            mControlBar.setMinChildGap(getMinChildGap(mControlBar.getContext()));
             mControlBar.setChildMarginFromCenter(
                     getChildMarginFromCenter(mControlBar.getContext(), adapterSize));
         }
