@@ -26,7 +26,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.fragment.app.Fragment;
 import androidx.leanback.app.BrowseSupportFragment;
-import androidx.leanback.widget.VerticalGridView;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.liskovsoft.mediaserviceinterfaces.data.MediaGroup;
@@ -81,7 +81,7 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
     private final List<SettingsItem> mRawItems = new ArrayList<>();
     private final List<RailEntry> mRailEntries = new ArrayList<>();
 
-    private VerticalGridView mRailList;
+    private RecyclerView mRailList;
     private RailAdapter mRailAdapter;
     private LinearLayout mDetailContainer;
     private ScrollView mDetailScroll;
@@ -151,7 +151,7 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
     @Override
     public void onResume() {
         super.onResume();
-        if (mRailAdapter != null) {
+        if (mRailAdapter != null && mRailList != null && !mRailList.hasFocus()) {
             mRailAdapter.notifyDataSetChanged();
         }
         renderSelectedDetail(false);
@@ -172,7 +172,9 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         int hairlinePx = ctx.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
 
         mRailPane.setBackground(ViewUtil.createRoundedDrawable(surfaceLow, outlineVariant, hairlinePx, railRadius));
+        ViewUtil.applyRoundedOutline(mRailPane, railRadius);
         mDetailScroll.setBackground(ViewUtil.createRoundedDrawable(surfaceContainer, outlineVariant, hairlinePx, detailRadius));
+        ViewUtil.applyRoundedOutline(mDetailScroll, detailRadius);
         mRailTitle.setTextColor(onSurface);
 
         Account account = MediaServiceManager.instance().getSelectedAccount();
@@ -186,9 +188,9 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
 
     private void setupRailList() {
         mRailAdapter = new RailAdapter();
+        mRailList.setLayoutManager(new LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false));
+        mRailList.setItemAnimator(null);
         mRailList.setAdapter(mRailAdapter);
-        mRailList.setWindowAlignment(VerticalGridView.WINDOW_ALIGN_NO_EDGE);
-        mRailList.setItemAlignmentOffsetPercent(VerticalGridView.WINDOW_ALIGN_OFFSET_PERCENT_DISABLED);
     }
 
     private void applyPendingUpdates() {
@@ -599,10 +601,10 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         mPreviewCard.setBackground(ViewUtil.createRoundedDrawable(surfaceHigh, outlineVariant, hairlinePx, cardRadius));
 
         FrameLayout thumbWrapper = new FrameLayout(ctx);
-        int thumbW = Math.round(144 * density);
-        int thumbH = Math.round(81 * density);
+        int thumbW = Math.round(112 * density);
+        int thumbH = Math.round(63 * density);
         LinearLayout.LayoutParams thumbLp = new LinearLayout.LayoutParams(thumbW, thumbH);
-        thumbLp.setMarginEnd(Math.round(16 * density));
+        thumbLp.setMarginEnd(Math.round(14 * density));
 
         mPreviewThumb = new View(ctx);
         thumbWrapper.addView(mPreviewThumb, new FrameLayout.LayoutParams(
@@ -726,10 +728,6 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         mPreviewBadge.setTextColor(onPrimaryContainer);
         mPreviewTitle.setTextColor(onSurface);
         mPreviewSubtitle.setTextColor(onSurfaceVariant);
-
-        if (mRailAdapter != null) {
-            mRailAdapter.notifyDataSetChanged();
-        }
     }
 
     // =========================================================================
@@ -869,7 +867,7 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
             M3Button pickAccent = new M3Button(ctx);
             pickAccent.setButtonStyle(M3Button.STYLE_TONAL);
             pickAccent.setIcon(R.drawable.ic_m3_palette);
-            pickAccent.setText(getString(R.string.settings_pick_accent));
+            pickAccent.setText(getString(R.string.accent_color));
             pickAccent.setOnClickListener(v -> {
                 MainUIData uiData = MainUIData.instance(ctx);
                 AccentColorPickerDialog.show(ctx, uiData.getAccentColor(), newColor -> {
@@ -887,8 +885,11 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
     }
 
     private void addSpacedRow(View view, int bottomMarginPx) {
+        int sideMarginPx = Math.round(3 * getResources().getDisplayMetrics().density);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMarginStart(sideMarginPx);
+        lp.setMarginEnd(sideMarginPx);
         lp.bottomMargin = bottomMarginPx;
         mDetailContainer.addView(view, lp);
     }
@@ -1075,7 +1076,7 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
                                 M3Motion.setImageTint(icon, tColor);
                                 M3Motion.setImageTint(chevron, sColor);
                             });
-                    M3Motion.animateFocusScale(v, focused, 1.02f);
+                    M3Motion.animateFocusScale(v, focused, 1.015f);
                 });
 
                 itemView.setOnClickListener(v -> onRailEntryClicked(position));

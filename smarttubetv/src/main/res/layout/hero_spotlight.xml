@@ -25,6 +25,7 @@
             android:layout_width="460dp"
             android:layout_height="match_parent"
             android:layout_gravity="end"
+            android:alpha="0.92"
             android:scaleType="centerCrop"
             tools:ignore="ContentDescription" />
 
@@ -88,7 +89,7 @@
                 android:id="@+id/hero_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:maxWidth="440dp"
+                android:maxWidth="420dp"
                 android:ellipsize="end"
                 android:fontFamily="sans-serif-medium"
                 android:lineSpacingMultiplier="1.08"
@@ -99,7 +100,7 @@
                 android:id="@+id/hero_subtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:maxWidth="440dp"
+                android:maxWidth="420dp"
                 android:layout_marginTop="5dp"
                 android:ellipsize="end"
                 android:fontFamily="sans-serif"
@@ -147,14 +148,14 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Bottom-right pager indicator pills -->
+        <!-- Top-right pager indicator pills (avoids colliding with action buttons) -->
         <LinearLayout
             android:id="@+id/hero_dots_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="20dp"
             android:layout_marginEnd="24dp"
-            android:layout_marginBottom="18dp"
             android:gravity="center_vertical"
             android:orientation="horizontal" />
     </FrameLayout>

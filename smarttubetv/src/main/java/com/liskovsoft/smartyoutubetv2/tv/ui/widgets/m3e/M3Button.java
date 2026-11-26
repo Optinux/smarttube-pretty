@@ -46,6 +46,7 @@ public class M3Button extends LinearLayout {
     private int mFocusedContent;
     private int mRestingStroke;
     private int mFocusedStroke;
+    private OnFocusChangeListener mExtraFocusListener;
 
     public M3Button(Context context) {
         this(context, null);
@@ -102,7 +103,14 @@ public class M3Button extends LinearLayout {
         setOnFocusChangeListener((v, hasFocus) -> {
             applyVisualState(hasFocus, true);
             M3Motion.animateFocusScale(this, hasFocus, 1.045f);
+            if (mExtraFocusListener != null) {
+                mExtraFocusListener.onFocusChange(v, hasFocus);
+            }
         });
+    }
+
+    public void addOnFocusChangeListener(@Nullable OnFocusChangeListener listener) {
+        mExtraFocusListener = listener;
     }
 
     public void setButtonStyle(int style) {

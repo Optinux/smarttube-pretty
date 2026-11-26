@@ -121,12 +121,9 @@ public class HeroSpotlightPresenter extends RowPresenter {
             mWatchBtn.setButtonStyle(M3Button.STYLE_FILLED);
             mWatchBtn.setIcon(R.drawable.ic_m3_play_arrow);
 
-            mCard.getViewTreeObserver().addOnGlobalFocusChangeListener((oldFocus, newFocus) -> {
-                if (!mCard.isAttachedToWindow()) {
-                    return;
-                }
+            View.OnFocusChangeListener buttonFocusListener = (v, hasFocus) -> {
                 boolean wasInside = mAnyButtonFocused;
-                boolean insideHero = newFocus != null && (newFocus == mWatchBtn || newFocus == mOptionsBtn || newFocus == mNextBtn);
+                boolean insideHero = mWatchBtn.hasFocus() || mOptionsBtn.hasFocus() || mNextBtn.hasFocus();
                 mAnyButtonFocused = insideHero;
                 if (insideHero) {
                     stopAutoRotate();
@@ -136,7 +133,10 @@ public class HeroSpotlightPresenter extends RowPresenter {
                 } else {
                     scheduleAutoRotate();
                 }
-            });
+            };
+            mWatchBtn.addOnFocusChangeListener(buttonFocusListener);
+            mOptionsBtn.addOnFocusChangeListener(buttonFocusListener);
+            mNextBtn.addOnFocusChangeListener(buttonFocusListener);
 
             mOptionsBtn.setButtonStyle(M3Button.STYLE_TONAL);
             mOptionsBtn.setIcon(R.drawable.ic_m3_more_horiz);

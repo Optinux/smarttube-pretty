@@ -7,21 +7,21 @@
     android:orientation="horizontal"
     android:clipChildren="false"
     android:clipToPadding="false"
-    android:paddingStart="@dimen/lb_browse_padding_start"
-    android:paddingEnd="36dp"
-    android:paddingTop="96dp"
+    android:paddingStart="36dp"
+    android:paddingEnd="32dp"
+    android:paddingTop="124dp"
     android:paddingBottom="22dp"
     android:descendantFocusability="afterDescendants">
 
     <!-- Left Pane: M3 Expressive Categorized Navigation Rail -->
     <LinearLayout
         android:id="@+id/settings_rail_pane"
-        android:layout_width="296dp"
+        android:layout_width="260dp"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="14dp"
-        android:clipChildren="false"
-        android:clipToPadding="false">
+        android:padding="12dp"
+        android:clipChildren="true"
+        android:clipToPadding="true">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -39,7 +39,7 @@
                 android:layout_weight="1"
                 android:fontFamily="sans-serif-medium"
                 android:text="@string/settings_hub_title"
-                android:textSize="20sp" />
+                android:textSize="19sp" />
 
             <TextView
                 android:id="@+id/settings_rail_badge"
@@ -47,7 +47,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium"
                 android:includeFontPadding="false"
-                android:maxWidth="130dp"
+                android:maxWidth="112dp"
                 android:ellipsize="end"
                 android:singleLine="true"
                 android:paddingStart="10dp"
@@ -57,21 +57,21 @@
                 android:textSize="11sp" />
         </LinearLayout>
 
-        <androidx.leanback.widget.VerticalGridView
+        <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/settings_rail_list"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:clipChildren="false"
-            android:clipToPadding="false"
+            android:clipChildren="true"
+            android:clipToPadding="true"
             android:paddingTop="4dp"
-            android:paddingBottom="8dp"
-            android:verticalSpacing="4dp" />
+            android:paddingBottom="6dp"
+            android:scrollbars="none" />
     </LinearLayout>
 
-    <!-- M3 Expanded Breakpoint Spacer (20dp) -->
+    <!-- M3 Expanded Breakpoint Spacer -->
     <Space
-        android:layout_width="20dp"
+        android:layout_width="16dp"
         android:layout_height="match_parent" />
 
     <!-- Right Pane: Interactive Detail & Live Controls Canvas -->
@@ -81,8 +81,8 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:clipChildren="false"
-        android:clipToPadding="false"
+        android:clipChildren="true"
+        android:clipToPadding="true"
         android:fillViewport="true"
         android:scrollbars="none">
 
@@ -90,10 +90,10 @@
             android:id="@+id/settings_detail_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:clipChildren="false"
-            android:clipToPadding="false"
+            android:clipChildren="true"
+            android:clipToPadding="true"
             android:orientation="vertical"
-            android:padding="24dp"
+            android:padding="20dp"
             tools:ignore="UselessParent" />
     </ScrollView>
 </LinearLayout>

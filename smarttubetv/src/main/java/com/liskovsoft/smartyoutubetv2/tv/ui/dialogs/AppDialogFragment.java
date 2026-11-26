@@ -328,7 +328,7 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
                     androidx.core.graphics.ColorUtils.setAlphaComponent(backdropColor, 145));
             View mainContainer = parentRootView.findViewById(R.id.settings_preference_fragment_container);
             if (mainContainer != null) {
-                float sheetRadiusPx = context.getResources().getDimension(R.dimen.m3_card_corner_radius);
+                float sheetRadiusPx = context.getResources().getDimension(R.dimen.m3_dialog_corner_radius);
                 ViewUtil.applyRoundedOutline(mainContainer, sheetRadiusPx);
                 if (android.os.Build.VERSION.SDK_INT >= 23 && mainContainer instanceof android.widget.FrameLayout) {
                     int borderPx = Math.max(1, Math.round(1f * density));
@@ -374,11 +374,12 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
         }
         if (listView instanceof VerticalGridView) {
             VerticalGridView gridView = (VerticalGridView) listView;
-            int padH = Math.round(12 * density);
+            int padH = Math.round(14 * density);
             int padTop = Math.round(10 * density);
             int padBottom = Math.round(16 * density);
             gridView.setPaddingRelative(padH, padTop, padH, padBottom);
-            gridView.setClipToPadding(false);
+            gridView.setClipToPadding(true);
+            gridView.setClipChildren(true);
             gridView.setVerticalSpacing(Math.round(3 * density));
 
             float outerItemRadius = context.getResources().getDimension(R.dimen.m3_card_small_corner_radius);
@@ -414,25 +415,29 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
                             outerItemRadius,
                             radii,
                             null);
-                    final View.OnFocusChangeListener prevListener = child.getOnFocusChangeListener();
-                    child.setOnFocusChangeListener((v, hasFocus) -> {
-                        if (prevListener != null) {
-                            prevListener.onFocusChange(v, hasFocus);
-                        }
-                        M3Motion.applyCardFocusTransition(
-                                v,
-                                hasFocus,
-                                hasFocus ? restingFill : focusedFill,
-                                hasFocus ? focusedFill : restingFill,
-                                hasFocus ? Color.TRANSPARENT : focusedStroke,
-                                hasFocus ? focusedStroke : Color.TRANSPARENT,
-                                hasFocus ? 0 : strokeWidthPx,
-                                hasFocus ? strokeWidthPx : 0,
-                                outerItemRadius,
-                                null,
-                                null);
-                        M3Motion.animateFocusScale(v, hasFocus, 1.015f);
-                    });
+                    if (child.getTag(R.id.m3_focus_listener_attached) == null) {
+                        // Store original listener once so recycled rows do not wrap listeners repeatedly
+                        final View.OnFocusChangeListener prevListener = child.getOnFocusChangeListener();
+                        child.setTag(R.id.m3_focus_listener_attached, Boolean.TRUE);
+                        child.setOnFocusChangeListener((v, hasFocus) -> {
+                            if (prevListener != null) {
+                                prevListener.onFocusChange(v, hasFocus);
+                            }
+                            M3Motion.applyCardFocusTransition(
+                                    v,
+                                    hasFocus,
+                                    hasFocus ? restingFill : focusedFill,
+                                    hasFocus ? focusedFill : restingFill,
+                                    hasFocus ? Color.TRANSPARENT : focusedStroke,
+                                    hasFocus ? focusedStroke : Color.TRANSPARENT,
+                                    hasFocus ? 0 : strokeWidthPx,
+                                    hasFocus ? strokeWidthPx : 0,
+                                    outerItemRadius,
+                                    null,
+                                    null);
+                            M3Motion.animateFocusScale(v, hasFocus, 1.012f);
+                        });
+                    }
                     tintCompoundButtons(child, buttonTint);
                 }
             });

@@ -222,11 +222,16 @@ public class ViewUtil {
             int focusedFill = androidx.core.graphics.ColorUtils.setAlphaComponent(
                     getThemeColor(context, R.attr.m3SecondaryContainer, R.color.m3_grey_secondary_container), 235);
             int focusedStroke = getThemeColor(context, R.attr.m3Outline, R.color.m3_grey_outline);
-            ((VerticalGridView) itemsContainer).setVerticalSpacing(
+            VerticalGridView vGrid = (VerticalGridView) itemsContainer;
+            int padH = Math.round(10f * context.getResources().getDisplayMetrics().density);
+            vGrid.setPaddingRelative(padH, vGrid.getPaddingTop(), padH, vGrid.getPaddingBottom());
+            vGrid.setClipChildren(true);
+            vGrid.setClipToPadding(true);
+            vGrid.setVerticalSpacing(
                     Math.round(3f * context.getResources().getDisplayMetrics().density));
             // Set background for individual buttons in the list.
             // This is the only way to do this because items haven't been added yet to the container.
-            ((VerticalGridView) itemsContainer).setOnChildLaidOutListener((parent, view, position, id) -> {
+            vGrid.setOnChildLaidOutListener((parent, view, position, id) -> {
                 if (view == null) {
                     return;
                 }
@@ -243,24 +248,27 @@ public class ViewUtil {
                         initiallyFocused ? focusStrokePx : 0,
                         itemCornerRadius,
                         null);
-                View.OnFocusChangeListener prev = view.getOnFocusChangeListener();
-                view.setOnFocusChangeListener((v, hasFocus) -> {
-                    if (prev != null) {
-                        prev.onFocusChange(v, hasFocus);
-                    }
-                    M3Motion.applyCardFocusTransition(
-                            v,
-                            hasFocus,
-                            hasFocus ? restingFill : focusedFill,
-                            hasFocus ? focusedFill : restingFill,
-                            hasFocus ? transparent : focusedStroke,
-                            hasFocus ? focusedStroke : transparent,
-                            hasFocus ? 0 : focusStrokePx,
-                            hasFocus ? focusStrokePx : 0,
-                            itemCornerRadius,
-                            null);
-                    M3Motion.animateFocusScale(v, hasFocus, 1.015f);
-                });
+                if (view.getTag(R.id.m3_focus_listener_attached) == null) {
+                    View.OnFocusChangeListener prev = view.getOnFocusChangeListener();
+                    view.setTag(R.id.m3_focus_listener_attached, Boolean.TRUE);
+                    view.setOnFocusChangeListener((v, hasFocus) -> {
+                        if (prev != null) {
+                            prev.onFocusChange(v, hasFocus);
+                        }
+                        M3Motion.applyCardFocusTransition(
+                                v,
+                                hasFocus,
+                                hasFocus ? restingFill : focusedFill,
+                                hasFocus ? focusedFill : restingFill,
+                                hasFocus ? transparent : focusedStroke,
+                                hasFocus ? focusedStroke : transparent,
+                                hasFocus ? 0 : focusStrokePx,
+                                hasFocus ? focusStrokePx : 0,
+                                itemCornerRadius,
+                                null);
+                        M3Motion.animateFocusScale(v, hasFocus, 1.012f);
+                    });
+                }
             });
         }
         if (title instanceof FrameLayout) {

@@ -388,7 +388,12 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
         if (mShelfChipRow == null) {
             mShelfChipRow = new ShelfChipRow(targetRowPos -> {
                 if (targetRowPos >= 0 && targetRowPos < mRowsAdapter.size()) {
-                    setSelectedPosition(targetRowPos, true);
+                    Object targetRow = mRowsAdapter.get(targetRowPos);
+                    if (targetRow instanceof ListRow) {
+                        setSelectedPosition(targetRowPos, true, new ListRowPresenter.SelectItemViewHolderTask(0));
+                    } else {
+                        setSelectedPosition(targetRowPos, true);
+                    }
                 }
             });
             mShelfChipRow.setChips(chips, 0);
