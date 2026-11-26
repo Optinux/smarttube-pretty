@@ -8,14 +8,12 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
 import androidx.leanback.widget.SearchOrbView;
 import androidx.leanback.widget.SearchOrbView.Colors;
@@ -278,16 +276,6 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
         mPipTitle.setPaddingRelative(padH, padV, padH, padV);
         mGlobalClock.setTextColor(onSurface);
         mGlobalDate.setTextColor(onSurfaceVariant);
-
-        // Top bar gradient scrim so a taller hero or scrolled rows slide smoothly underneath
-        int screenBg = ViewUtil.getThemeColor(getContext(), R.attr.m3Surface, R.color.m3_grey_surface);
-        setBackground(new GradientDrawable(
-                GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{
-                        ColorUtils.setAlphaComponent(screenBg, 235),
-                        ColorUtils.setAlphaComponent(screenBg, 145),
-                        Color.TRANSPARENT
-                }));
 
         updateButtonsVisibility();
     }

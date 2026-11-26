@@ -19,6 +19,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.LruCache;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -26,6 +27,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -33,11 +35,15 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.AttrRes;
+import androidx.annotation.DimenRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.graphics.Insets;
 import androidx.core.view.AccessibilityDelegateCompat;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.leanback.widget.RowPresenter;
 
@@ -65,7 +71,24 @@ import java.util.List;
  * eased horizontal dissolve, card-consistent focus highlight, and click-to-resume handoff.
  */
 public class HeroSpotlightPresenter extends RowPresenter {
+    // Centralized tone extraction, surface blend & scrim curve tuning parameters
     private static final long TONE_TRANSITION_DURATION_MS = 300L;
+    private static final float TONE_EDGE_STRIP_FRACTION = 0.22f;
+    private static final float TONE_MIN_SATURATION = 0.06f;
+    private static final float TONE_MAX_SATURATION = 0.34f;
+    private static final float TONE_MIN_LIGHTNESS = 0.08f;
+    private static final float TONE_MAX_LIGHTNESS = 0.18f;
+    private static final float TONE_SATURATION_SCALE = 0.48f;
+    private static final float TONE_LIGHTNESS_SCALE = 0.34f;
+    private static final float TONE_SURFACE_BLEND_RATIO = 0.65f; // 65% blend toward theme surface (mScreenBg)
+
+    private static final float[] SCRIM_STOP_OFFSETS = {0f, 0.20f, 0.46f, 0.74f, 1.0f};
+    private static final int[] SCRIM_STOP_ALPHAS = {255, 224, 148, 52, 0};
+    private static final int TOP_SCRIM_MAX_ALPHA = 112;
+    private static final int BOTTOM_SCRIM_END_ALPHA = 216;
+    private static final int BOTTOM_SCRIM_MID_ALPHA = 104;
+
+    private static final float MIN_CARD_HEIGHT_DP = 160f;
 
     private WeakReference<HeroViewHolder> mActiveHolder = new WeakReference<>(null);
     private boolean mIsHostResumed = true;
@@ -166,9 +189,6 @@ public class HeroSpotlightPresenter extends RowPresenter {
      * into the derived banner tone without a linear 2-stop band or hard vertical edge.
      */
     private static final class EasedHorizontalScrimDrawable extends Drawable {
-        private static final float[] CURVE_OFFSETS = {0f, 0.22f, 0.48f, 0.76f, 1.0f};
-        private static final int[] CURVE_ALPHAS = {255, 232, 158, 56, 0};
-
         private final Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private int mColor = Color.TRANSPARENT;
         private float mMediaStartFraction = 0.35f;
@@ -215,11 +235,11 @@ public class HeroSpotlightPresenter extends RowPresenter {
                     ? Math.min(0.46f, Math.max(0.28f, 1f - fadeStart - 0.06f))
                     : 0.65f;
 
-            int[] colors = new int[CURVE_OFFSETS.length];
-            float[] positions = new float[CURVE_OFFSETS.length];
-            for (int i = 0; i < CURVE_OFFSETS.length; i++) {
-                colors[i] = ColorUtils.setAlphaComponent(mColor, CURVE_ALPHAS[i]);
-                positions[i] = Math.min(1f, fadeStart + fadeSpan * CURVE_OFFSETS[i]);
+            int[] colors = new int[SCRIM_STOP_OFFSETS.length];
+            float[] positions = new float[SCRIM_STOP_OFFSETS.length];
+            for (int i = 0; i < SCRIM_STOP_OFFSETS.length; i++) {
+                colors[i] = ColorUtils.setAlphaComponent(mColor, SCRIM_STOP_ALPHAS[i]);
+                positions[i] = Math.min(1f, fadeStart + fadeSpan * SCRIM_STOP_OFFSETS[i]);
             }
 
             float x0 = mIsRtl ? width : 0f;
@@ -257,6 +277,8 @@ public class HeroSpotlightPresenter extends RowPresenter {
 
     private static final class HeroViewHolder extends RowPresenter.ViewHolder
             implements HeroPreviewController.Listener {
+        private final FrameLayout mWrapper;
+        private final View mRowAlignmentAnchor;
         private final FrameLayout mCard;
         private final FrameLayout mMediaContainer;
         private final ImageView mArtwork;
@@ -273,6 +295,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
         private final HeroPreviewController mPreviewController;
         private final EasedHorizontalScrimDrawable mHorizontalScrimDrawable = new EasedHorizontalScrimDrawable();
         private final LruCache<String, Integer> mToneCache = new LruCache<>(16);
+        private final int[] mTempLoc = new int[2];
 
         private HeroSpotlightRow mRow;
         private View mActiveDotProgressFill;
@@ -285,6 +308,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
         private boolean mIsRecyclerDragging;
         private boolean mScrollListenerAttached;
         private boolean mSwipedHorizontal;
+        private boolean mGeometryUpdatePosted;
         private float mTouchDownX;
         private float mTouchDownY;
 
@@ -295,19 +319,37 @@ public class HeroSpotlightPresenter extends RowPresenter {
         private float mCornerRadius;
         private int mFocusStrokePx;
         private int mHairlineStrokePx;
-        private float mFocusedScale;
+        private float mFocusedScale = 1f;
+
+        private int mBrowsePaddingStartPx;
+        private int mBrowsePaddingTopPx;
+        private int mBrowseRowsMarginTopPx;
+        private int mBaselineCardHeightPx;
+        private int mHorizontalInsetPx;
 
         private int mCurrentTone;
         private int mTargetTone;
         private ValueAnimator mToneAnimator;
         private String mActiveImageKey;
 
+        private WeakReference<View> mObservedTitleBar = new WeakReference<>(null);
+
         private final ViewTreeObserver.OnScrollChangedListener mScrollChangedListener =
                 this::updateViewportVisibility;
+
+        private final View.OnLayoutChangeListener mGeometryLayoutListener =
+                (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> scheduleGeometryUpdate();
+
+        private final Runnable mGeometryUpdateRunnable = () -> {
+            mGeometryUpdatePosted = false;
+            updateDynamicHeroGeometry();
+        };
 
         @SuppressLint("ClickableViewAccessibility")
         HeroViewHolder(View itemView) {
             super(itemView);
+            mWrapper = (FrameLayout) itemView;
+            mRowAlignmentAnchor = itemView.findViewById(R.id.row_content);
             mCard = itemView.findViewById(R.id.hero_spotlight_card);
             mMediaContainer = itemView.findViewById(R.id.hero_media_container);
             mArtwork = itemView.findViewById(R.id.hero_artwork);
@@ -422,16 +464,27 @@ public class HeroSpotlightPresenter extends RowPresenter {
                 updateViewportVisibility();
             });
 
+            mWrapper.addOnLayoutChangeListener(mGeometryLayoutListener);
+
+            ViewCompat.setOnApplyWindowInsetsListener(mWrapper, (v, insets) -> {
+                scheduleGeometryUpdate();
+                return insets;
+            });
+
             mCard.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
                 @Override
                 public void onViewAttachedToWindow(View v) {
                     attachScrollObserver();
+                    scheduleGeometryUpdate();
                     updateViewportVisibility();
                 }
 
                 @Override
                 public void onViewDetachedFromWindow(View v) {
                     detachScrollObserver();
+                    detachTitleBarObserver();
+                    mCard.removeCallbacks(mGeometryUpdateRunnable);
+                    mGeometryUpdatePosted = false;
                     M3Motion.cancelFocusAnimations(mCard);
                     mPreviewController.setHeroVisible(false);
                 }
@@ -441,8 +494,8 @@ public class HeroSpotlightPresenter extends RowPresenter {
         private void applyThemeTokens() {
             Context ctx = mCard.getContext();
             mScreenBg = ViewUtil.getThemeColor(ctx, R.attr.m3Surface, R.color.m3_grey_surface);
-            int surfaceContainer = ViewUtil.getThemeColor(ctx, R.attr.m3SurfaceContainer, R.color.m3_grey_surface_container);
-            mFallbackTone = ColorUtils.blendARGB(mScreenBg, surfaceContainer, 0.85f);
+            // Fallback tone on extraction failure matches the theme's surface color
+            mFallbackTone = mScreenBg;
             mOutlineColor = ViewUtil.getThemeColor(ctx, R.attr.m3Outline, R.color.m3_grey_outline);
             mHairlineColor = ViewUtil.getThemeColor(ctx, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
             int onSurface = ViewUtil.getThemeColor(ctx, R.attr.m3OnSurface, R.color.m3_on_surface);
@@ -451,13 +504,222 @@ public class HeroSpotlightPresenter extends RowPresenter {
             mCornerRadius = ctx.getResources().getDimension(R.dimen.lb_rounded_rect_corner_radius);
             mFocusStrokePx = ctx.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
             mHairlineStrokePx = ctx.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
-            mFocusedScale = ctx.getResources().getFraction(R.fraction.lb_focus_zoom_factor_small, 1, 1);
+
+            mBrowsePaddingStartPx = resolveThemeDimensionPixelSize(
+                    ctx, R.attr.browsePaddingStart, R.dimen.lb_browse_padding_start);
+            mBrowsePaddingTopPx = resolveThemeDimensionPixelSize(
+                    ctx, R.attr.browsePaddingTop, R.dimen.lb_browse_padding_top);
+            mBrowseRowsMarginTopPx = resolveThemeDimensionPixelSize(
+                    ctx, R.attr.browseRowsMarginTop, R.dimen.lb_browse_rows_margin_top);
+            mBaselineCardHeightPx = ctx.getResources().getDimensionPixelSize(R.dimen.hero_spotlight_baseline_height);
+            mHorizontalInsetPx = mBrowsePaddingStartPx;
+
+            int estimatedCardWidth = Math.max(1,
+                    ctx.getResources().getDisplayMetrics().widthPixels - (mHorizontalInsetPx * 2));
+            mFocusedScale = computeClampedFocusScale(estimatedCardWidth, mHorizontalInsetPx);
 
             ViewUtil.applyRoundedOutline(mCard, mCornerRadius);
 
             mTitle.setTextColor(onSurface);
             mChannel.setTextColor(ColorUtils.setAlphaComponent(onSurface, 232));
             mStats.setTextColor(onSurfaceVariant);
+        }
+
+        private static int resolveThemeDimensionPixelSize(
+                @NonNull Context ctx, @AttrRes int attrRes, @DimenRes int fallbackRes) {
+            TypedValue tv = new TypedValue();
+            if (ctx.getTheme().resolveAttribute(attrRes, tv, true)) {
+                if (tv.type == TypedValue.TYPE_DIMENSION) {
+                    return TypedValue.complexToDimensionPixelSize(tv.data, ctx.getResources().getDisplayMetrics());
+                }
+                if (tv.resourceId != 0) {
+                    return ctx.getResources().getDimensionPixelSize(tv.resourceId);
+                }
+            }
+            return ctx.getResources().getDimensionPixelSize(fallbackRes);
+        }
+
+        private float computeClampedFocusScale(int cardWidth, int horizontalInsetPx) {
+            if (cardWidth <= 0) {
+                return 1f;
+            }
+            Context ctx = mCard.getContext();
+            float density = ctx.getResources().getDisplayMetrics().density;
+            float baseZoom = ctx.getResources().getFraction(R.fraction.lb_focus_zoom_factor_small, 1, 1);
+            float refCardWidth = ctx.getResources().getDimension(R.dimen.card_width);
+            // Match standard video card radial growth per side while preventing edge/sidebar clipping
+            float refExpansionPerSide = refCardWidth * Math.max(0f, baseZoom - 1f) * 0.5f;
+            float safeMarginPx = mFocusStrokePx + (4f * density);
+            float maxAllowedExpansion = Math.max(0f, horizontalInsetPx - safeMarginPx);
+            float expansionPerSide = Math.min(refExpansionPerSide, maxAllowedExpansion);
+            return Math.min(baseZoom, 1f + (2f * expansionPerSide) / (float) cardWidth);
+        }
+
+        private void scheduleGeometryUpdate() {
+            if (!ViewCompat.isAttachedToWindow(mCard) || mGeometryUpdatePosted) {
+                return;
+            }
+            mGeometryUpdatePosted = true;
+            mCard.post(mGeometryUpdateRunnable);
+        }
+
+        private void detachTitleBarObserver() {
+            View oldTitle = mObservedTitleBar.get();
+            if (oldTitle != null) {
+                oldTitle.removeOnLayoutChangeListener(mGeometryLayoutListener);
+            }
+            mObservedTitleBar.clear();
+        }
+
+        private void updateDynamicHeroGeometry() {
+            if (!ViewCompat.isAttachedToWindow(mCard)) {
+                return;
+            }
+
+            ViewParent gridParent = mWrapper.getParent();
+            if (!(gridParent instanceof View) || ((View) gridParent).getHeight() <= 0) {
+                return;
+            }
+            View gridView = (View) gridParent;
+
+            WindowInsetsCompat rootInsets = ViewCompat.getRootWindowInsets(mWrapper);
+            Insets safeInsets = rootInsets != null
+                    ? rootInsets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout())
+                    : Insets.NONE;
+
+            // Keep left and right insets identical and centered in the collapsed-sidebar content area
+            int horizontalInset = Math.max(mBrowsePaddingStartPx, Math.max(safeInsets.left, safeInsets.right));
+            if (mHorizontalInsetPx != horizontalInset
+                    || mWrapper.getPaddingStart() != horizontalInset
+                    || mWrapper.getPaddingEnd() != horizontalInset) {
+                mHorizontalInsetPx = horizontalInset;
+                mWrapper.setPaddingRelative(
+                        horizontalInset,
+                        mWrapper.getPaddingTop(),
+                        horizontalInset,
+                        mWrapper.getPaddingBottom());
+                if (mCard.getWidth() > 0) {
+                    updateFocusScaleForWidth(mCard.getWidth());
+                }
+            }
+
+            View browseFrame = findAncestorById(mWrapper, R.id.browse_frame);
+            View searchRoot = browseFrame != null ? browseFrame : mWrapper.getRootView();
+            View titleBar = searchRoot != null ? searchRoot.findViewById(R.id.browse_title_group) : null;
+
+            if (titleBar != null && mObservedTitleBar.get() != titleBar) {
+                detachTitleBarObserver();
+                titleBar.addOnLayoutChangeListener(mGeometryLayoutListener);
+                mObservedTitleBar = new WeakReference<>(titleBar);
+            }
+
+            // Skip measurement while BrowseSupportFragment hides/translates the title bar out on scroll
+            if (titleBar == null
+                    || titleBar.getVisibility() != View.VISIBLE
+                    || titleBar.getHeight() <= 0
+                    || Math.abs(titleBar.getTranslationY()) >= 1f) {
+                return;
+            }
+
+            int lowestElementBottom = findLowestVisibleElementBottomInWindow(titleBar, mTempLoc);
+            if (lowestElementBottom <= 0) {
+                titleBar.getLocationInWindow(mTempLoc);
+                lowestElementBottom = mTempLoc[1] + titleBar.getPaddingTop();
+            }
+            int topBarBottomInWindow = Math.max(lowestElementBottom, safeInsets.top + titleBar.getPaddingTop());
+
+            gridView.getLocationInWindow(mTempLoc);
+            int gridTopInWindow = mTempLoc[1];
+
+            float density = mCard.getResources().getDisplayMetrics().density;
+            int minCardHeightPx = Math.round(MIN_CARD_HEIGHT_DP * density);
+
+            // Top sits cleanly below top bar's lowest element by ?attr/browsePaddingTop;
+            // bottom remains strictly anchored so rows below never move.
+            int desiredCardTopInGrid = (topBarBottomInWindow + mBrowsePaddingTopPx) - gridTopInWindow;
+            int fixedCardBottomInGrid = mBrowseRowsMarginTopPx + mBaselineCardHeightPx;
+            int targetCardHeight = Math.max(minCardHeightPx, fixedCardBottomInGrid - desiredCardTopInGrid);
+            int actualCardTopInGrid = fixedCardBottomInGrid - targetCardHeight;
+
+            int newCardTopMargin = actualCardTopInGrid > mBrowseRowsMarginTopPx
+                    ? (actualCardTopInGrid - mBrowseRowsMarginTopPx) : 0;
+            int newAnchorTopMargin = actualCardTopInGrid < mBrowseRowsMarginTopPx
+                    ? (mBrowseRowsMarginTopPx - actualCardTopInGrid) : 0;
+
+            boolean changed = false;
+            ViewGroup.LayoutParams rawCardLp = mCard.getLayoutParams();
+            if (rawCardLp instanceof FrameLayout.LayoutParams) {
+                FrameLayout.LayoutParams cardLp = (FrameLayout.LayoutParams) rawCardLp;
+                if (cardLp.height != targetCardHeight || cardLp.topMargin != newCardTopMargin) {
+                    cardLp.height = targetCardHeight;
+                    cardLp.topMargin = newCardTopMargin;
+                    mCard.setLayoutParams(cardLp);
+                    changed = true;
+                }
+            }
+            if (mRowAlignmentAnchor != null) {
+                ViewGroup.LayoutParams rawAnchorLp = mRowAlignmentAnchor.getLayoutParams();
+                if (rawAnchorLp instanceof FrameLayout.LayoutParams) {
+                    FrameLayout.LayoutParams anchorLp = (FrameLayout.LayoutParams) rawAnchorLp;
+                    if (anchorLp.topMargin != newAnchorTopMargin) {
+                        anchorLp.topMargin = newAnchorTopMargin;
+                        mRowAlignmentAnchor.setLayoutParams(anchorLp);
+                        changed = true;
+                    }
+                }
+            }
+            if (changed) {
+                mWrapper.requestLayout();
+            }
+        }
+
+        @Nullable
+        private static View findAncestorById(@NonNull View view, int id) {
+            ViewParent parent = view.getParent();
+            while (parent instanceof View) {
+                View parentView = (View) parent;
+                if (parentView.getId() == id) {
+                    return parentView;
+                }
+                parent = parentView.getParent();
+            }
+            return null;
+        }
+
+        private static int findLowestVisibleElementBottomInWindow(@NonNull View root, @NonNull int[] loc) {
+            if (root.getVisibility() != View.VISIBLE || root.getAlpha() <= 0.05f
+                    || root.getWidth() <= 0 || root.getHeight() <= 0) {
+                return 0;
+            }
+            if (root instanceof ViewGroup) {
+                ViewGroup vg = (ViewGroup) root;
+                int maxBottom = 0;
+                for (int i = 0; i < vg.getChildCount(); i++) {
+                    int childBottom = findLowestVisibleElementBottomInWindow(vg.getChildAt(i), loc);
+                    if (childBottom > maxBottom) {
+                        maxBottom = childBottom;
+                    }
+                }
+                return maxBottom;
+            }
+            if (root instanceof ImageView && ((ImageView) root).getDrawable() == null) {
+                return 0;
+            }
+            if (root instanceof TextView && TextUtils.isEmpty(((TextView) root).getText())) {
+                return 0;
+            }
+            root.getLocationInWindow(loc);
+            return loc[1] + root.getHeight();
+        }
+
+        private void updateFocusScaleForWidth(int cardWidth) {
+            float updatedScale = computeClampedFocusScale(cardWidth, mHorizontalInsetPx);
+            if (Math.abs(updatedScale - mFocusedScale) > 0.0005f) {
+                mFocusedScale = updatedScale;
+                if (mCard.hasFocus()) {
+                    M3Motion.animateFocusScale(mCard, true, mFocusedScale);
+                }
+            }
         }
 
         private void applyCardFocusHighlight(boolean focused) {
@@ -496,6 +758,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
             }
             mLastCardWidth = cardWidth;
             mLastCardHeight = cardHeight;
+            updateFocusScaleForWidth(cardWidth);
 
             Context ctx = mCard.getContext();
             float density = ctx.getResources().getDisplayMetrics().density;
@@ -568,7 +831,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
             GradientDrawable topScrim = new GradientDrawable(
                     GradientDrawable.Orientation.TOP_BOTTOM,
                     new int[]{
-                            ColorUtils.setAlphaComponent(tone, 145),
+                            ColorUtils.setAlphaComponent(tone, TOP_SCRIM_MAX_ALPHA),
                             Color.TRANSPARENT
                     });
             mScrimTop.setBackground(topScrim);
@@ -576,8 +839,8 @@ public class HeroSpotlightPresenter extends RowPresenter {
             GradientDrawable vertScrim = new GradientDrawable(
                     GradientDrawable.Orientation.BOTTOM_TOP,
                     new int[]{
-                            ColorUtils.setAlphaComponent(tone, 232),
-                            ColorUtils.setAlphaComponent(tone, 128),
+                            ColorUtils.setAlphaComponent(tone, BOTTOM_SCRIM_END_ALPHA),
+                            ColorUtils.setAlphaComponent(tone, BOTTOM_SCRIM_MID_ALPHA),
                             Color.TRANSPARENT
                     });
             mScrimVertical.setBackground(vertScrim);
@@ -601,6 +864,9 @@ public class HeroSpotlightPresenter extends RowPresenter {
 
         void unbind() {
             detachScrollObserver();
+            detachTitleBarObserver();
+            mCard.removeCallbacks(mGeometryUpdateRunnable);
+            mGeometryUpdatePosted = false;
             cancelToneAnimation();
             M3Motion.cancelFocusAnimations(mCard);
             mPreviewController.release();
@@ -621,6 +887,10 @@ public class HeroSpotlightPresenter extends RowPresenter {
 
         void onHostDestroy() {
             detachScrollObserver();
+            detachTitleBarObserver();
+            mCard.removeCallbacks(mGeometryUpdateRunnable);
+            mGeometryUpdatePosted = false;
+            ViewCompat.setOnApplyWindowInsetsListener(mWrapper, null);
             cancelToneAnimation();
             M3Motion.cancelFocusAnimations(mCard);
             mPreviewController.release();
@@ -741,7 +1011,11 @@ public class HeroSpotlightPresenter extends RowPresenter {
             final String primaryUrl = !TextUtils.isEmpty(video.bgImageUrl)
                     ? video.bgImageUrl
                     : ClickbaitRemover.updateThumbnail(video, thumbQuality);
-            final String cacheKey = !TextUtils.isEmpty(video.videoId) ? video.videoId : primaryUrl;
+            final boolean isRtl = ViewCompat.getLayoutDirection(mCard) == ViewCompat.LAYOUT_DIRECTION_RTL;
+            final String baseCacheKey = !TextUtils.isEmpty(video.videoId) ? video.videoId : primaryUrl;
+            final String cacheKey = !TextUtils.isEmpty(baseCacheKey)
+                    ? baseCacheKey + (isRtl ? "_rtl" : "_ltr")
+                    : null;
             mActiveImageKey = cacheKey;
 
             Integer cachedTone = !TextUtils.isEmpty(cacheKey) ? mToneCache.get(cacheKey) : null;
@@ -779,7 +1053,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
                                 }
                                 if (cachedTone == null) {
                                     int derived = (resource instanceof BitmapDrawable)
-                                            ? extractMutedBannerTone(((BitmapDrawable) resource).getBitmap(), mScreenBg, mFallbackTone)
+                                            ? extractMutedBannerTone(((BitmapDrawable) resource).getBitmap(), mScreenBg, mFallbackTone, isRtl)
                                             : mFallbackTone;
                                     if (!TextUtils.isEmpty(cacheKey)) {
                                         mToneCache.put(cacheKey, derived);
@@ -826,7 +1100,8 @@ public class HeroSpotlightPresenter extends RowPresenter {
             return TextUtils.join("  " + Video.TERTIARY_TEXT_DELIM + "  ", kept);
         }
 
-        private static int extractMutedBannerTone(@Nullable Bitmap bitmap, int screenBg, int fallbackTone) {
+        private static int extractMutedBannerTone(
+                @Nullable Bitmap bitmap, int screenBg, int fallbackTone, boolean sampleEndEdge) {
             if (bitmap == null || bitmap.isRecycled()) {
                 return fallbackTone;
             }
@@ -836,10 +1111,15 @@ public class HeroSpotlightPresenter extends RowPresenter {
                 return fallbackTone;
             }
 
-            long colorSumR = 0;
-            long colorSumG = 0;
-            long colorSumB = 0;
-            long colorWeight = 0;
+            // Sample only the downscaled edge strip adjacent to the horizontal fade
+            int stripWidth = Math.max(1, Math.round(width * TONE_EDGE_STRIP_FRACTION));
+            int startX = sampleEndEdge ? Math.max(0, width - stripWidth) : 0;
+            int endX = Math.min(width, startX + stripWidth);
+
+            long mutedSumR = 0;
+            long mutedSumG = 0;
+            long mutedSumB = 0;
+            long mutedWeight = 0;
 
             long allSumR = 0;
             long allSumG = 0;
@@ -847,11 +1127,11 @@ public class HeroSpotlightPresenter extends RowPresenter {
             long allCount = 0;
 
             float[] hsl = new float[3];
-            int stepX = Math.max(1, width / 16);
-            int stepY = Math.max(1, height / 9);
+            int stepX = Math.max(1, stripWidth / 8);
+            int stepY = Math.max(1, height / 12);
 
             for (int y = 0; y < height; y += stepY) {
-                for (int x = 0; x < width; x += stepX) {
+                for (int x = startX; x < endX; x += stepX) {
                     int px = bitmap.getPixel(x, y);
                     if (Color.alpha(px) < 128) {
                         continue;
@@ -865,22 +1145,23 @@ public class HeroSpotlightPresenter extends RowPresenter {
                     allCount++;
 
                     ColorUtils.colorToHSL(px, hsl);
-                    if (hsl[1] >= 0.14f && hsl[2] >= 0.08f && hsl[2] <= 0.88f) {
-                        int weight = Math.max(1, Math.round(hsl[1] * 10f));
-                        colorSumR += (long) r * weight;
-                        colorSumG += (long) g * weight;
-                        colorSumB += (long) b * weight;
-                        colorWeight += weight;
+                    // Prefer dark/muted edge mid-tones and avoid neon highlights
+                    if (hsl[1] >= 0.08f && hsl[2] >= 0.05f && hsl[2] <= 0.72f) {
+                        int weight = Math.max(1, Math.round((1f - hsl[2]) * 10f));
+                        mutedSumR += (long) r * weight;
+                        mutedSumG += (long) g * weight;
+                        mutedSumB += (long) b * weight;
+                        mutedWeight += weight;
                     }
                 }
             }
 
             int baseColor;
-            if (colorWeight > 0) {
+            if (mutedWeight > 0) {
                 baseColor = Color.rgb(
-                        (int) (colorSumR / colorWeight),
-                        (int) (colorSumG / colorWeight),
-                        (int) (colorSumB / colorWeight));
+                        (int) (mutedSumR / mutedWeight),
+                        (int) (mutedSumG / mutedWeight),
+                        (int) (mutedSumB / mutedWeight));
             } else if (allCount > 0) {
                 baseColor = Color.rgb(
                         (int) (allSumR / allCount),
@@ -890,13 +1171,12 @@ public class HeroSpotlightPresenter extends RowPresenter {
                 return fallbackTone;
             }
 
-            // Desaturate and darken relative to the ambient backdrop so the hero reads as its own
-            // distinct surface and keeps white/light text crisp even on extreme thumbnails.
+            // Clamp HSL saturation and lightness strictly dark/muted, then blend heavily toward theme surface
             ColorUtils.colorToHSL(baseColor, hsl);
-            hsl[1] = Math.min(0.44f, Math.max(0.12f, hsl[1] * 0.58f));
-            hsl[2] = Math.min(0.21f, Math.max(0.11f, hsl[2] * 0.42f));
+            hsl[1] = Math.min(TONE_MAX_SATURATION, Math.max(TONE_MIN_SATURATION, hsl[1] * TONE_SATURATION_SCALE));
+            hsl[2] = Math.min(TONE_MAX_LIGHTNESS, Math.max(TONE_MIN_LIGHTNESS, hsl[2] * TONE_LIGHTNESS_SCALE));
             int mutedTone = ColorUtils.HSLToColor(hsl);
-            return ColorUtils.blendARGB(screenBg, mutedTone, 0.82f);
+            return ColorUtils.blendARGB(mutedTone, screenBg, TONE_SURFACE_BLEND_RATIO);
         }
 
         private void renderDots(int count, int activeIndex) {

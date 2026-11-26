@@ -36,8 +36,8 @@
     <dimen name="m3_card_large_corner_radius">20dp</dimen>
     <dimen name="m3_dialog_corner_radius">28dp</dimen>
     <dimen name="m3_hero_corner_radius">32dp</dimen>
-    <dimen name="hero_spotlight_height">304dp</dimen>
-    <dimen name="hero_spotlight_top_growth">48dp</dimen>
+    <!-- Baseline hero card height preserving the exact vertical bottom anchor of rows below -->
+    <dimen name="hero_spotlight_baseline_height">256dp</dimen>
     <dimen name="m3_pill_corner_radius">999dp</dimen>
     <dimen name="m3_focus_stroke_width">2dp</dimen>
     <dimen name="m3_hairline_stroke_width">1dp</dimen>

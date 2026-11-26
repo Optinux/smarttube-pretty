@@ -7,24 +7,25 @@
     android:layout_height="wrap_content"
     android:clipChildren="false"
     android:clipToPadding="false"
-    android:paddingStart="@dimen/lb_browse_padding_start"
-    android:paddingEnd="@dimen/lb_browse_padding_end"
+    android:paddingStart="?attr/browsePaddingStart"
+    android:paddingEnd="?attr/browsePaddingStart"
     android:paddingTop="4dp"
     android:paddingBottom="12dp">
 
-    <!-- Leanback RowsSupportFragment aligns row_content to lb_browse_rows_margin_top (126dp).
-         Offsetting it down by hero_spotlight_top_growth makes the taller hero grow upward only,
-         keeping its bottom edge and all shelves below at the exact same y-position. -->
+    <!-- Leanback RowsSupportFragment aligns row_content to ?attr/browseRowsMarginTop (126dp).
+         HeroSpotlightPresenter measures the top bar's lowest visible element + insets + ?attr/browsePaddingTop
+         and sizes hero_spotlight_card + row_content/card topMargin dynamically so its bottom edge
+         and all shelves below stay at the exact same y-position. -->
     <View
         android:id="@id/row_content"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="@dimen/hero_spotlight_top_growth" />
+        android:layout_marginTop="0dp" />
 
     <FrameLayout
         android:id="@+id/hero_spotlight_card"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/hero_spotlight_height"
+        android:layout_height="@dimen/hero_spotlight_baseline_height"
         android:clickable="true"
         android:clipChildren="true"
         android:clipToPadding="true"

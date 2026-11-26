@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Taller hero stage (+48dp upward over the 264dp baseline) on TV and tablets -->
-    <dimen name="hero_spotlight_height">312dp</dimen>
+    <!-- Baseline hero card height on TV and tablets -->
+    <dimen name="hero_spotlight_baseline_height">264dp</dimen>
 </resources>
