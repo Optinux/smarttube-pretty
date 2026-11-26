@@ -16,6 +16,11 @@ public class VideoRowsFragment extends MultipleRowsFragment {
     }
 
     @Override
+    protected boolean isHeroSpotlightEnabled() {
+        return true;
+    }
+
+    @Override
     protected VideoGroupPresenter getMainPresenter() {
         return BrowsePresenter.instance(getContext());
     }

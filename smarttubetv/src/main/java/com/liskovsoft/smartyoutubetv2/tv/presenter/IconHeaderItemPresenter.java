@@ -146,25 +146,26 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
             GradientDrawable pill = (GradientDrawable) bg;
             int fillAlpha = Math.round(Color.alpha(mSecondaryContainerColor) * level);
             pill.setColor(ColorUtils.setAlphaComponent(mSecondaryContainerColor, fillAlpha));
-            // M3 Expressive navigation rail relies on flat tonal pill fill without resting/active outline clutter
-            pill.setStroke(0, Color.TRANSPARENT);
+            int strokeAlpha = Math.round(255 * Math.max(0f, (level - 0.5f) * 2f));
+            pill.setStroke(level > 0.5f ? mFocusStrokeWidthPx : 0,
+                    ColorUtils.setAlphaComponent(mOutlineColor, strokeAlpha));
         }
 
         TextView label = holder.view.findViewById(R.id.header_label);
         if (label != null) {
             label.setTextColor(ColorUtils.blendARGB(mOnSurfaceVariantColor, mOnSecondaryContainerColor, level));
             label.setAlpha(1.0f);
-            label.setTypeface(Typeface.create(level > 0.5f ? "sans-serif-medium" : "sans-serif", Typeface.NORMAL));
+            label.setTypeface(Typeface.create("sans-serif-medium", level > 0.5f ? Typeface.BOLD : Typeface.NORMAL));
         }
 
         ImageView iconView = holder.view.findViewById(R.id.header_icon);
         if (iconView != null) {
             iconView.setAlpha(1.0f);
-            float iconScale = 1.0f + 0.08f * level;
+            float iconScale = 1.0f + 0.10f * level;
             iconView.setScaleX(iconScale);
             iconView.setScaleY(iconScale);
             if (mIconUrl == null && mResId > 0) {
-                int iconTint = ColorUtils.blendARGB(mOnSurfaceVariantColor, mOnSecondaryContainerColor, level);
+                int iconTint = ColorUtils.blendARGB(mOnSurfaceVariantColor, mPrimaryColor, level);
                 ImageViewCompat.setImageTintList(iconView, ColorStateList.valueOf(iconTint));
             } else {
                 ImageViewCompat.setImageTintList(iconView, null);

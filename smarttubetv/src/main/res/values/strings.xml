@@ -118,4 +118,36 @@
     <string name="text_post_results_title">Posts for %s</string>
     <string name="text_no_results">No results</string>
     <string name="error_message_network_needed">Oops, you need a network connection to do that!</string>
+
+    <!-- M3 Expressive Home Spotlight & Settings Hub -->
+    <string name="hero_watch_now">Watch now</string>
+    <string name="hero_resume">Resume</string>
+    <string name="hero_more_options">Options</string>
+    <string name="hero_next_pick">Next pick</string>
+    <string name="hero_featured">Featured</string>
+    <string name="hero_live_now">Live now</string>
+    <string name="hero_upcoming">Upcoming</string>
+    <string name="hero_all_shelves">Top</string>
+    <string name="settings_hub_title">Settings</string>
+    <string name="settings_quick_controls">Quick controls</string>
+    <string name="settings_quick_controls_subtitle">Theme, accent &amp; instant toggles</string>
+    <string name="settings_group_account">Account &amp; Locale</string>
+    <string name="settings_group_appearance">Appearance &amp; Navigation</string>
+    <string name="settings_group_playback">Playback &amp; Media</string>
+    <string name="settings_group_extensions">Enhancements &amp; System</string>
+    <string name="settings_open_category">Open %1$s</string>
+    <string name="settings_preview_label">Live theme preview</string>
+    <string name="settings_preview_title">Expressive TV Interface</string>
+    <string name="settings_preview_subtitle">Surface tones, corner shapes &amp; accent contrast</string>
+    <string name="settings_apply_restart_hint">Restart app to apply layout &amp; theme changes</string>
+    <string name="settings_restart_now">Restart app</string>
+    <string name="settings_switch_account">Switch account</string>
+    <string name="settings_pick_accent">Custom accent picker</string>
+    <string name="settings_cycle_scheme">Color scheme</string>
+    <string name="settings_rounded_corners">Rounded card corners</string>
+    <string name="settings_not_signed_in">Guest mode</string>
+    <string name="settings_enabled">Enabled</string>
+    <string name="settings_disabled">Disabled</string>
+    <string name="settings_active">Active</string>
+    <string name="settings_off">Off</string>
 </resources>

@@ -24,9 +24,14 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.VideoGroup;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.interfaces.VideoGroupPresenter;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
+import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.adapter.VideoGroupObjectAdapter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.ChannelHeaderPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.ChannelHeaderPresenter.ChannelHeaderCallback;
+import com.liskovsoft.smartyoutubetv2.tv.presenter.HeroSpotlightPresenter;
+import com.liskovsoft.smartyoutubetv2.tv.presenter.HeroSpotlightRow;
+import com.liskovsoft.smartyoutubetv2.tv.presenter.ShelfChipPresenter;
+import com.liskovsoft.smartyoutubetv2.tv.presenter.ShelfChipRow;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.ShortsCardPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.VideoCardPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.CustomListRowPresenter;
@@ -34,6 +39,7 @@ import com.liskovsoft.smartyoutubetv2.tv.presenter.base.OnItemLongPressedListene
 import com.liskovsoft.smartyoutubetv2.tv.ui.browse.interfaces.VideoSection;
 import com.liskovsoft.smartyoutubetv2.tv.ui.common.LeanbackActivity;
 import com.liskovsoft.smartyoutubetv2.tv.ui.common.UriBackgroundManager;
+import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.m3e.M3ChipBarView.ChipItem;
 import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
@@ -55,6 +61,8 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
     private ShortsCardPresenter mShortsPresenter;
     private int mSelectedRowIndex = -1;
     private ChannelHeaderCallback mChannelHeaderCallback;
+    private HeroSpotlightRow mHeroSpotlightRow;
+    private ShelfChipRow mShelfChipRow;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -82,6 +90,18 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
         mChannelHeaderCallback = callback;
     }
 
+    protected boolean isHeroSpotlightEnabled() {
+        return false;
+    }
+
+    private int getHeaderRowCount() {
+        int count = 0;
+        if (mChannelHeaderCallback != null) count++;
+        if (mHeroSpotlightRow != null) count++;
+        if (mShelfChipRow != null) count++;
+        return count;
+    }
+
     protected abstract VideoGroupPresenter getMainPresenter();
 
     private void applyPendingUpdates() {
@@ -107,6 +127,8 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             ClassPresenterSelector presenterSelector = new ClassPresenterSelector();
             presenterSelector.addClassPresenter(ListRow.class, mRowPresenter);
             presenterSelector.addClassPresenter(ChannelHeaderCallback.class, new ChannelHeaderPresenter());
+            presenterSelector.addClassPresenter(HeroSpotlightRow.class, new HeroSpotlightPresenter());
+            presenterSelector.addClassPresenter(ShelfChipRow.class, new ShelfChipPresenter());
 
             mRowsAdapter = new ArrayObjectAdapter(presenterSelector);
             setAdapter(mRowsAdapter);
@@ -122,6 +144,8 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
 
     @Override
     public void clear() {
+        mHeroSpotlightRow = null;
+        mShelfChipRow = null;
         if (mRowsAdapter != null) {
             mRowsAdapter.clear();
             if (mChannelHeaderCallback != null) {
@@ -225,9 +249,10 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             return;
         }
 
-        // Correct position depending on the search bar presence
-        if (group.getPosition() != -1 && mChannelHeaderCallback != null) {
-            group.setPosition(group.getPosition() + 1);
+        // Correct position depending on header rows presence
+        int rawGroupPosition = group.getPosition();
+        if (rawGroupPosition != -1 && mChannelHeaderCallback != null) {
+            group.setPosition(rawGroupPosition + 1);
         }
 
         int action = group.getAction();
@@ -270,10 +295,23 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
 
             ListRow row = new ListRow(rowHeader, videoGroupAdapter);
 
-            if (group.getPosition() == -1 || group.getPosition() > mRowsAdapter.size()) {
+            if (isHeroSpotlightEnabled() && mChannelHeaderCallback == null && mHeroSpotlightRow == null) {
+                ensureHeroSpotlight(group);
+            }
+
+            int headerOffset = mChannelHeaderCallback == null ? getHeaderRowCount() : 0;
+            int targetPos = group.getPosition() == -1
+                    ? mRowsAdapter.size()
+                    : Math.min(mRowsAdapter.size(), Math.max(headerOffset, group.getPosition() + headerOffset));
+
+            if (group.getPosition() == -1 || targetPos >= mRowsAdapter.size()) {
                 mRowsAdapter.add(row);
             } else {
-                mRowsAdapter.add(group.getPosition(), row);
+                mRowsAdapter.add(targetPos, row);
+            }
+
+            if (isHeroSpotlightEnabled() && mChannelHeaderCallback == null) {
+                syncShelfChips();
             }
         } else {
             Log.d(TAG, "Continue row %s %s", group.getTitle(), System.currentTimeMillis());
@@ -286,6 +324,81 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
         }
 
         restorePosition();
+    }
+
+    private void ensureHeroSpotlight(VideoGroup firstGroup) {
+        if (firstGroup == null || firstGroup.getVideos() == null || firstGroup.getVideos().isEmpty()) {
+            return;
+        }
+        String label = firstGroup.getSection() != null && firstGroup.getSection().getTitle() != null
+                ? firstGroup.getSection().getTitle()
+                : firstGroup.getTitle();
+        HeroSpotlightRow hero = new HeroSpotlightRow(label, firstGroup.getVideos(), new HeroSpotlightRow.OnHeroActionListener() {
+            @Override
+            public void onWatchClicked(Video video) {
+                if (mMainPresenter != null) {
+                    mMainPresenter.onVideoItemClicked(video);
+                }
+            }
+
+            @Override
+            public void onOptionsClicked(Video video) {
+                if (mMainPresenter != null) {
+                    mMainPresenter.onVideoItemLongClicked(video);
+                }
+            }
+
+            @Override
+            public void onVideoHighlighted(Video video) {
+                if (mBackgroundManager != null) {
+                    mBackgroundManager.setBackgroundFrom(video);
+                }
+            }
+        });
+        if (!hero.getVideos().isEmpty()) {
+            mHeroSpotlightRow = hero;
+            mRowsAdapter.add(0, mHeroSpotlightRow);
+            if (mBackgroundManager != null && mHeroSpotlightRow.getCurrentVideo() != null) {
+                mBackgroundManager.setBackgroundFrom(mHeroSpotlightRow.getCurrentVideo());
+            }
+        }
+    }
+
+    private void syncShelfChips() {
+        if (mRowsAdapter == null || mHeroSpotlightRow == null) {
+            return;
+        }
+        List<ChipItem> chips = new ArrayList<>();
+        chips.add(new ChipItem(0, getString(R.string.hero_all_shelves)));
+        int listRowCount = 0;
+        for (int i = 0; i < mRowsAdapter.size(); i++) {
+            Object obj = mRowsAdapter.get(i);
+            if (obj instanceof ListRow) {
+                listRowCount++;
+                HeaderItem hi = ((ListRow) obj).getHeaderItem();
+                String title = hi != null && hi.getName() != null ? hi.getName() : "";
+                if (!title.isEmpty()) {
+                    chips.add(new ChipItem(i, title));
+                }
+            }
+        }
+        if (listRowCount < 2) {
+            return;
+        }
+        if (mShelfChipRow == null) {
+            mShelfChipRow = new ShelfChipRow(targetRowPos -> {
+                if (targetRowPos >= 0 && targetRowPos < mRowsAdapter.size()) {
+                    setSelectedPosition(targetRowPos, true);
+                }
+            });
+            mShelfChipRow.setChips(chips, 0);
+            mRowsAdapter.add(1, mShelfChipRow);
+            // Recompute chip row targets now that ShelfChipRow shifted ListRow indices by +1
+            syncShelfChips();
+        } else {
+            mShelfChipRow.setChips(chips, mShelfChipRow.getSelectedIndex());
+            mRowsAdapter.notifyArrayItemRangeChanged(1, 1);
+        }
     }
 
     private void restorePosition() {
