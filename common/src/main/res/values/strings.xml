@@ -789,6 +789,17 @@
     <string name="accent_color_lavender">Lavender</string>
     <string name="accent_color_pink">Orchid Pink</string>
     <string name="accent_color_mono">Monochrome</string>
+    <string name="update_downloading">Downloading update…</string>
+    <string name="update_verifying">Verifying update…</string>
+    <string name="update_retry">Retry</string>
+    <string name="update_install_permission_title">Permission required</string>
+    <string name="update_install_permission_desc">Allow "Install unknown apps" for this app in system settings to install updates.</string>
+    <string name="update_open_settings">Open settings</string>
+    <string name="update_install_permission_denied">Install permission was not granted</string>
+    <string name="update_install_failed">Failed to install update</string>
+    <string name="update_required_notice">This update is required for continued compatibility.</string>
+    <string name="update_version_info">Version %1$s (build %2$d)</string>
+    <string name="update_cancelled">Update download cancelled</string>
     <plurals name="hours">
         <item quantity="one">%s hour</item>
         <item quantity="other">%s hours</item>

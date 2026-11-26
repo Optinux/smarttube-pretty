@@ -12,15 +12,13 @@ All core streaming, SponsorBlock, playback, and device features come from upstre
 
 ## Download
 
-[![Build Debug APK](https://github.com/Optinux/smarttube-pretty/actions/workflows/CI.yml/badge.svg)](https://github.com/Optinux/smarttube-pretty/actions/workflows/CI.yml)
+[![Build and Release APK](https://github.com/Optinux/smarttube-pretty/actions/workflows/CI.yml/badge.svg)](https://github.com/Optinux/smarttube-pretty/actions/workflows/CI.yml)
 
-Pre-built APKs are compiled automatically on every commit via GitHub Actions:
+Pre-built signed release APKs and the in-app update manifest are published automatically to [**GitHub Releases**](https://github.com/Optinux/smarttube-pretty/releases) on every `master` push and release tag:
 
-1. Open the [**latest successful CI builds**](https://github.com/Optinux/smarttube-pretty/actions/workflows/CI.yml?query=is%3Asuccess).
-2. Click the newest run at the top.
-3. Scroll down to **Artifacts** and download the APK for your device (most Android TV devices use `arm64`, older 32-bit devices use `armeabi-v7a`, or pick `universal`).
-
-> **Note:** GitHub requires you to be signed in to a GitHub account to download workflow artifacts.
+1. Open the [**latest release**](https://github.com/Optinux/smarttube-pretty/releases/latest).
+2. Download the APK for your device (most Android TV devices use `arm64-v8a`, older 32-bit devices use `armeabi-v7a`, or pick `universal`).
+3. Once installed, future updates can be installed directly in-app (About -> **Check for updates** or automatic launch check).
 
 ## Building
 

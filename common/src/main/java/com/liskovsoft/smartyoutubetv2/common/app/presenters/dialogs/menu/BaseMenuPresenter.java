@@ -22,6 +22,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.presenters.dialogs.menu.VideoMe
 import com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager;
 import com.liskovsoft.smartyoutubetv2.common.prefs.GeneralData;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
+import com.liskovsoft.smartyoutubetv2.common.updater.UpdateManager;
 import com.liskovsoft.smartyoutubetv2.common.utils.AppDialogUtil;
 import com.liskovsoft.smartyoutubetv2.common.utils.SimpleEditDialog;
 import com.liskovsoft.youtubeapi.service.YouTubeMediaItemService;
@@ -506,7 +507,16 @@ public abstract class BaseMenuPresenter extends BasePresenter<Void> {
     }
 
     protected void appendUpdateCheckButton() {
-        // Auto-update disabled: upstream repo changed and CI builds don't support in-app updates
+        if (!mIsUpdateCheckEnabled || !UpdateManager.instance(getContext()).isConfigured()) {
+            return;
+        }
+
+        getDialogPresenter().appendSingleButton(
+                UiOptionItem.from(getContext().getString(R.string.check_for_updates),
+                        optionItem -> {
+                            closeDialog();
+                            AppUpdatePresenter.instance(getContext()).start(true);
+                        }));
     }
 
     protected void appendToggleExcludeFromContentBlockButton() {

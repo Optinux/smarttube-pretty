@@ -1,7 +1,6 @@
 package com.liskovsoft.smartyoutubetv2.common.app.presenters.settings;
 
 import android.content.Context;
-import com.liskovsoft.appupdatechecker2.AppUpdateChecker;
 import com.liskovsoft.sharedutils.helpers.AppInfoHelpers;
 import com.liskovsoft.sharedutils.helpers.MessageHelpers;
 import com.liskovsoft.smartyoutubetv2.common.R;
@@ -12,14 +11,16 @@ import com.liskovsoft.smartyoutubetv2.common.app.presenters.base.BasePresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.dialogs.ATVBridgePresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.dialogs.AmazonBridgePresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.dialogs.AppUpdatePresenter;
+import com.liskovsoft.smartyoutubetv2.common.updater.UpdateManager;
+import com.liskovsoft.smartyoutubetv2.common.updater.UpdatePrefs;
 
 public class AboutSimpleSettingsPresenter extends BasePresenter<Void> {
-    private final AppUpdateChecker mUpdateChecker;
+    private final UpdatePrefs mUpdatePrefs;
 
     public AboutSimpleSettingsPresenter(Context context) {
         super(context);
 
-        mUpdateChecker = new AppUpdateChecker(getContext(), null);
+        mUpdatePrefs = UpdatePrefs.instance(getContext());
     }
 
     public static AboutSimpleSettingsPresenter instance(Context context) {
@@ -33,10 +34,10 @@ public class AboutSimpleSettingsPresenter extends BasePresenter<Void> {
 
         AppDialogPresenter settingsPresenter = AppDialogPresenter.instance(getContext());
 
-        // Auto-update disabled: upstream repo changed and CI builds don't support in-app updates
-        //appendAutoUpdateSwitch(settingsPresenter);
-
-        //appendUpdateCheckButton(settingsPresenter);
+        if (UpdateManager.instance(getContext()).isConfigured()) {
+            appendAutoUpdateSwitch(settingsPresenter);
+            appendUpdateCheckButton(settingsPresenter);
+        }
 
         appendInstallBridge(settingsPresenter);
 
@@ -45,8 +46,8 @@ public class AboutSimpleSettingsPresenter extends BasePresenter<Void> {
 
     private void appendAutoUpdateSwitch(AppDialogPresenter settingsPresenter) {
         settingsPresenter.appendSingleSwitch(UiOptionItem.from(getContext().getString(R.string.check_updates_auto), optionItem -> {
-            mUpdateChecker.setUpdateCheckEnabled(optionItem.isSelected());
-        }, mUpdateChecker.isUpdateCheckEnabled()));
+            mUpdatePrefs.setAutoCheckEnabled(optionItem.isSelected());
+        }, mUpdatePrefs.isAutoCheckEnabled()));
     }
 
     private void appendUpdateCheckButton(AppDialogPresenter settingsPresenter) {

@@ -92,6 +92,7 @@ import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.common.prefs.PlayerData;
 import com.liskovsoft.smartyoutubetv2.common.prefs.PlayerTweaksData;
 import com.liskovsoft.smartyoutubetv2.common.prefs.RemoteControlData;
+import com.liskovsoft.smartyoutubetv2.common.updater.UpdatePrefs;
 import com.liskovsoft.youtubeapi.service.internal.MediaServiceData;
 
 import java.io.IOException;
@@ -118,7 +119,7 @@ public class Utils {
     };
     public static final String[] BACKUP_PREFS = {
             "yt_service_prefs.xml",
-            "com.liskovsoft.appupdatechecker2.preferences.xml",
+            UpdatePrefs.PREFS_NAME + ".xml",
             "com.liskovsoft.sharedutils.prefs.GlobalPreferences.xml",
             "_preferences.xml" // before _ should be the app package name
     };

@@ -1,11 +1,16 @@
-name: Build Debug APK
+name: Build and Release APK
 
 on:
   push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -16,6 +21,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           submodules: recursive
+          fetch-depth: 20
 
       - name: Set up JDK 17
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
@@ -24,42 +30,150 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Update Version Name
-        id: get_version
+      - name: Configure Signing Keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
-          sed -i "s/versionName \"\(.*\)\"/versionName \"\1-ci-${{ github.run_number }}\"/" smarttubetv/build.gradle
-          echo "VERSION_NAME=$(grep "versionName" smarttubetv/build.gradle | head -n 1 | awk -F'"' '{print $2}')" >> $GITHUB_OUTPUT
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::error::Missing signing secrets (SIGNING_KEYSTORE_BASE64, SIGNING_STORE_PASSWORD, SIGNING_KEY_ALIAS, SIGNING_KEY_PASSWORD)."
+            exit 1
+          fi
+          KEYSTORE_PATH="${{ runner.temp }}/release.keystore"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$KEYSTORE_PATH"
+          echo "CI=true" >> "$GITHUB_ENV"
+          echo "SIGNING_STORE_FILE=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+          echo "SIGNING_STORE_PASSWORD=$STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "SIGNING_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "SIGNING_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Derive Version Metadata
+        id: version
+        run: |
+          BASE_CODE=$(grep -E 'def baseVersionCode\s*=' smarttubetv/build.gradle | head -n 1 | sed -E 's/.*=\s*([0-9]+).*/\1/')
+          BASE_NAME=$(grep -E 'def baseVersionName\s*=' smarttubetv/build.gradle | head -n 1 | awk -F'"' '{print $2}')
+          VERSION_CODE=$((BASE_CODE * 10000 + GITHUB_RUN_NUMBER))
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            RELEASE_TAG="${{ github.ref_name }}"
+            VERSION_NAME="${RELEASE_TAG#v}"
+          else
+            RELEASE_TAG="ci-${{ github.run_number }}"
+            VERSION_NAME="${BASE_NAME}-ci-${{ github.run_number }}"
+          fi
+          echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Grant Gradle permissions
         run: chmod +x gradlew
 
-      - name: Build Debug APKs
-        run: ./gradlew clean assembleStstableDebug
+      - name: Build Signed Release APKs
+        run: ./gradlew clean assembleStstableRelease
 
-      - name: Upload ARM64 APK
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: SmartTube-Pretty_${{ steps.get_version.outputs.VERSION_NAME }}_arm64
-          path: ./smarttubetv/build/outputs/apk/ststable/debug/*_arm64-v8a.apk
-          if-no-files-found: error
+      - name: Compute Checksums and Generate Update Manifest
+        run: |
+          APK_DIR="./smarttubetv/build/outputs/apk/ststable/release"
+          DIST_DIR="${{ runner.temp }}/dist"
+          rm -rf "$DIST_DIR"
+          mkdir -p "$DIST_DIR"
 
-      - name: Upload ARMv7 APK
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: SmartTube-Pretty_${{ steps.get_version.outputs.VERSION_NAME }}_armeabi-v7a
-          path: ./smarttubetv/build/outputs/apk/ststable/debug/*_armeabi-v7a.apk
-          if-no-files-found: error
+          cp "$APK_DIR"/*.apk "$DIST_DIR"/
 
-      - name: Upload Universal APK
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: SmartTube-Pretty_${{ steps.get_version.outputs.VERSION_NAME }}_universal
-          path: ./smarttubetv/build/outputs/apk/ststable/debug/*_universal.apk
-          if-no-files-found: error
+          python3 - "$DIST_DIR" "${{ github.repository }}" "$RELEASE_TAG" "$VERSION_CODE" "$VERSION_NAME" << 'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          import sys
 
-      - name: Upload x86 APK
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: SmartTube-Pretty_${{ steps.get_version.outputs.VERSION_NAME }}_x86
-          path: ./smarttubetv/build/outputs/apk/ststable/debug/*_x86.apk
-          if-no-files-found: error
+          dist_dir, repo, release_tag, version_code_str, version_name = sys.argv[1:6]
+          version_code = int(version_code_str)
+          base_download_url = f"https://github.com/{repo}/releases/download/{release_tag}"
+
+          abis = ["arm64-v8a", "armeabi-v7a", "x86", "universal"]
+          apks = {}
+          sha_lines = []
+
+          for filename in sorted(os.listdir(dist_dir)):
+              if not filename.endswith(".apk"):
+                  continue
+              path = os.path.join(dist_dir, filename)
+              h = hashlib.sha256()
+              with open(path, "rb") as f:
+                  for chunk in iter(lambda: f.read(65536), b""):
+                      h.update(chunk)
+              digest = h.hexdigest()
+              size = os.path.getsize(path)
+              sha_lines.append(f"{digest}  {filename}")
+
+              for abi in abis:
+                  if filename.endswith(f"_{abi}.apk"):
+                      apks[abi] = {
+                          "url": f"{base_download_url}/{filename}",
+                          "sha256": digest,
+                          "size": size,
+                      }
+                      break
+
+          if "universal" not in apks:
+              raise RuntimeError("Missing universal APK in release outputs")
+
+          try:
+              log_output = subprocess.check_output(
+                  ["git", "log", "-n", "10", "--pretty=format:%s"],
+                  text=True,
+              )
+              changelog = [line.strip() for line in log_output.splitlines() if line.strip()]
+          except Exception:
+              changelog = [f"Release {version_name}"]
+
+          manifest = {
+              "versionCode": version_code,
+              "versionName": version_name,
+              "apkUrl": apks["universal"]["url"],
+              "sha256": apks["universal"]["sha256"],
+              "size": apks["universal"]["size"],
+              "minSupportedVersionCode": 0,
+              "changelog": changelog,
+              "apks": apks,
+          }
+
+          with open(os.path.join(dist_dir, "manifest.json"), "w", encoding="utf-8") as f:
+              json.dump(manifest, f, indent=2)
+              f.write("\n")
+
+          with open(os.path.join(dist_dir, "checksums.sha256"), "w", encoding="utf-8") as f:
+              f.write("\n".join(sha_lines) + "\n")
+          PY
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DIST_DIR="${{ runner.temp }}/dist"
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "$DIST_DIR"/* --clobber
+            gh release edit "$RELEASE_TAG" --latest
+          else
+            if [ "${{ github.ref_type }}" = "tag" ]; then
+              gh release create "$RELEASE_TAG" "$DIST_DIR"/* \
+                --title "SmartTube Pretty $VERSION_NAME" \
+                --generate-notes \
+                --latest
+            else
+              gh release create "$RELEASE_TAG" "$DIST_DIR"/* \
+                --target "${{ github.sha }}" \
+                --title "SmartTube Pretty $VERSION_NAME" \
+                --generate-notes \
+                --latest
+            fi
+          fi
+
+      - name: Clean up temporary signing key
+        if: always()
+        run: rm -f "${{ runner.temp }}/release.keystore"

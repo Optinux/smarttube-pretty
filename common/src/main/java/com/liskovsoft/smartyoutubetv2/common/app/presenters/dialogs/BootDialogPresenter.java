@@ -30,8 +30,7 @@ public class BootDialogPresenter extends BasePresenter<Void> {
     //}
 
     public void start() {
-        // Auto-update disabled: upstream repo changed and CI builds don't support in-app updates
-        //startUpdatePresenter();
+        startUpdatePresenter();
     }
 
     private void startUpdatePresenter() {

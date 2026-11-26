@@ -7,8 +7,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
-import com.liskovsoft.appupdatechecker2.other.downloadmanager.DownloadManagerTask;
-import com.liskovsoft.appupdatechecker2.other.downloadmanager.DownloadManagerTask.DownloadListener;
+import com.liskovsoft.sharedutils.helpers.FileHelpers;
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.sharedutils.helpers.MessageHelpers;
 import com.liskovsoft.sharedutils.mylogger.Log;
@@ -19,7 +18,10 @@ import com.liskovsoft.smartyoutubetv2.common.app.presenters.AppDialogPresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.base.BasePresenter;
 import com.liskovsoft.smartyoutubetv2.common.misc.MotherActivity;
 import com.liskovsoft.smartyoutubetv2.common.prefs.GeneralData;
+import com.liskovsoft.smartyoutubetv2.common.updater.UpdateManager;
 import com.liskovsoft.smartyoutubetv2.common.utils.LoadingManager;
+
+import java.io.File;
 
 abstract class BridgePresenter extends BasePresenter<Void> implements MotherActivity.OnResult {
     private static final String TAG = BridgePresenter.class.getSimpleName();
@@ -27,20 +29,6 @@ abstract class BridgePresenter extends BasePresenter<Void> implements MotherActi
     private boolean mRemoveOldApkFirst;
     private String mBridgePath;
     private boolean mForceInstall;
-    private final DownloadListener mListener = new DownloadListener() {
-        @Override
-        public void onDownloadCompleted(Uri uri) {
-            mBridgePath = uri.getPath();
-
-            if (mBridgePath != null) {
-                if (mForceInstall) {
-                    installBridgeIfNeeded();
-                } else {
-                    startDialog();
-                }
-            }
-        }
-    };
 
     public BridgePresenter(Context context) {
         super(context);
@@ -115,8 +103,25 @@ abstract class BridgePresenter extends BasePresenter<Void> implements MotherActi
     private void downloadPackageFromUrl(Context context, String pkgUrl) {
         Log.d(TAG, "Installing bridge apk");
 
-        DownloadManagerTask task = new DownloadManagerTask(mListener, context, pkgUrl);
-        task.execute();
+        File cacheDir = FileHelpers.getCacheDir(context);
+        File destination = new File(cacheDir != null ? cacheDir : context.getCacheDir(), "bridge-tmp.apk");
+        UpdateManager.instance(context).downloadBridgeApk(pkgUrl, destination, null, new UpdateManager.SimpleFileCallback() {
+            @Override
+            public void onSuccess(File file) {
+                mBridgePath = file.getAbsolutePath();
+                if (mForceInstall) {
+                    installBridgeIfNeeded();
+                } else {
+                    startDialog();
+                }
+            }
+
+            @Override
+            public void onError(Exception error) {
+                LoadingManager.showLoading(getContext(), false);
+                Log.e(TAG, "Failed to download bridge apk: %s", error.getMessage());
+            }
+        });
     }
 
     private void installBridgeFromPath(Context context) {

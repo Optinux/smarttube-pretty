@@ -24,11 +24,75 @@ buildscript {
 
 apply plugin: 'com.android.application'
 
-def keystorePropertiesFile = rootProject.file("keystore.properties")
-def keystoreProperties = new Properties()
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+def loadPropertiesFile(File file) {
+    def props = new Properties()
+    if (file.exists()) {
+        file.withInputStream { stream -> props.load(stream) }
+    }
+    return props
 }
+
+def localProperties = loadPropertiesFile(rootProject.file("local.properties"))
+def keystoreProperties = loadPropertiesFile(rootProject.file("keystore.properties"))
+
+def resolveSigningValue = { String envName, String localPropKey, String keystorePropKey ->
+    def envVal = System.getenv(envName)
+    if (envVal != null && !envVal.trim().isEmpty()) {
+        return envVal.trim()
+    }
+    def localVal = localProperties.getProperty(localPropKey)
+    if (localVal != null && !localVal.trim().isEmpty()) {
+        return localVal.trim()
+    }
+    def ksVal = keystoreProperties.getProperty(keystorePropKey)
+    if (ksVal != null && !ksVal.trim().isEmpty()) {
+        return ksVal.trim()
+    }
+    return null
+}
+
+def signingStoreFilePath = resolveSigningValue("SIGNING_STORE_FILE", "signing.storeFile", "storeFile")
+def signingStorePassword = resolveSigningValue("SIGNING_STORE_PASSWORD", "signing.storePassword", "storePassword")
+def signingKeyAlias = resolveSigningValue("SIGNING_KEY_ALIAS", "signing.keyAlias", "keyAlias")
+def signingKeyPassword = resolveSigningValue("SIGNING_KEY_PASSWORD", "signing.keyPassword", "keyPassword")
+def signingStoreFile = signingStoreFilePath != null ? rootProject.file(signingStoreFilePath) : null
+def hasSigningConfig = signingStoreFile != null && signingStoreFile.exists() &&
+        signingStorePassword != null && signingKeyAlias != null && signingKeyPassword != null
+
+def baseVersionCode = 2473
+def baseVersionName = "32.83"
+
+def deriveVersionCode = {
+    def explicit = project.findProperty("VERSION_CODE")?.toString() ?: System.getenv("VERSION_CODE")
+    if (explicit != null && !explicit.trim().isEmpty()) {
+        return Integer.parseInt(explicit.trim())
+    }
+    def ciRun = System.getenv("GITHUB_RUN_NUMBER")
+    if (ciRun != null && !ciRun.trim().isEmpty()) {
+        return baseVersionCode * 10000 + Integer.parseInt(ciRun.trim())
+    }
+    return baseVersionCode * 10000
+}
+
+def deriveVersionName = {
+    def explicit = project.findProperty("VERSION_NAME")?.toString() ?: System.getenv("VERSION_NAME")
+    if (explicit != null && !explicit.trim().isEmpty()) {
+        return explicit.trim()
+    }
+    def refType = System.getenv("GITHUB_REF_TYPE")
+    def refName = System.getenv("GITHUB_REF_NAME")
+    if (refType == "tag" && refName != null && !refName.trim().isEmpty()) {
+        return refName.trim().replaceFirst(/^v/, "")
+    }
+    def ciRun = System.getenv("GITHUB_RUN_NUMBER")
+    if (ciRun != null && !ciRun.trim().isEmpty()) {
+        return "${baseVersionName}-ci-${ciRun.trim()}"
+    }
+    return baseVersionName
+}
+
+def derivedVersionCode = deriveVersionCode()
+def derivedVersionName = deriveVersionName()
 
 // The first letter of the flavor name must be in uppercase
 if (new File("${projectDir}/google-services.json").exists() && (getGradle().getStartParameter().getTaskRequests().toString().contains("Stbeta") ||
@@ -57,8 +121,8 @@ android {
         applicationId "app.smarttube"
         minSdkVersion project.properties.minSdkVersion
         targetSdkVersion project.properties.targetSdkVersion
-        versionCode 2473
-        versionName "32.83"
+        versionCode derivedVersionCode
+        versionName derivedVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"
 
@@ -90,11 +154,11 @@ android {
 
     signingConfigs {
         release {
-            if (keystorePropertiesFile.exists()) {
-                storeFile = file(keystoreProperties['storeFile'])
-                storePassword = keystoreProperties['storePassword']
-                keyAlias = keystoreProperties['keyAlias']
-                keyPassword = keystoreProperties['keyPassword']
+            if (hasSigningConfig) {
+                storeFile = signingStoreFile
+                storePassword = signingStorePassword
+                keyAlias = signingKeyAlias
+                keyPassword = signingKeyPassword
             }
         }
     }
@@ -107,13 +171,13 @@ android {
 
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
 
-            if (keystorePropertiesFile.exists()) {
+            if (hasSigningConfig) {
                 signingConfig signingConfigs.release
             }
         }
-        // Use same key for release and debug for testing
+        // Use same persistent keystore for both release and debug builds so in-place upgrades always work
         debug {
-            if (keystorePropertiesFile.exists()) {
+            if (hasSigningConfig) {
                 signingConfig signingConfigs.release
             }
         }
@@ -254,4 +318,17 @@ dependencies {
     implementation 'org.conscrypt:conscrypt-android:' + conscryptVersion
 
     implementation 'androidx.work:work-runtime:' + workVersion
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    def isCi = "true".equalsIgnoreCase(System.getenv("CI"))
+    def buildsReleaseApk = taskGraph.allTasks.any { task ->
+        task.project == project && task.name.startsWith("assemble") && task.name.endsWith("Release")
+    }
+    if (isCi && buildsReleaseApk && !hasSigningConfig) {
+        throw new GradleException(
+                "Release signing is required in CI. Configure SIGNING_STORE_FILE, SIGNING_STORE_PASSWORD, " +
+                "SIGNING_KEY_ALIAS, and SIGNING_KEY_PASSWORD environment variables."
+        )
+    }
 }

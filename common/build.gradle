@@ -100,7 +100,5 @@ dependencies {
 
     implementation project(':leanbackassistant')
 
-    implementation project(':appupdatechecker2')
-
     implementation project(':slidableactivity') // https://github.com/r0adkll/Slidr
 }

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="update_urls">
-        <!-- Auto-update disabled: upstream repo changed and CI builds don't support in-app updates -->
-        <!--<item>https://github.com/yuliskov/SmartTubeNext/releases/download/latest/smarttube_stable2.json</item>-->
+        <item>https://github.com/Optinux/smarttube-pretty/releases/latest/download/manifest.json</item>
     </string-array>
 </resources>

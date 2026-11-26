@@ -35,6 +35,7 @@ import com.r0adkll.slidr.model.SlidrConfig;
 import com.r0adkll.slidr.model.SlidrListener;
 import com.r0adkll.slidr.model.SlidrPosition;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,6 +44,7 @@ public class MotherActivity extends FragmentActivity {
     private static final float DEFAULT_DENSITY = 2.0f; // xhdpi
     private static final float DEFAULT_WIDTH = 1920f; // xhdpi
     private static DisplayMetrics sCachedDisplayMetrics;
+    private static WeakReference<MotherActivity> sCurrentActivity;
     protected static boolean sIsInPipMode;
     private ScreensaverManager mScreensaverManager;
     // Make static in case Don't keep activities enabled in Developer settings
@@ -207,6 +209,7 @@ public class MotherActivity extends FragmentActivity {
 
     @Override
     protected void onResume() {
+        sCurrentActivity = new WeakReference<>(this);
         mIsBackPressed = false;
         try {
             super.onResume();
@@ -329,12 +332,25 @@ public class MotherActivity extends FragmentActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (mOnResults != null) {
-            for (OnResult callback : mOnResults) {
-                callback.onResult(requestCode, resultCode, data);
-            }
+            List<OnResult> callbacks = new ArrayList<>(mOnResults);
             mOnResults.clear();
             mOnResults = null;
+            for (OnResult callback : callbacks) {
+                callback.onResult(requestCode, resultCode, data);
+            }
         }
+    }
+
+    @Nullable
+    public static MotherActivity getCurrentActivity() {
+        MotherActivity activity = sCurrentActivity != null ? sCurrentActivity.get() : null;
+        if (activity == null || activity.isFinishing()) {
+            return null;
+        }
+        if (VERSION.SDK_INT >= 17 && activity.isDestroyed()) {
+            return null;
+        }
+        return activity;
     }
 
     @Override
