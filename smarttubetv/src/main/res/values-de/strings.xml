@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- M3 Expressive Home Spotlight & Settings Hub -->
-    <string name="hero_all_shelves">Oben</string>
     <string name="hero_page_indicator">Element %1$d von %2$d</string>
     <string name="settings_hub_title">Einstellungen</string>
     <string name="settings_quick_controls">Schnelleinstellungen</string>

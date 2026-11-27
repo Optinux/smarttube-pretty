@@ -443,7 +443,6 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             return;
         }
         List<ChipItem> chips = new ArrayList<>();
-        chips.add(new ChipItem(0, getString(R.string.hero_all_shelves)));
         int listRowCount = 0;
         for (int i = 0; i < mRowsAdapter.size(); i++) {
             Object obj = mRowsAdapter.get(i);
@@ -456,7 +455,7 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
                 }
             }
         }
-        if (listRowCount < 2) {
+        if (listRowCount < 2 || chips.isEmpty()) {
             return;
         }
         if (mShelfChipRow == null) {
