@@ -20,7 +20,6 @@ import android.os.Build;
 import android.text.TextUtils;
 import android.util.LruCache;
 import android.util.TypedValue;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -302,6 +301,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
         private int mActiveDotWidthPx;
         private int mLastCardWidth = -1;
         private int mLastCardHeight = -1;
+        private int mPendingMediaWidth = -1;
         private float mMediaStartFraction = 0.35f;
 
         private boolean mIsTouchInteracting;
@@ -309,6 +309,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
         private boolean mScrollListenerAttached;
         private boolean mSwipedHorizontal;
         private boolean mGeometryUpdatePosted;
+        private boolean mMediaWidthUpdatePosted;
         private float mTouchDownX;
         private float mTouchDownY;
 
@@ -338,11 +339,29 @@ public class HeroSpotlightPresenter extends RowPresenter {
                 this::updateViewportVisibility;
 
         private final View.OnLayoutChangeListener mGeometryLayoutListener =
-                (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> scheduleGeometryUpdate();
+                (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                    if ((right - left) != (oldRight - oldLeft)
+                            || (bottom - top) != (oldBottom - oldTop)
+                            || top != oldTop) {
+                        scheduleGeometryUpdate();
+                    }
+                };
 
         private final Runnable mGeometryUpdateRunnable = () -> {
             mGeometryUpdatePosted = false;
             updateDynamicHeroGeometry();
+        };
+
+        private final Runnable mMediaWidthRunnable = () -> {
+            mMediaWidthUpdatePosted = false;
+            if (!ViewCompat.isAttachedToWindow(mMediaContainer) || mPendingMediaWidth <= 0) {
+                return;
+            }
+            ViewGroup.LayoutParams mediaLp = mMediaContainer.getLayoutParams();
+            if (mediaLp != null && mediaLp.width != mPendingMediaWidth) {
+                mediaLp.width = mPendingMediaWidth;
+                mMediaContainer.setLayoutParams(mediaLp);
+            }
         };
 
         @SuppressLint("ClickableViewAccessibility")
@@ -362,6 +381,9 @@ public class HeroSpotlightPresenter extends RowPresenter {
             mChannel = itemView.findViewById(R.id.hero_channel);
             mStats = itemView.findViewById(R.id.hero_stats);
             mDotsContainer = itemView.findViewById(R.id.hero_dots_container);
+
+            mMediaContainer.setClipChildren(true);
+            mMediaContainer.setClipToPadding(true);
 
             mPreviewController = new HeroPreviewController(itemView.getContext(), mPlayerView, this);
             mScrimHorizontal.setBackground(mHorizontalScrimDrawable);
@@ -484,7 +506,9 @@ public class HeroSpotlightPresenter extends RowPresenter {
                     detachScrollObserver();
                     detachTitleBarObserver();
                     mCard.removeCallbacks(mGeometryUpdateRunnable);
+                    mMediaContainer.removeCallbacks(mMediaWidthRunnable);
                     mGeometryUpdatePosted = false;
+                    mMediaWidthUpdatePosted = false;
                     M3Motion.cancelFocusAnimations(mCard);
                     mPreviewController.setHeroVisible(false);
                 }
@@ -572,7 +596,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
         }
 
         private void updateDynamicHeroGeometry() {
-            if (!ViewCompat.isAttachedToWindow(mCard)) {
+            if (!ViewCompat.isAttachedToWindow(mCard) || mWrapper.getWidth() <= 0) {
                 return;
             }
 
@@ -581,6 +605,9 @@ public class HeroSpotlightPresenter extends RowPresenter {
                 return;
             }
             View gridView = (View) gridParent;
+            if (Math.abs(gridView.getScaleY() - 1f) >= 0.01f) {
+                return;
+            }
 
             WindowInsetsCompat rootInsets = ViewCompat.getRootWindowInsets(mWrapper);
             Insets safeInsets = rootInsets != null
@@ -588,7 +615,10 @@ public class HeroSpotlightPresenter extends RowPresenter {
                     : Insets.NONE;
 
             // Keep left and right insets identical and centered in the collapsed-sidebar content area
-            int horizontalInset = Math.max(mBrowsePaddingStartPx, Math.max(safeInsets.left, safeInsets.right));
+            int maxSafeHorizontal = mWrapper.getWidth() / 4;
+            int horizontalInset = Math.min(
+                    maxSafeHorizontal,
+                    Math.max(mBrowsePaddingStartPx, Math.max(safeInsets.left, safeInsets.right)));
             if (mHorizontalInsetPx != horizontalInset
                     || mWrapper.getPaddingStart() != horizontalInset
                     || mWrapper.getPaddingEnd() != horizontalInset) {
@@ -613,11 +643,14 @@ public class HeroSpotlightPresenter extends RowPresenter {
                 mObservedTitleBar = new WeakReference<>(titleBar);
             }
 
-            // Skip measurement while BrowseSupportFragment hides/translates the title bar out on scroll
+            // Skip measurement while BrowseSupportFragment hides/translates/fades the title bar
             if (titleBar == null
+                    || !ViewCompat.isLaidOut(titleBar)
                     || titleBar.getVisibility() != View.VISIBLE
                     || titleBar.getHeight() <= 0
-                    || Math.abs(titleBar.getTranslationY()) >= 1f) {
+                    || titleBar.getAlpha() < 0.99f
+                    || Math.abs(titleBar.getTranslationY()) >= 1f
+                    || Math.abs(titleBar.getScaleY() - 1f) >= 0.01f) {
                 return;
             }
 
@@ -633,12 +666,17 @@ public class HeroSpotlightPresenter extends RowPresenter {
 
             float density = mCard.getResources().getDisplayMetrics().density;
             int minCardHeightPx = Math.round(MIN_CARD_HEIGHT_DP * density);
+            int maxCardHeightPx = Math.min(
+                    Math.max(minCardHeightPx, gridView.getHeight() - mBrowsePaddingTopPx),
+                    mBaselineCardHeightPx + Math.round(64f * density));
 
             // Top sits cleanly below top bar's lowest element by ?attr/browsePaddingTop;
             // bottom remains strictly anchored so rows below never move.
             int desiredCardTopInGrid = (topBarBottomInWindow + mBrowsePaddingTopPx) - gridTopInWindow;
             int fixedCardBottomInGrid = mBrowseRowsMarginTopPx + mBaselineCardHeightPx;
-            int targetCardHeight = Math.max(minCardHeightPx, fixedCardBottomInGrid - desiredCardTopInGrid);
+            int targetCardHeight = Math.min(
+                    maxCardHeightPx,
+                    Math.max(minCardHeightPx, fixedCardBottomInGrid - desiredCardTopInGrid));
             int actualCardTopInGrid = fixedCardBottomInGrid - targetCardHeight;
 
             int newCardTopMargin = actualCardTopInGrid > mBrowseRowsMarginTopPx
@@ -650,7 +688,8 @@ public class HeroSpotlightPresenter extends RowPresenter {
             ViewGroup.LayoutParams rawCardLp = mCard.getLayoutParams();
             if (rawCardLp instanceof FrameLayout.LayoutParams) {
                 FrameLayout.LayoutParams cardLp = (FrameLayout.LayoutParams) rawCardLp;
-                if (cardLp.height != targetCardHeight || cardLp.topMargin != newCardTopMargin) {
+                if (Math.abs(cardLp.height - targetCardHeight) > 1
+                        || Math.abs(cardLp.topMargin - newCardTopMargin) > 1) {
                     cardLp.height = targetCardHeight;
                     cardLp.topMargin = newCardTopMargin;
                     mCard.setLayoutParams(cardLp);
@@ -661,7 +700,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
                 ViewGroup.LayoutParams rawAnchorLp = mRowAlignmentAnchor.getLayoutParams();
                 if (rawAnchorLp instanceof FrameLayout.LayoutParams) {
                     FrameLayout.LayoutParams anchorLp = (FrameLayout.LayoutParams) rawAnchorLp;
-                    if (anchorLp.topMargin != newAnchorTopMargin) {
+                    if (Math.abs(anchorLp.topMargin - newAnchorTopMargin) > 1) {
                         anchorLp.topMargin = newAnchorTopMargin;
                         mRowAlignmentAnchor.setLayoutParams(anchorLp);
                         changed = true;
@@ -714,9 +753,9 @@ public class HeroSpotlightPresenter extends RowPresenter {
 
         private void updateFocusScaleForWidth(int cardWidth) {
             float updatedScale = computeClampedFocusScale(cardWidth, mHorizontalInsetPx);
-            if (Math.abs(updatedScale - mFocusedScale) > 0.0005f) {
+            if (Math.abs(updatedScale - mFocusedScale) > 0.002f) {
                 mFocusedScale = updatedScale;
-                if (mCard.hasFocus()) {
+                if (mCard.hasFocus() && Math.abs(mCard.getScaleX() - mFocusedScale) > 0.002f) {
                     M3Motion.animateFocusScale(mCard, true, mFocusedScale);
                 }
             }
@@ -768,8 +807,11 @@ public class HeroSpotlightPresenter extends RowPresenter {
             int targetMediaWidth = Math.min(cardWidth, Math.max(ideal16by9Width, Math.round(cardWidth * 0.65f)));
             ViewGroup.LayoutParams mediaLp = mMediaContainer.getLayoutParams();
             if (mediaLp != null && mediaLp.width != targetMediaWidth) {
-                mediaLp.width = targetMediaWidth;
-                mMediaContainer.setLayoutParams(mediaLp);
+                mPendingMediaWidth = targetMediaWidth;
+                if (!mMediaWidthUpdatePosted) {
+                    mMediaWidthUpdatePosted = true;
+                    mMediaContainer.post(mMediaWidthRunnable);
+                }
             }
             mMediaStartFraction = Math.max(0f, (float) (cardWidth - targetMediaWidth) / (float) cardWidth);
 
@@ -866,7 +908,9 @@ public class HeroSpotlightPresenter extends RowPresenter {
             detachScrollObserver();
             detachTitleBarObserver();
             mCard.removeCallbacks(mGeometryUpdateRunnable);
+            mMediaContainer.removeCallbacks(mMediaWidthRunnable);
             mGeometryUpdatePosted = false;
+            mMediaWidthUpdatePosted = false;
             cancelToneAnimation();
             M3Motion.cancelFocusAnimations(mCard);
             mPreviewController.release();
@@ -889,7 +933,9 @@ public class HeroSpotlightPresenter extends RowPresenter {
             detachScrollObserver();
             detachTitleBarObserver();
             mCard.removeCallbacks(mGeometryUpdateRunnable);
+            mMediaContainer.removeCallbacks(mMediaWidthRunnable);
             mGeometryUpdatePosted = false;
+            mMediaWidthUpdatePosted = false;
             ViewCompat.setOnApplyWindowInsetsListener(mWrapper, null);
             cancelToneAnimation();
             M3Motion.cancelFocusAnimations(mCard);
@@ -952,12 +998,11 @@ public class HeroSpotlightPresenter extends RowPresenter {
                 return;
             }
             float clamped = Math.max(0f, Math.min(1f, fraction));
-            int targetWidth = Math.round(mActiveDotWidthPx * clamped);
-            ViewGroup.LayoutParams lp = mActiveDotProgressFill.getLayoutParams();
-            if (lp != null && lp.width != targetWidth) {
-                lp.width = targetWidth;
-                mActiveDotProgressFill.setLayoutParams(lp);
-            }
+            boolean isRtl = ViewCompat.getLayoutDirection(mDotsContainer) == ViewCompat.LAYOUT_DIRECTION_RTL;
+            float width = mActiveDotProgressFill.getWidth() > 0
+                    ? mActiveDotProgressFill.getWidth() : mActiveDotWidthPx;
+            mActiveDotProgressFill.setPivotX(isRtl ? width : 0f);
+            mActiveDotProgressFill.setScaleX(clamped);
         }
 
         private void advanceSlide(int delta, boolean animate) {
@@ -1214,7 +1259,11 @@ public class HeroSpotlightPresenter extends RowPresenter {
 
                     View fill = new View(ctx);
                     fill.setBackground(ViewUtil.createRoundedDrawable(activeColor, 0, 0, pillRadius));
-                    pillTrack.addView(fill, new FrameLayout.LayoutParams(0, FrameLayout.LayoutParams.MATCH_PARENT, Gravity.START));
+                    boolean isRtl = ViewCompat.getLayoutDirection(mDotsContainer) == ViewCompat.LAYOUT_DIRECTION_RTL;
+                    fill.setPivotX(isRtl ? w : 0f);
+                    fill.setScaleX(0f);
+                    pillTrack.addView(fill, new FrameLayout.LayoutParams(
+                            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
                     mActiveDotProgressFill = fill;
                     mActiveDotWidthPx = w;
