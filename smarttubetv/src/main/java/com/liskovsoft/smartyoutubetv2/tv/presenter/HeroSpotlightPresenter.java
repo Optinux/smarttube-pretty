@@ -183,6 +183,13 @@ public class HeroSpotlightPresenter extends RowPresenter {
         }
     }
 
+    public void onVideosUpdated() {
+        HeroViewHolder vh = mActiveHolder.get();
+        if (vh != null) {
+            vh.refreshPlaylist();
+        }
+    }
+
     /**
      * Multi-stop cubic-eased horizontal scrim dissolving the media stage's start edge
      * into the derived banner tone without a linear 2-stop band or hard vertical edge.
@@ -904,6 +911,22 @@ public class HeroSpotlightPresenter extends RowPresenter {
             }
             renderCurrentSlide(false);
             updateViewportVisibility();
+        }
+
+        void refreshPlaylist() {
+            if (mRow == null) {
+                return;
+            }
+            List<Video> videos = mRow.getVideos();
+            if (videos.isEmpty()) {
+                return;
+            }
+            renderDots(videos.size(), mRow.getSelectedIndex());
+            onPlaybackProgress(mPreviewController.getPlaybackProgressFraction());
+            Video nextVideo = videos.size() > 1
+                    ? videos.get((mRow.getSelectedIndex() + 1) % videos.size())
+                    : null;
+            mPreviewController.updateNextVideo(nextVideo);
         }
 
         void unbind() {

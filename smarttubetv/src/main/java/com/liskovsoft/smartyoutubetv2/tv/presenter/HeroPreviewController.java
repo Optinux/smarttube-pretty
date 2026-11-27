@@ -239,6 +239,17 @@ final class HeroPreviewController implements Player.EventListener, VideoListener
         }
     }
 
+    void updateNextVideo(@Nullable Video nextVideo) {
+        mNextVideo = nextVideo;
+        if (mHasRenderedFirstFrame && mIsResumed && mIsHeroVisible) {
+            preloadNextVideo();
+        }
+    }
+
+    float getPlaybackProgressFraction() {
+        return Math.max(0f, Math.min(1f, (float) mAccumulatedPlayMs / AUTO_ADVANCE_DURATION_MS));
+    }
+
     /**
      * Returns the exact preview playback position in milliseconds if video playback has rendered,
      * or -1L when staying on thumbnail (e.g., Data Saver, load error, or before first frame).

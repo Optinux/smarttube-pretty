@@ -347,8 +347,12 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
 
             ListRow row = new ListRow(rowHeader, videoGroupAdapter);
 
-            if (isHeroSpotlightEnabled() && mChannelHeaderCallback == null && mHeroSpotlightRow == null) {
-                ensureHeroSpotlight(group);
+            if (isHeroSpotlightEnabled() && mChannelHeaderCallback == null) {
+                if (mHeroSpotlightRow == null) {
+                    ensureHeroSpotlight(group);
+                } else {
+                    topUpHeroSpotlight(group);
+                }
             }
 
             int headerOffset = mChannelHeaderCallback == null ? getHeaderRowCount() : 0;
@@ -373,6 +377,14 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             existingAdapter.add(group); // continue
 
             freeze(false);
+
+            if (isHeroSpotlightEnabled() && mChannelHeaderCallback == null) {
+                if (mHeroSpotlightRow == null) {
+                    ensureHeroSpotlight(group);
+                } else {
+                    topUpHeroSpotlight(group);
+                }
+            }
         }
 
         restorePosition();
@@ -411,6 +423,18 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             if (mBackgroundManager != null && mHeroSpotlightRow.getCurrentVideo() != null) {
                 mBackgroundManager.setBackgroundFrom(mHeroSpotlightRow.getCurrentVideo());
             }
+        }
+    }
+
+    private void topUpHeroSpotlight(VideoGroup group) {
+        if (mHeroSpotlightRow == null || group == null || group.isShorts() || group.getVideos() == null) {
+            return;
+        }
+        if (mHeroSpotlightRow.getVideos().size() >= HeroSpotlightRow.MAX_SPOTLIGHT_VIDEOS) {
+            return;
+        }
+        if (mHeroSpotlightRow.appendVideos(group.getVideos()) && mHeroSpotlightPresenter != null) {
+            mHeroSpotlightPresenter.onVideosUpdated();
         }
     }
 
