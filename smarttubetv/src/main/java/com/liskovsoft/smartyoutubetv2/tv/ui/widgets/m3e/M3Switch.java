@@ -96,8 +96,8 @@ public class M3Switch extends View {
             return;
         }
         mAnimator = ValueAnimator.ofFloat(mProgress, target);
-        mAnimator.setDuration(M3Motion.DURATION_FAST_SPATIAL_MS);
-        mAnimator.setInterpolator(M3Motion.fastSpatial());
+        mAnimator.setDuration(M3Motion.scaledDuration(M3Motion.DURATION_FAST_MS, target - mProgress));
+        mAnimator.setInterpolator(M3Motion.standard());
         mAnimator.addUpdateListener(anim -> {
             mProgress = (float) anim.getAnimatedValue();
             invalidate();

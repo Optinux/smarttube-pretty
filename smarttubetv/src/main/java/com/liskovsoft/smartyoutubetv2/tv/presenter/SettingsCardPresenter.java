@@ -63,7 +63,7 @@ public class SettingsCardPresenter extends Presenter {
 
         container.setOnFocusChangeListener((v, hasFocus) -> {
             updateCardStyle(container, textView, imageView, hasFocus, true);
-            M3Motion.animateFocusScale(imageView, hasFocus, 1.08f);
+            M3Motion.animateFocusScale(imageView, hasFocus, M3Motion.FOCUS_SCALE_ICON);
 
             if (hasFocus) {
                 ViewUtil.enableMarquee(textView);

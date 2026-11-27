@@ -200,6 +200,7 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
         }
 
         mGridAdapter.add(group);
+        M3Motion.animateInitialVisibleChildren(getBrowseGrid());
 
         restorePosition();
     }

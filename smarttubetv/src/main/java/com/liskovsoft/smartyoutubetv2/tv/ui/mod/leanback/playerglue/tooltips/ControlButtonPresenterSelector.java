@@ -84,6 +84,8 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
         TextView mLabel;
         View mFocusableView;
         ControlButtonPresenter.FocusScaleListener mFocusListener;
+        long mBoundActionId = View.NO_ID;
+        int mBoundActionIndex = -1;
 
         public ActionViewHolder(View view) {
             super(view);
@@ -186,6 +188,7 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
                     squircleRadius);
             vh.mFocusListener = listener;
             vh.mFocusableView.setOnFocusChangeListener(listener);
+            M3Motion.attachPressFeedback(vh.mFocusableView, M3Motion.FOCUS_SCALE_ICON);
             listener.syncImmediate(false);
         }
 
@@ -195,6 +198,15 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
         public void onBindViewHolder(ViewHolder viewHolder, Object item) {
             Action action = (Action) item;
             ActionViewHolder vh = (ActionViewHolder) viewHolder;
+            int actionIndex = action instanceof PlaybackControlsRow.MultiAction
+                    ? ((PlaybackControlsRow.MultiAction) action).getIndex()
+                    : 0;
+            boolean sameActionStateChanged = vh.mBoundActionId == action.getId()
+                    && vh.mBoundActionIndex != actionIndex
+                    && ViewCompat.isAttachedToWindow(vh.mIcon)
+                    && vh.mIcon.isShown();
+            vh.mBoundActionId = action.getId();
+            vh.mBoundActionIndex = actionIndex;
 
             if (action instanceof PlaybackControlsRow.PlayPauseAction) {
                 Drawable currentDrawable = vh.mIcon.getDrawable();
@@ -206,8 +218,7 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
                 } else {
                     morphDrawable = (PlayPauseMorphDrawable) currentDrawable;
                 }
-                boolean showPause = ((PlaybackControlsRow.PlayPauseAction) action).getIndex()
-                        == PlaybackControlsRow.PlayPauseAction.INDEX_PAUSE;
+                boolean showPause = actionIndex == PlaybackControlsRow.PlayPauseAction.INDEX_PAUSE;
                 boolean animate = !isNew
                         && ViewCompat.isAttachedToWindow(vh.mIcon)
                         && vh.mIcon.isShown();
@@ -218,6 +229,9 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
                     ((PlayPauseMorphDrawable) prevDrawable).cancelAnimation();
                 }
                 vh.mIcon.setImageDrawable(action.getIcon());
+                if (sameActionStateChanged) {
+                    M3Motion.animateIconReveal(vh.mIcon);
+                }
             }
             int actionPadding = 0;
             if (action instanceof PaddingAction) {
@@ -266,6 +280,12 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
             vh.view.setScaleX(1.0f);
             vh.view.setScaleY(1.0f);
             M3Motion.cancelFocusAnimations(vh.mFocusableView);
+            vh.mBoundActionId = View.NO_ID;
+            vh.mBoundActionIndex = -1;
+            vh.mIcon.animate().cancel();
+            vh.mIcon.setAlpha(1f);
+            vh.mIcon.setScaleX(1f);
+            vh.mIcon.setScaleY(1f);
             Drawable prevDrawable = vh.mIcon.getDrawable();
             if (prevDrawable instanceof PlayPauseMorphDrawable) {
                 ((PlayPauseMorphDrawable) prevDrawable).cancelAnimation();
@@ -295,8 +315,8 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
         }
 
         static class FocusScaleListener implements View.OnFocusChangeListener {
-            private static final float FOCUSED_SCALE = 1.09f;
-            private static final float HERO_FOCUSED_SCALE = 1.12f;
+            private static final float FOCUSED_SCALE = M3Motion.FOCUS_SCALE_ICON;
+            private static final float HERO_FOCUSED_SCALE = M3Motion.FOCUS_SCALE_HERO_BUTTON;
             private final View mTargetView;
             private final View mSurfaceView;
             private final ImageView mIconView;

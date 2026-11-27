@@ -91,6 +91,7 @@ public class ChannelCardPresenter extends LongClickPresenter {
 
         TextView textView = container.findViewById(R.id.channel_title);
         updateCardStyle(container, textView, false, false, false);
+        M3Motion.attachPressFeedback(container, M3Motion.FOCUS_SCALE_SUBTLE);
 
         boolean autoScrollEnabled = isCardTextAutoScrollEnabled(context);
         if (autoScrollEnabled) {
@@ -133,6 +134,7 @@ public class ChannelCardPresenter extends LongClickPresenter {
         int fromText = hasFocus ? unfocusedText : mSelectedTextColor;
         int toText = hasFocus ? mSelectedTextColor : unfocusedText;
 
+        M3Motion.animateFocusScale(container, hasFocus, M3Motion.FOCUS_SCALE_SUBTLE);
         M3Motion.applyCardFocusTransition(
                 container,
                 hasFocus,
@@ -174,13 +176,14 @@ public class ChannelCardPresenter extends LongClickPresenter {
                 .load(video.cardImageUrl)
                 .apply(ViewUtil.glideOptions())
                 .listener(mErrorListener)
+                .transition(ViewUtil.glideCrossFade(context))
                 //.error(R.drawable.card_placeholder) // R.color.lb_grey
                 .into(imageView);
     }
 
     @Override
     public void onUnbindViewHolder(ViewHolder viewHolder) {
-        M3Motion.cancelFocusAnimations(viewHolder.view);
+        M3Motion.resetOnUnbind(viewHolder.view);
         // Remove references to images so that the garbage collector can free up memory.
         ImageView imageView = viewHolder.view.findViewById(R.id.channel_image);
         imageView.setImageDrawable(null);

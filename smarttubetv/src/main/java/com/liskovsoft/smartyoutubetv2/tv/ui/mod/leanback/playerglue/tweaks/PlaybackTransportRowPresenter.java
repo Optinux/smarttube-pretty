@@ -710,8 +710,8 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
             view.animate()
                     .alpha(1f)
                     .translationY(0f)
-                    .setDuration(M3Motion.DURATION_FAST_EFFECTS_MS)
-                    .setInterpolator(M3Motion.fastEffects())
+                    .setDuration(M3Motion.DURATION_FAST_MS)
+                    .setInterpolator(M3Motion.emphasizedDecelerate())
                     .start();
         }
 

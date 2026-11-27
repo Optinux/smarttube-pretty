@@ -31,6 +31,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.TextView;
 import androidx.annotation.RestrictTo;
+import com.liskovsoft.sharedutils.motion.MotionSpec;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 //import androidx.appcompat.R;
 
@@ -67,7 +68,8 @@ class TooltipPopup {
         mLayoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
         mLayoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
         mLayoutParams.format = PixelFormat.TRANSLUCENT;
-        mLayoutParams.windowAnimations = R.style.Animation_AppCompat_Tooltip;
+        mLayoutParams.windowAnimations = MotionSpec.areAnimationsEnabled(mContext)
+                ? R.style.Animation_AppCompat_Tooltip : 0;
         mLayoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                 | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
     }

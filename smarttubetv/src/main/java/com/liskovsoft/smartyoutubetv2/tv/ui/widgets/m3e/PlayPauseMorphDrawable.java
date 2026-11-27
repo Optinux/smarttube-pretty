@@ -19,15 +19,15 @@ import android.graphics.drawable.Drawable;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.liskovsoft.sharedutils.motion.MotionSpec;
 import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 
 /**
  * Material 3 Expressive animated Play/Pause morphing drawable.
  * Smoothly morphs and rotates 90 degrees between Play (0.0) and Pause (1.0)
- * using M3 spatial spring physics, while respecting system reduced-motion settings.
+ * using the standard motion tier and easing, while respecting system reduced-motion settings.
  */
 public class PlayPauseMorphDrawable extends Drawable {
-    private static final long MORPH_DURATION_MS = 240L;
     private static final float VIRTUAL_SIZE = 24f;
     private static final float HALF_VIRTUAL_SIZE = 12f;
 
@@ -75,10 +75,10 @@ public class PlayPauseMorphDrawable extends Drawable {
             return;
         }
 
-        long duration = Math.max(90L, Math.round(MORPH_DURATION_MS * Math.abs(target - mProgress)));
+        long duration = M3Motion.scaledDuration(M3Motion.DURATION_STANDARD_MS, target - mProgress);
         mAnimator = ValueAnimator.ofFloat(mProgress, target);
         mAnimator.setDuration(duration);
-        mAnimator.setInterpolator(M3Motion.defaultSpatial());
+        mAnimator.setInterpolator(M3Motion.standard());
         mAnimator.addUpdateListener(anim -> {
             mProgress = (float) anim.getAnimatedValue();
             invalidateSelf();
@@ -119,7 +119,7 @@ public class PlayPauseMorphDrawable extends Drawable {
 
         float scale = Math.min(bounds.width(), bounds.height()) / VIRTUAL_SIZE;
         float morphT = Math.max(0f, Math.min(1f, mProgress));
-        float pulseScale = 1f - 0.08f * (float) Math.sin(Math.PI * morphT);
+        float pulseScale = 1f - MotionSpec.ICON_PULSE_DIP * (float) Math.sin(Math.PI * morphT);
 
         mPaint.setAlpha(mAlpha);
         mPaint.setColorFilter(mColorFilter != null ? mColorFilter : mTintFilter);

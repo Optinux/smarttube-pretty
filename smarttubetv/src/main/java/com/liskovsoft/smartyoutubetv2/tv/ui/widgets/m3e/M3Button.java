@@ -102,11 +102,12 @@ public class M3Button extends LinearLayout {
 
         setOnFocusChangeListener((v, hasFocus) -> {
             applyVisualState(hasFocus, true);
-            M3Motion.animateFocusScale(this, hasFocus, 1.045f);
+            M3Motion.animateFocusScale(this, hasFocus, M3Motion.FOCUS_SCALE_DEFAULT);
             if (mExtraFocusListener != null) {
                 mExtraFocusListener.onFocusChange(v, hasFocus);
             }
         });
+        M3Motion.attachPressFeedback(this, M3Motion.FOCUS_SCALE_DEFAULT);
     }
 
     public void addOnFocusChangeListener(@Nullable OnFocusChangeListener listener) {
@@ -222,7 +223,8 @@ public class M3Button extends LinearLayout {
         int toContent = focused ? mFocusedContent : mRestingContent;
 
         float targetRadius = focused ? mMorphedRadiusPx : mRestingRadiusPx;
-        if (getBackground() instanceof GradientDrawable && animate) {
+        boolean hasMorphBg = getBackground() instanceof GradientDrawable && animate;
+        if (hasMorphBg) {
             M3Motion.animateCornerMorph(this, (GradientDrawable) getBackground(), mCurrentRadiusPx, targetRadius);
         }
         mCurrentRadiusPx = targetRadius;
@@ -236,7 +238,7 @@ public class M3Button extends LinearLayout {
                 toStroke,
                 fromStrokePx,
                 toStrokePx,
-                targetRadius,
+                hasMorphBg ? -1f : targetRadius,
                 (fraction, currentFill) -> {
                     int blended = ColorUtils.blendARGB(fromContent, toContent, fraction);
                     mLabelView.setTextColor(blended);

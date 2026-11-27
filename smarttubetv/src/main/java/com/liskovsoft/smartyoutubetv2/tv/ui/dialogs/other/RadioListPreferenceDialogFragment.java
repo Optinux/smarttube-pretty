@@ -75,6 +75,7 @@ public class RadioListPreferenceDialogFragment extends LeanbackListPreferenceDia
             if (index == RecyclerView.NO_POSITION) {
                 return;
             }
+            final CharSequence prevSelected = mSelectedValue;
             final CharSequence entry = mEntryValues[index];
             final ListPreference preference = (ListPreference) getPreference();
             if (index >= 0 && preference != null) {
@@ -85,7 +86,19 @@ public class RadioListPreferenceDialogFragment extends LeanbackListPreferenceDia
                 }
             }
 
-            notifyDataSetChanged();
+            int prevIndex = -1;
+            if (prevSelected != null) {
+                for (int i = 0; i < mEntryValues.length; i++) {
+                    if (prevSelected.equals(mEntryValues[i])) {
+                        prevIndex = i;
+                        break;
+                    }
+                }
+            }
+            if (prevIndex >= 0 && prevIndex != index) {
+                notifyItemChanged(prevIndex);
+            }
+            notifyItemChanged(index);
         }
     }
 }

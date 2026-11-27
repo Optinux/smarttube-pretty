@@ -57,6 +57,7 @@ public class TagPresenter extends LongClickPresenter {
         cardView.setFocusableInTouchMode(true);
         ViewUtil.applyRoundedOutline(cardView, mPillRadius);
         updateCardAppearance(cardView, false);
+        M3Motion.attachPressFeedback(cardView, M3Motion.FOCUS_SCALE_SUBTLE);
         return new ViewHolder(cardView);
     }
 
@@ -70,6 +71,7 @@ public class TagPresenter extends LongClickPresenter {
         int fromText = selected ? mDefaultTextColor : mSelectedTextColor;
         int toText = selected ? mSelectedTextColor : mDefaultTextColor;
 
+        M3Motion.animateFocusScale(view, selected, M3Motion.FOCUS_SCALE_SUBTLE);
         M3Motion.applyCardFocusTransition(
                 view,
                 selected,
@@ -108,7 +110,7 @@ public class TagPresenter extends LongClickPresenter {
 
     @Override
     public void onUnbindViewHolder(ViewHolder viewHolder) {
-        M3Motion.cancelFocusAnimations(viewHolder.view);
+        M3Motion.resetOnUnbind(viewHolder.view);
     }
 
 }

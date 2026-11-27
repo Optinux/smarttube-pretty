@@ -168,7 +168,7 @@ public class ChannelHeaderPresenter extends RowPresenter {
                         focused ? focusStrokePx : 0,
                         pillRadius,
                         null);
-                M3Motion.animateFocusScale(searchBarItems, focused, 1.015f);
+                M3Motion.animateFocusScale(searchBarItems, focused, M3Motion.FOCUS_SCALE_SUBTLE);
             }
 
             if (mIsKeyboardAutoShowEnabled && focused) {

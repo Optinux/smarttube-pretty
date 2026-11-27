@@ -26,8 +26,8 @@ import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
  */
 public final class ProgressBarManager {
     // Default delay for progress bar widget.
-    private static final long SHOW_DELAY_MS = 500;
-    private static final long HIDE_DELAY_MS = 50;
+    private static final long SHOW_DELAY_MS = M3Motion.LOADING_SHOW_DELAY_MS;
+    private static final long HIDE_DELAY_MS = M3Motion.HIDE_DEBOUNCE_MS;
     private long mHideTimeMs;
     
     ViewGroup rootView;
@@ -71,8 +71,8 @@ public final class ProgressBarManager {
                     .alpha(0f)
                     .scaleX(0.92f)
                     .scaleY(0.92f)
-                    .setDuration(120L)
-                    .setInterpolator(M3Motion.fastEffects())
+                    .setDuration(M3Motion.DURATION_FAST_MS)
+                    .setInterpolator(M3Motion.accelerate())
                     .withEndAction(() -> finishHide())
                     .start();
         }
@@ -111,8 +111,8 @@ public final class ProgressBarManager {
                 .alpha(1f)
                 .scaleX(1f)
                 .scaleY(1f)
-                .setDuration(M3Motion.DURATION_FAST_SPATIAL_MS)
-                .setInterpolator(M3Motion.fastSpatial())
+                .setDuration(M3Motion.DURATION_FAST_MS)
+                .setInterpolator(M3Motion.emphasizedDecelerate())
                 .start();
     }
 

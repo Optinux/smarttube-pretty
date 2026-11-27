@@ -106,15 +106,14 @@ public class M3GuidedActionsStylist extends GuidedActionsStylist {
                 focusedTitleColor,
                 defaultDescColor,
                 focusedDescColor);
-        M3Motion.animateFocusScale(itemView, initiallyFocused, 1.03f);
+        M3Motion.animateFocusScale(itemView, initiallyFocused, M3Motion.FOCUS_SCALE_SUBTLE);
 
-        Object prevObj = itemView.getTag(R.id.m3_focus_state_tag);
         // Preserve Leanback's own OnFocusChangeListener created before onBindViewHolder
         View.OnFocusChangeListener existing = itemView.getOnFocusChangeListener();
-        if (itemView.getTag(R.id.m3_elevation_animator) == null && existing != null) {
-            itemView.setTag(R.id.m3_elevation_animator, existing);
+        if (itemView.getTag(R.id.m3_prev_focus_listener_tag) == null && existing != null) {
+            itemView.setTag(R.id.m3_prev_focus_listener_tag, existing);
         }
-        Object wrappedObj = itemView.getTag(R.id.m3_elevation_animator);
+        Object wrappedObj = itemView.getTag(R.id.m3_prev_focus_listener_tag);
         final View.OnFocusChangeListener leanbackListener =
                 wrappedObj instanceof View.OnFocusChangeListener
                         ? (View.OnFocusChangeListener) wrappedObj
@@ -138,7 +137,7 @@ public class M3GuidedActionsStylist extends GuidedActionsStylist {
                     focusedTitleColor,
                     defaultDescColor,
                     focusedDescColor);
-            M3Motion.animateFocusScale(v, hasFocus, 1.03f);
+            M3Motion.animateFocusScale(v, hasFocus, M3Motion.FOCUS_SCALE_SUBTLE);
         });
     }
 

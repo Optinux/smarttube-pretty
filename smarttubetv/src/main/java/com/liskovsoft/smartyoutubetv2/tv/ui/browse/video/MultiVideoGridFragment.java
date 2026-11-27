@@ -271,6 +271,7 @@ public class MultiVideoGridFragment extends MultiGridFragment implements VideoSe
         }
 
         mGridAdapter1.add(group);
+        M3Motion.animateInitialVisibleChildren(getBrowseGrid1());
 
         restorePosition1();
     }
@@ -298,6 +299,7 @@ public class MultiVideoGridFragment extends MultiGridFragment implements VideoSe
         }
 
         mGridAdapter2.add(group);
+        M3Motion.animateInitialVisibleChildren(getBrowseGrid2());
 
         // TODO: Do we need to restore position on second group?
         //restorePosition2();

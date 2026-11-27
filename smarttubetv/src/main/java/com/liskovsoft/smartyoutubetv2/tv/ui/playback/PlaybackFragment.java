@@ -86,6 +86,7 @@ import com.liskovsoft.smartyoutubetv2.tv.ui.playback.previewtimebar.StoryboardSe
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.chat.LiveChatView;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.time.DateTimeView;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.time.EndingTimeView;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.googlecommon.common.helpers.YouTubeHelper;
 
 import java.io.InputStream;
@@ -574,6 +575,8 @@ public class PlaybackFragment extends SeekModePlaybackFragment implements Playba
         mYouTubeOverlay
                 .player(mPlayer)
                 .playerView(mDoubleTapPlayerAdapter)
+                .animationDuration(M3Motion.DURATION_SLOW_MS)
+                .iconAnimationDuration(M3Motion.DURATION_SLOW_MS)
                 .seekSeconds(getPlayerData().getSeekIncrementMs() / 1_000)
                 .performListener(new PerformListener() {
             @Override
@@ -1224,7 +1227,8 @@ public class PlaybackFragment extends SeekModePlaybackFragment implements Playba
 
     @Override
     public void showControlsOverlay(boolean runAnimation) {
-        super.showControlsOverlay(mIsUIAnimationsEnabled);
+        boolean animate = mIsUIAnimationsEnabled && M3Motion.areAnimationsEnabled(getContext());
+        super.showControlsOverlay(animate);
 
         // Do throttle. Called so many times. Rely on boxing because initial state is unknown.
         if (mIsControlsShownPreviously != null && mIsControlsShownPreviously) {
@@ -1246,7 +1250,8 @@ public class PlaybackFragment extends SeekModePlaybackFragment implements Playba
 
     @Override
     public void hideControlsOverlay(boolean runAnimation) {
-        super.hideControlsOverlay(mIsUIAnimationsEnabled);
+        boolean animate = mIsUIAnimationsEnabled && M3Motion.areAnimationsEnabled(getContext());
+        super.hideControlsOverlay(animate);
 
         // Do throttle. Called so many times. Rely on boxing because initial state is unknown.
         if (mIsControlsShownPreviously != null && !mIsControlsShownPreviously) {

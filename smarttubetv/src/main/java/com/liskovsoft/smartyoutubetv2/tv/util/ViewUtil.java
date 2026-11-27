@@ -28,6 +28,7 @@ import androidx.leanback.widget.ListRow;
 import androidx.leanback.widget.RowPresenter;
 import androidx.leanback.widget.VerticalGridView;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.bumptech.glide.request.RequestOptions;
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper;
@@ -189,6 +190,17 @@ public class ViewUtil {
                 .skipMemoryCache(true); // ensure start animation from beginning
     }
 
+    public static DrawableTransitionOptions glideCrossFade(Context context) {
+        return glideCrossFade(context, M3Motion.DURATION_FAST_MS);
+    }
+
+    public static DrawableTransitionOptions glideCrossFade(Context context, long durationMs) {
+        if (!M3Motion.areAnimationsEnabled(context) || durationMs <= 0) {
+            return new DrawableTransitionOptions();
+        }
+        return DrawableTransitionOptions.withCrossFade((int) durationMs);
+    }
+
     public static void enableTransparentDialog(Context context, View rootView) {
         if (context == null || rootView == null || VERSION.SDK_INT <= 19) {
             return;
@@ -266,7 +278,7 @@ public class ViewUtil {
                                 hasFocus ? focusStrokePx : 0,
                                 itemCornerRadius,
                                 null);
-                        M3Motion.animateFocusScale(v, hasFocus, 1.012f);
+                        M3Motion.animateFocusScale(v, hasFocus, M3Motion.FOCUS_SCALE_SUBTLE);
                     });
                 }
             });

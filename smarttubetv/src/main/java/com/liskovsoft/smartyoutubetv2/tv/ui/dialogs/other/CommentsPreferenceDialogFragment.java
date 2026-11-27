@@ -93,6 +93,7 @@ public class CommentsPreferenceDialogFragment extends LeanbackPreferenceDialogFr
                     .load(url)
                     .apply(ViewUtil.glideOptions())
                     .circleCrop() // resize image
+                    .transition(ViewUtil.glideCrossFade(view.getContext()))
                     .into(imageView));
         adapter.setLoadMoreListener((page, totalItemsCount) -> mCommentsReceiver.onLoadMore(mCurrentGroup));
         adapter.setOnMessageViewClickListener((v, message) -> mCommentsReceiver.onCommentClicked(message.getCommentItem()));

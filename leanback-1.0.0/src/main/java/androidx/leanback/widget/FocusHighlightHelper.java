@@ -25,15 +25,14 @@ import android.os.Build;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewParent;
-import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
-import android.view.animation.OvershootInterpolator;
-import android.view.animation.PathInterpolator;
 
 import androidx.leanback.R;
 import androidx.leanback.app.HeadersFragment;
 import androidx.leanback.graphics.ColorOverlayDimmer;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.liskovsoft.sharedutils.motion.MotionSpec;
 
 /**
  * Sets up the highlighting behavior when an item gains focus.
@@ -73,28 +72,14 @@ public class FocusHighlightHelper {
         private float mSpatialLevelStart;
         private float mSpatialLevelDelta;
         private final TimeAnimator mAnimator = new TimeAnimator();
-        private final Interpolator mSpatialInterpolator = createSpatialInterpolator();
-        private final Interpolator mEffectsInterpolator = createEffectsInterpolator();
+        private final Interpolator mSpatialInterpolator = MotionSpec.standard();
+        private final Interpolator mEffectsInterpolator = MotionSpec.standard();
         private final ColorOverlayDimmer mDimmer;
-
-        private static Interpolator createSpatialInterpolator() {
-            if (Build.VERSION.SDK_INT >= 21) {
-                return new PathInterpolator(0.42f, 1.67f, 0.21f, 0.90f);
-            }
-            return new OvershootInterpolator(0.75f);
-        }
-
-        private static Interpolator createEffectsInterpolator() {
-            if (Build.VERSION.SDK_INT >= 21) {
-                return new PathInterpolator(0.31f, 0.94f, 0.34f, 1.00f);
-            }
-            return new DecelerateInterpolator();
-        }
 
         void animateFocus(boolean select, boolean immediate) {
             endAnimation();
             final float end = select ? 1 : 0;
-            if (immediate) {
+            if (immediate || !MotionSpec.areAnimationsEnabled(mView.getContext())) {
                 setFocusLevels(end, end);
             } else if (mFocusLevel != end || mSpatialLevel != end) {
                 mFocusLevelStart = mFocusLevel;
@@ -182,7 +167,7 @@ public class FocusHighlightHelper {
     }
 
     static class BrowseItemFocusHighlight implements FocusHighlightHandler {
-        private static final int DURATION_MS = 180;
+        private static final int DURATION_MS = (int) MotionSpec.DURATION_FAST_MS;
 
         private int mScaleIndex;
         private final boolean mUseDimmer;

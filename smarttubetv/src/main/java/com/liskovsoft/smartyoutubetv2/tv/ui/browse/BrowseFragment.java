@@ -41,6 +41,7 @@ import com.liskovsoft.smartyoutubetv2.tv.ui.browse.interfaces.SettingsSection;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.headers.ExtendedHeadersSupportFragment;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.misc.ProgressBarManager;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.browse.NavigateTitleView;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.util.HashMap;
@@ -271,6 +272,9 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
             Helpers.setField(this, "mMainFragment", fragment);
 
             FragmentTransaction ft = getChildFragmentManager().beginTransaction();
+            if (M3Motion.areAnimationsEnabled(getContext())) {
+                ft.setCustomAnimations(R.animator.m3_shared_axis_x_enter, R.animator.m3_shared_axis_x_exit);
+            }
             ft.replace(R.id.scale_frame, fragment);
             //mFocusOnContent = !isShowingHeaders(); // Fix focus lost when error fragment shown and sidebar is hidden
             mFocusOnContent = hasFocus(); // Maintain focus

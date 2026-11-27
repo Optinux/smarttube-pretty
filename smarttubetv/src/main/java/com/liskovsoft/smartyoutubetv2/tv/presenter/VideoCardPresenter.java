@@ -198,6 +198,7 @@ public class VideoCardPresenter extends LongClickPresenter {
                 // Cache makes app crashing on old android versions
                 .diskCacheStrategy(VERSION.SDK_INT > 21 ? DiskCacheStrategy.ALL : DiskCacheStrategy.NONE)
                 .listener(mErrorListener)
+                .transition(ViewUtil.glideCrossFade(context))
                 .error(
                     // Updated thumbnail url not found
                     Glide.with(context)
@@ -205,6 +206,7 @@ public class VideoCardPresenter extends LongClickPresenter {
                         //.placeholder(mDefaultCardImage)
                         .apply(ViewUtil.glideOptions())
                         .listener(mErrorListener)
+                        .transition(ViewUtil.glideCrossFade(context))
                         .error(R.drawable.card_placeholder) // R.color.lb_grey
                 )
                 .into(cardView.getMainImageView());

@@ -3,6 +3,7 @@ package com.liskovsoft.smartyoutubetv2.tv.ui.search.tags;
 import android.os.Bundle;
 import android.speech.SpeechRecognizer;
 import android.text.TextUtils;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,6 +28,7 @@ import com.liskovsoft.smartyoutubetv2.tv.presenter.VideoCardPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.base.OnItemLongPressedListener;
 import com.liskovsoft.smartyoutubetv2.tv.ui.common.LeanbackActivity;
 import com.liskovsoft.smartyoutubetv2.tv.ui.search.tags.vineyard.SearchTagsFragmentBase;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 import java.lang.ref.WeakReference;
@@ -81,6 +83,14 @@ public class SearchTagsFragment extends SearchTagsFragmentBase {
 
         // Called when the activity is paused
         mCrashRestorer.persistVideo(outState, mSearchPresenter.getCurrentVideo());
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        if (savedInstanceState == null) {
+            M3Motion.animateEnter(view, M3Motion.SLIDE_OFFSET_DP * getResources().getDisplayMetrics().density, 0f);
+        }
     }
 
     @Override
@@ -209,7 +219,7 @@ public class SearchTagsFragment extends SearchTagsFragmentBase {
             super.focusOnResults();
             if (getRowsSupportFragment() != null) {
                 // Move selection to the videos (second row)
-                getRowsSupportFragment().setSelectedPosition(findResultsIndex());
+                getRowsSupportFragment().setSelectedPosition(findResultsIndex(), M3Motion.areAnimationsEnabled(getContext()));
             }
         }
     }
@@ -357,6 +367,10 @@ public class SearchTagsFragment extends SearchTagsFragmentBase {
             Log.d(TAG, "Continue row %s %s", group.getTitle(), System.currentTimeMillis());
 
             existingAdapter.add(group); // continue row
+        }
+
+        if (getRowsSupportFragment() != null) {
+            M3Motion.animateInitialVisibleChildren(getRowsSupportFragment().getVerticalGridView());
         }
     }
 

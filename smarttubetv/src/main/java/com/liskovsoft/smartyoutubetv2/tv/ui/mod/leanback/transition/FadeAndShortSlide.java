@@ -29,9 +29,9 @@ import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.DecelerateInterpolator;
 import androidx.annotation.RequiresApi;
 import androidx.leanback.R;
+import com.liskovsoft.sharedutils.motion.MotionSpec;
 
 /**
  * Execute horizontal slide of 1/4 width and fade (to workaround bug 23718734)
@@ -40,8 +40,8 @@ import androidx.leanback.R;
 @RequiresApi(21)
 public class FadeAndShortSlide extends Visibility {
 
-    private static final TimeInterpolator sDecelerate = new DecelerateInterpolator();
-    // private static final TimeInterpolator sAccelerate = new AccelerateInterpolator();
+    private static final TimeInterpolator sDecelerate = MotionSpec.emphasizedDecelerate();
+    private static final TimeInterpolator sAccelerate = MotionSpec.accelerate();
     private static final String PROPNAME_SCREEN_POSITION =
             "android:fadeAndShortSlideTransition:screenPosition";
 
@@ -264,7 +264,7 @@ public class FadeAndShortSlide extends Visibility {
         float startY = view.getTranslationY();
         float endY = mSlideCalculator.getGoneY(this, sceneRoot, view, position);
         final Animator slideAnimator = TranslationAnimationCreator.createAnimation(view,
-                startValues, left, top, startX, startY, endX, endY, sDecelerate /* sAccelerate */,
+                startValues, left, top, startX, startY, endX, endY, sAccelerate,
                 this);
         final Animator fadeAnimator = mFade.onDisappear(sceneRoot, view, startValues, endValues);
         if (slideAnimator == null) {

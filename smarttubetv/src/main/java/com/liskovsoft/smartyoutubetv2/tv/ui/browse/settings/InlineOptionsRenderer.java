@@ -313,16 +313,7 @@ public final class InlineOptionsRenderer {
         container.addView(listContainer, listLp);
 
         if (accordionHeader != null) {
-            final boolean[] expanded = {false};
-            accordionHeader.setOnClickListener(v -> {
-                expanded[0] = !expanded[0];
-                accordionHeader.setSegmentedPosition(true, !expanded[0]);
-                updateRowBottomMargin(accordionHeader, expanded[0] ? segmentGap : sectionGap);
-                listContainer.setVisibility(expanded[0] ? View.VISIBLE : View.GONE);
-                if (expanded[0]) {
-                    M3Motion.animateEnter(listContainer, 8f * ctx.getResources().getDisplayMetrics().density, 0f);
-                }
-            });
+            bindAccordionToggle(ctx, accordionHeader, listContainer, sectionGap, segmentGap);
         }
     }
 
@@ -417,16 +408,7 @@ public final class InlineOptionsRenderer {
         container.addView(listContainer, listLp);
 
         if (accordionHeader != null) {
-            final boolean[] expanded = {false};
-            accordionHeader.setOnClickListener(v -> {
-                expanded[0] = !expanded[0];
-                accordionHeader.setSegmentedPosition(true, !expanded[0]);
-                updateRowBottomMargin(accordionHeader, expanded[0] ? segmentGap : sectionGap);
-                listContainer.setVisibility(expanded[0] ? View.VISIBLE : View.GONE);
-                if (expanded[0]) {
-                    M3Motion.animateEnter(listContainer, 8f * ctx.getResources().getDisplayMetrics().density, 0f);
-                }
-            });
+            bindAccordionToggle(ctx, accordionHeader, listContainer, sectionGap, segmentGap);
         }
     }
 
@@ -480,18 +462,34 @@ public final class InlineOptionsRenderer {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         if (headerRow != null) {
-            final M3QuickToggleRow accordionHeader = headerRow;
-            final boolean[] expanded = {false};
-            accordionHeader.setOnClickListener(v -> {
-                expanded[0] = !expanded[0];
-                accordionHeader.setSegmentedPosition(true, !expanded[0]);
-                updateRowBottomMargin(accordionHeader, expanded[0] ? segmentGap : sectionGap);
-                listContainer.setVisibility(expanded[0] ? View.VISIBLE : View.GONE);
-                if (expanded[0]) {
-                    M3Motion.animateEnter(listContainer, 8f * ctx.getResources().getDisplayMetrics().density, 0f);
-                }
-            });
+            bindAccordionToggle(ctx, headerRow, listContainer, sectionGap, segmentGap);
         }
+    }
+
+    private static void bindAccordionToggle(
+            @NonNull Context ctx,
+            @NonNull M3QuickToggleRow accordionHeader,
+            @NonNull LinearLayout listContainer,
+            int sectionGap,
+            int segmentGap) {
+        final boolean[] expanded = {false};
+        accordionHeader.setOnClickListener(v -> {
+            expanded[0] = !expanded[0];
+            boolean nowExpanded = expanded[0];
+            accordionHeader.setSegmentedPosition(true, !nowExpanded);
+            updateRowBottomMargin(accordionHeader, nowExpanded ? segmentGap : sectionGap);
+            float slidePx = M3Motion.SLIDE_OFFSET_COMPACT_DP * ctx.getResources().getDisplayMetrics().density;
+            if (nowExpanded) {
+                listContainer.setVisibility(View.VISIBLE);
+                M3Motion.animateEnter(listContainer, slidePx, 0f);
+            } else {
+                M3Motion.animateExit(listContainer, 0f, -slidePx * 0.5f, () -> {
+                    if (!expanded[0]) {
+                        listContainer.setVisibility(View.GONE);
+                    }
+                });
+            }
+        });
     }
 
     private static void renderLongTextCategory(
@@ -515,11 +513,14 @@ public final class InlineOptionsRenderer {
 
         float density = ctx.getResources().getDisplayMetrics().density;
         int surfaceHigh = ViewUtil.getThemeColor(ctx, R.attr.m3SurfaceContainerHigh, R.color.m3_grey_surface_container_high);
+        int secondaryContainer = ViewUtil.getThemeColor(ctx, R.attr.m3SecondaryContainer, R.color.m3_grey_secondary_container);
         int outlineVariant = ViewUtil.getThemeColor(ctx, R.attr.m3OutlineVariant, R.color.m3_grey_outline_variant);
+        int outline = ViewUtil.getThemeColor(ctx, R.attr.m3Outline, R.color.m3_grey_outline);
         int onSurface = ViewUtil.getThemeColor(ctx, R.attr.m3OnSurface, R.color.m3_on_surface);
         int primary = ViewUtil.getThemeColor(ctx, R.attr.m3Primary, R.color.m3_grey_primary);
         float cardRadius = ctx.getResources().getDimension(R.dimen.m3_card_corner_radius);
         int hairlinePx = ctx.getResources().getDimensionPixelSize(R.dimen.m3_hairline_stroke_width);
+        int focusStrokePx = ctx.getResources().getDimensionPixelSize(R.dimen.m3_focus_stroke_width);
 
         TextView textView = new TextView(ctx);
         int pad = Math.round(16 * density);
@@ -531,7 +532,23 @@ public final class InlineOptionsRenderer {
         textView.setLinkTextColor(primary);
         textView.setFocusable(true);
         textView.setFocusableInTouchMode(true);
-        textView.setBackground(ViewUtil.createRoundedDrawable(surfaceHigh, outlineVariant, hairlinePx, cardRadius));
+        M3Motion.applyCardFocusTransition(
+                textView, false, secondaryContainer, surfaceHigh,
+                outline, outlineVariant, focusStrokePx, hairlinePx, cardRadius, null);
+        textView.setOnFocusChangeListener((v, focused) -> {
+            M3Motion.animateFocusScale(v, focused, M3Motion.FOCUS_SCALE_SUBTLE);
+            M3Motion.applyCardFocusTransition(
+                    v,
+                    focused,
+                    focused ? surfaceHigh : secondaryContainer,
+                    focused ? secondaryContainer : surfaceHigh,
+                    focused ? outlineVariant : outline,
+                    focused ? outline : outlineVariant,
+                    focused ? hairlinePx : focusStrokePx,
+                    focused ? focusStrokePx : hairlinePx,
+                    cardRadius,
+                    null);
+        });
         LinkifyCompat.addLinks(textView, LinkifyCompat.WEB_URLS | LinkifyCompat.EMAIL_ADDRESSES);
         host.attachReturnToRailOnLeft(textView);
         addSpacedRow(ctx, container, textView, sectionGap);

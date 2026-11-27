@@ -3,18 +3,17 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:duration="@integer/lb_browse_headers_transition_duration">
     <changeBounds
-        android:interpolator="@interpolator/m3_default_spatial" />
+        android:interpolator="@interpolator/m3_standard" />
     <changeTransform
-        android:interpolator="@interpolator/m3_default_spatial">
+        android:interpolator="@interpolator/m3_standard">
         <targets>
             <target android:targetId="@id/container_list" />
         </targets>
     </changeTransform>
     <fade
         android:transitionVisibilityMode="mode_in"
-        android:startDelay="@integer/lb_browse_headers_transition_delay"
-        android:interpolator="@interpolator/m3_fast_effects" />
+        android:interpolator="@interpolator/m3_emphasized_decelerate" />
     <fade
         android:transitionVisibilityMode="mode_out"
-        android:interpolator="@interpolator/m3_fast_effects" />
+        android:interpolator="@interpolator/m3_accelerate" />
 </transitionSet>

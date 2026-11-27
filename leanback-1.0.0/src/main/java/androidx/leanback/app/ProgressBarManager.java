@@ -7,6 +7,10 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 
+import androidx.core.view.ViewCompat;
+
+import com.liskovsoft.sharedutils.motion.MotionSpec;
+
 /**
  * Manager for showing/hiding progress bar widget. This class lets user specify an initial
  * delay after which the progress bar will be shown. This is currently being used in
@@ -15,7 +19,7 @@ import android.widget.ProgressBar;
  */
 public final class ProgressBarManager {
     // Default delay for progress bar widget.
-    private static final long DEFAULT_PROGRESS_BAR_DELAY = 1000;
+    private static final long DEFAULT_PROGRESS_BAR_DELAY = MotionSpec.LOADING_SHOW_DELAY_MS;
 
     private long mInitialDelay = DEFAULT_PROGRESS_BAR_DELAY;
     ViewGroup rootView;
@@ -41,12 +45,37 @@ public final class ProgressBarManager {
                             FrameLayout.LayoutParams.WRAP_CONTENT);
                     progressBarParams.gravity = Gravity.CENTER;
                     rootView.addView(mProgressBarView, progressBarParams);
+                    animateShow(mProgressBarView);
                 } else if (mUserProvidedProgressBar) {
                     mProgressBarView.setVisibility(View.VISIBLE);
+                    animateShow(mProgressBarView);
                 }
             }
         }
     };
+
+    private static void animateShow(View view) {
+        if (view == null) {
+            return;
+        }
+        view.animate().cancel();
+        if (!MotionSpec.areAnimationsEnabled(view.getContext()) || !ViewCompat.isAttachedToWindow(view)) {
+            view.setAlpha(1f);
+            view.setScaleX(1f);
+            view.setScaleY(1f);
+            return;
+        }
+        view.setAlpha(0f);
+        view.setScaleX(0.92f);
+        view.setScaleY(0.92f);
+        view.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(MotionSpec.DURATION_FAST_MS)
+                .setInterpolator(MotionSpec.emphasizedDecelerate())
+                .start();
+    }
 
     /**
      * Sets the root view on which the progress bar will be attached. This class assumes the
@@ -74,14 +103,39 @@ public final class ProgressBarManager {
      */
     public void hide() {
         mIsShowing = false;
+        mHandler.removeCallbacks(runnable);
+        if (mProgressBarView == null) {
+            return;
+        }
+        mProgressBarView.animate().cancel();
+        if (!MotionSpec.areAnimationsEnabled(mProgressBarView.getContext())
+                || !ViewCompat.isAttachedToWindow(mProgressBarView)) {
+            finishHide();
+            return;
+        }
+        mProgressBarView.animate()
+                .alpha(0f)
+                .scaleX(0.92f)
+                .scaleY(0.92f)
+                .setDuration(MotionSpec.DURATION_FAST_MS)
+                .setInterpolator(MotionSpec.accelerate())
+                .withEndAction(this::finishHide)
+                .start();
+    }
+
+    private void finishHide() {
+        if (mIsShowing || mProgressBarView == null) {
+            return;
+        }
         if (mUserProvidedProgressBar) {
             mProgressBarView.setVisibility(View.INVISIBLE);
-        } else if (mProgressBarView != null) {
+            mProgressBarView.setAlpha(1f);
+            mProgressBarView.setScaleX(1f);
+            mProgressBarView.setScaleY(1f);
+        } else if (rootView != null) {
             rootView.removeView(mProgressBarView);
             mProgressBarView = null;
         }
-
-        mHandler.removeCallbacks(runnable);
     }
 
     /**

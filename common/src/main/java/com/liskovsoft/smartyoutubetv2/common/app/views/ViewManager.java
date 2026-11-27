@@ -15,8 +15,10 @@ import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.sharedutils.helpers.MessageHelpers;
 import com.liskovsoft.sharedutils.locale.LocaleUpdater;
 import com.liskovsoft.sharedutils.misc.WeakHashSet;
+import com.liskovsoft.sharedutils.motion.MotionSpec;
 import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.sharedutils.rx.RxHelper;
+import com.liskovsoft.smartyoutubetv2.common.R;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.AppDialogPresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.BrowsePresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.ChannelPresenter;
@@ -152,7 +154,7 @@ public class ViewManager {
                     Log.d(TAG, "Launching parent activity: " + parentActivity.getSimpleName());
                     Intent intent = new Intent(activity, parentActivity);
 
-                    safeStartActivity(activity, intent);
+                    safeStartActivity(activity, intent, true);
                 } catch (ActivityNotFoundException e) {
                     e.printStackTrace();
                     Log.e(TAG, "Parent activity not found.");
@@ -389,12 +391,16 @@ public class ViewManager {
      * Small delay to fix PIP transition bug (UI become unresponsive)
      */
     private void safeStartActivity(Context context, Intent intent) {
+        safeStartActivity(context, intent, false);
+    }
+
+    private void safeStartActivity(Context context, Intent intent, boolean isBackTransition) {
         mIsFinished = false;
 
         if (PlaybackPresenter.instance(mContext).isEngineBlocked()) { // Android 14 no-pip fix???
-            Utils.postDelayed(() -> safeStartActivityInt(context, intent), 0); // 50 ms old val
+            Utils.postDelayed(() -> safeStartActivityInt(context, intent, isBackTransition), 0); // 50 ms old val
         } else {
-            safeStartActivityInt(context, intent);
+            safeStartActivityInt(context, intent, isBackTransition);
         }
     }
 
@@ -402,13 +408,58 @@ public class ViewManager {
      * Fix: java.lang.IllegalArgumentException<br/>
      * View=android.widget.TextView not attached to window manager
      */
-    private void safeStartActivityInt(Context context, Intent intent) {
+    private void safeStartActivityInt(Context context, Intent intent, boolean isBackTransition) {
         try {
             context.startActivity(intent);
+            applyTransition(context, intent, isBackTransition);
         } catch (IllegalArgumentException | ActivityNotFoundException | IndexOutOfBoundsException | NullPointerException | SecurityException e) {
             // NPE: Attempt to write to field 'boolean com.android.server.am.ActivityStack.mConfigWillChange' on a null object reference
             Log.e(TAG, "Error when starting activity: %s", e.getMessage());
             MessageHelpers.showLongMessage(context, e.getLocalizedMessage());
+        }
+    }
+
+    private void applyTransition(Context context, Intent intent, boolean isBackTransition) {
+        if (intent == null || intent.getComponent() == null) {
+            return;
+        }
+        Activity host = context instanceof Activity ? (Activity) context : MotherActivity.getCurrentActivity();
+        if (host == null || host.isFinishing()) {
+            return;
+        }
+        if (!MotionSpec.areAnimationsEnabled(host)) {
+            host.overridePendingTransition(0, 0);
+            return;
+        }
+        String targetName = intent.getComponent().getClassName();
+        if (targetName.contains("AppDialogActivity")) {
+            host.overridePendingTransition(R.anim.m3_dialog_enter, 0);
+        } else if (isBackTransition) {
+            host.overridePendingTransition(R.anim.m3_activity_enter_back, R.anim.m3_activity_exit_back);
+        } else {
+            host.overridePendingTransition(R.anim.m3_activity_enter_forward, R.anim.m3_activity_exit_forward);
+        }
+    }
+
+    public static void applyBackTransition(Activity activity) {
+        if (activity == null) {
+            return;
+        }
+        if (!MotionSpec.areAnimationsEnabled(activity)) {
+            activity.overridePendingTransition(0, 0);
+        } else {
+            activity.overridePendingTransition(R.anim.m3_activity_enter_back, R.anim.m3_activity_exit_back);
+        }
+    }
+
+    public static void applyDialogExitTransition(Activity activity) {
+        if (activity == null) {
+            return;
+        }
+        if (!MotionSpec.areAnimationsEnabled(activity)) {
+            activity.overridePendingTransition(0, 0);
+        } else {
+            activity.overridePendingTransition(0, R.anim.m3_dialog_exit);
         }
     }
 

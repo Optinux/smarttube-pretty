@@ -138,6 +138,7 @@ public class SignInFragment extends GuidedStepSupportFragment implements SignInV
                 .apply(ViewUtil.glideOptions())
                 .error(R.drawable.activate_account_qrcode)
                 .listener(mErrorListener)
+                .transition(ViewUtil.glideCrossFade(getContext()))
                 .into(getGuidanceStylist().getIconView());
 
         String description = getString(R.string.signin_view_description, signInUrl);

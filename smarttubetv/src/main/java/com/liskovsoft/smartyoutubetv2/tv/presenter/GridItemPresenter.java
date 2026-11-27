@@ -57,7 +57,7 @@ public class GridItemPresenter extends Presenter {
             applyItemStyle(
                     view, hasFocus, true, defaultBg, focusedBg, defaultStroke, focusedStroke,
                     hairlineStrokePx, focusStrokePx, defaultText, focusedText, cornerRadius);
-            M3Motion.animateFocusScale(view, hasFocus, 1.05f);
+            M3Motion.animateFocusScale(view, hasFocus, M3Motion.FOCUS_SCALE_CARD);
         });
         return new ViewHolder(view);
     }
@@ -107,6 +107,6 @@ public class GridItemPresenter extends Presenter {
 
     @Override
     public void onUnbindViewHolder(ViewHolder viewHolder) {
-        M3Motion.cancelFocusAnimations(viewHolder.view);
+        M3Motion.resetOnUnbind(viewHolder.view);
     }
 }

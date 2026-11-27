@@ -1,5 +1,7 @@
 package com.liskovsoft.smartyoutubetv2.tv.util;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.ColorStateList;
@@ -8,130 +10,76 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build.VERSION;
-import android.provider.Settings;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
-import android.view.animation.DecelerateInterpolator;
+import android.view.ViewTreeObserver;
 import android.view.animation.Interpolator;
-import android.view.animation.OvershootInterpolator;
-import android.view.animation.PathInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.liskovsoft.sharedutils.motion.MotionSpec;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 
 /**
- * Material 3 Expressive motion physics helpers.
- * Spatial animations (scale, translation, size) use spring-derived curves with subtle overshoot,
- * while Effects animations (color, opacity, stroke) strictly use damping 1.0 (no overshoot).
+ * Android View animation helpers backed by {@link MotionSpec} (the single source of truth).
+ * All animations are non-overshooting, interruptible, reversible, hardware-accelerated
+ * (alpha, translation, scale, rotation), and honor system reduced-motion settings.
  */
 public final class M3Motion {
-    public static final long DURATION_FAST_EFFECTS_MS = 150L;
-    public static final long DURATION_FAST_SPATIAL_MS = 180L;
-    public static final long DURATION_DEFAULT_EFFECTS_MS = 200L;
-    public static final long DURATION_ENTER_MS = 220L;
-    public static final long DURATION_EXIT_MS = 150L;
+    // Re-exported tokens from MotionSpec
+    public static final long DURATION_FAST_MS = MotionSpec.DURATION_FAST_MS;
+    public static final long DURATION_STANDARD_MS = MotionSpec.DURATION_STANDARD_MS;
+    public static final long DURATION_SLOW_MS = MotionSpec.DURATION_SLOW_MS;
 
-    private static final Interpolator FAST_SPATIAL_INTERPOLATOR = createFastSpatialInterpolator();
-    private static final Interpolator DEFAULT_SPATIAL_INTERPOLATOR = createDefaultSpatialInterpolator();
-    private static final Interpolator FAST_EFFECTS_INTERPOLATOR = createFastEffectsInterpolator();
-    private static final Interpolator DEFAULT_EFFECTS_INTERPOLATOR = createDefaultEffectsInterpolator();
-    private static final Interpolator EMPHASIZED_DECELERATE_INTERPOLATOR = createEmphasizedDecelerateInterpolator();
-    private static final Interpolator EMPHASIZED_ACCELERATE_INTERPOLATOR = createEmphasizedAccelerateInterpolator();
+    public static final long STAGGER_STEP_MS = MotionSpec.STAGGER_STEP_MS;
+    public static final int MAX_STAGGER_ITEMS = MotionSpec.MAX_STAGGER_ITEMS;
+    public static final long LOADING_SHOW_DELAY_MS = MotionSpec.LOADING_SHOW_DELAY_MS;
+    public static final long HIDE_DEBOUNCE_MS = MotionSpec.HIDE_DEBOUNCE_MS;
+
+    public static final float SLIDE_OFFSET_DP = MotionSpec.SLIDE_OFFSET_DP;
+    public static final float SLIDE_OFFSET_COMPACT_DP = MotionSpec.SLIDE_OFFSET_COMPACT_DP;
+    public static final float FOCUS_SCALE_SUBTLE = MotionSpec.FOCUS_SCALE_SUBTLE;
+    public static final float FOCUS_SCALE_DEFAULT = MotionSpec.FOCUS_SCALE_DEFAULT;
+    public static final float FOCUS_SCALE_CARD = MotionSpec.FOCUS_SCALE_CARD;
+    public static final float FOCUS_SCALE_ICON = MotionSpec.FOCUS_SCALE_ICON;
+    public static final float FOCUS_SCALE_HERO_BUTTON = MotionSpec.FOCUS_SCALE_HERO_BUTTON;
+    public static final float PRESS_SCALE = MotionSpec.PRESS_SCALE;
+    public static final float DIALOG_ENTER_SCALE = MotionSpec.DIALOG_ENTER_SCALE;
+    public static final float ELEVATION_REST_DP = MotionSpec.ELEVATION_REST_DP;
+    public static final float ELEVATION_FOCUSED_DP = MotionSpec.ELEVATION_FOCUSED_DP;
 
     private M3Motion() {
     }
 
-    public static Interpolator fastSpatial() {
-        return FAST_SPATIAL_INTERPOLATOR;
-    }
-
-    public static Interpolator defaultSpatial() {
-        return DEFAULT_SPATIAL_INTERPOLATOR;
-    }
-
-    public static Interpolator fastEffects() {
-        return FAST_EFFECTS_INTERPOLATOR;
-    }
-
-    public static Interpolator defaultEffects() {
-        return DEFAULT_EFFECTS_INTERPOLATOR;
+    public static Interpolator standard() {
+        return MotionSpec.standard();
     }
 
     public static Interpolator emphasizedDecelerate() {
-        return EMPHASIZED_DECELERATE_INTERPOLATOR;
+        return MotionSpec.emphasizedDecelerate();
     }
 
-    public static Interpolator emphasizedAccelerate() {
-        return EMPHASIZED_ACCELERATE_INTERPOLATOR;
-    }
-
-    private static Interpolator createFastSpatialInterpolator() {
-        if (VERSION.SDK_INT >= 21) {
-            return new PathInterpolator(0.42f, 1.67f, 0.21f, 0.90f);
-        }
-        return new OvershootInterpolator(0.75f);
-    }
-
-    private static Interpolator createDefaultSpatialInterpolator() {
-        if (VERSION.SDK_INT >= 21) {
-            return new PathInterpolator(0.38f, 1.21f, 0.22f, 1.00f);
-        }
-        return new DecelerateInterpolator(1.5f);
-    }
-
-    private static Interpolator createFastEffectsInterpolator() {
-        if (VERSION.SDK_INT >= 21) {
-            return new PathInterpolator(0.31f, 0.94f, 0.34f, 1.00f);
-        }
-        return new DecelerateInterpolator();
-    }
-
-    private static Interpolator createDefaultEffectsInterpolator() {
-        if (VERSION.SDK_INT >= 21) {
-            return new PathInterpolator(0.34f, 0.80f, 0.34f, 1.00f);
-        }
-        return new DecelerateInterpolator();
-    }
-
-    private static Interpolator createEmphasizedDecelerateInterpolator() {
-        if (VERSION.SDK_INT >= 21) {
-            return new PathInterpolator(0.05f, 0.70f, 0.10f, 1.00f);
-        }
-        return new DecelerateInterpolator(1.8f);
-    }
-
-    private static Interpolator createEmphasizedAccelerateInterpolator() {
-        if (VERSION.SDK_INT >= 21) {
-            return new PathInterpolator(0.30f, 0.00f, 0.80f, 0.15f);
-        }
-        return new DecelerateInterpolator();
+    public static Interpolator accelerate() {
+        return MotionSpec.accelerate();
     }
 
     public static boolean areAnimationsEnabled(@Nullable Context context) {
-        if (VERSION.SDK_INT >= 26 && !ValueAnimator.areAnimatorsEnabled()) {
-            return false;
-        }
-        if (context == null) {
-            return true;
-        }
-        if (VERSION.SDK_INT >= 17) {
-            try {
-                return Settings.Global.getFloat(
-                        context.getContentResolver(),
-                        Settings.Global.ANIMATOR_DURATION_SCALE,
-                        1.0f) > 0f;
-            } catch (Exception ignored) {
-            }
-        }
-        return true;
+        return MotionSpec.areAnimationsEnabled(context);
+    }
+
+    public static long scaledDuration(long baseDurationMs, float normalizedDelta) {
+        return MotionSpec.scaledDuration(baseDurationMs, normalizedDelta);
     }
 
     /**
-     * Animates view scale with M3 Expressive Fast Spatial physics, or snaps immediately if animations are disabled.
+     * Animates view focus scale using the fast tier and standard easing (no bounce/overshoot).
      */
     public static void animateFocusScale(@Nullable View view, boolean focused, float focusedScale) {
         if (view == null) {
@@ -147,15 +95,140 @@ public final class M3Motion {
         view.animate()
                 .scaleX(targetScale)
                 .scaleY(targetScale)
-                .setDuration(DURATION_FAST_SPATIAL_MS)
-                .setInterpolator(FAST_SPATIAL_INTERPOLATOR)
+                .setDuration(DURATION_FAST_MS)
+                .setInterpolator(standard())
                 .start();
     }
 
     /**
-     * Short, smooth entrance fade + subtle spatial slide for views entering the screen.
+     * Tactile press feedback that briefly scales toward {@link #PRESS_SCALE} without delaying input.
+     */
+    public static void animatePressScale(@Nullable View view, boolean pressed, float restingScale) {
+        if (view == null) {
+            return;
+        }
+        float targetScale = pressed ? restingScale * PRESS_SCALE : restingScale;
+        view.animate().cancel();
+        if (!areAnimationsEnabled(view.getContext()) || !ViewCompat.isAttachedToWindow(view)) {
+            view.setScaleX(targetScale);
+            view.setScaleY(targetScale);
+            return;
+        }
+        view.animate()
+                .scaleX(targetScale)
+                .scaleY(targetScale)
+                .setDuration(DURATION_FAST_MS)
+                .setInterpolator(standard())
+                .start();
+    }
+
+    /**
+     * Attaches non-blocking D-pad center/enter and touch press feedback while respecting existing listeners.
+     */
+    public static void attachPressFeedback(@Nullable View view, float focusedScale) {
+        if (view == null) {
+            return;
+        }
+        view.setOnTouchListener((v, event) -> {
+            int action = event.getActionMasked();
+            float baseScale = v.hasFocus() ? focusedScale : 1.0f;
+            if (action == MotionEvent.ACTION_DOWN) {
+                animatePressScale(v, true, baseScale);
+            } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                animatePressScale(v, false, baseScale);
+            }
+            return false;
+        });
+        final View.OnKeyListener existingKey = null;
+        view.setOnKeyListener((v, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
+                float baseScale = v.hasFocus() ? focusedScale : 1.0f;
+                if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
+                    animatePressScale(v, true, baseScale);
+                } else if (event.getAction() == KeyEvent.ACTION_UP) {
+                    animatePressScale(v, false, baseScale);
+                }
+            }
+            return existingKey != null && existingKey.onKey(v, keyCode, event);
+        });
+    }
+
+    /**
+     * Smooth entrance fade + subtle spatial slide using the standard tier and emphasized-decelerate curve.
      */
     public static void animateEnter(@Nullable View view, float startTranslationX, float startTranslationY) {
+        animateEnterInternal(view, startTranslationX, startTranslationY, DURATION_STANDARD_MS, 0L);
+    }
+
+    /**
+     * Staggered first-appearance animation (fade + small upward slide), capped at {@link #MAX_STAGGER_ITEMS}.
+     */
+    public static void animateEnterStaggered(
+            @Nullable View view,
+            int itemIndex,
+            float startTranslationX,
+            float startTranslationY) {
+        if (view == null) {
+            return;
+        }
+        if (itemIndex >= MAX_STAGGER_ITEMS || !areAnimationsEnabled(view.getContext())) {
+            view.animate().cancel();
+            view.setAlpha(1f);
+            view.setTranslationX(0f);
+            view.setTranslationY(0f);
+            return;
+        }
+        animateEnterInternal(
+                view,
+                startTranslationX,
+                startTranslationY,
+                DURATION_STANDARD_MS,
+                MotionSpec.staggerDelayMs(itemIndex));
+    }
+
+    /**
+     * Animates initially visible RecyclerView children (capped at {@link #MAX_STAGGER_ITEMS})
+     * once on first non-empty data appearance. Subsequent scroll or pagination updates skip.
+     */
+    public static void animateInitialVisibleChildren(@Nullable RecyclerView rv) {
+        if (rv == null || Boolean.TRUE.equals(rv.getTag(R.id.m3_initial_animated_tag))) {
+            return;
+        }
+        if (!areAnimationsEnabled(rv.getContext())) {
+            rv.setTag(R.id.m3_initial_animated_tag, Boolean.TRUE);
+            return;
+        }
+        rv.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                rv.getViewTreeObserver().removeOnPreDrawListener(this);
+                if (Boolean.TRUE.equals(rv.getTag(R.id.m3_initial_animated_tag))) {
+                    return true;
+                }
+                int count = rv.getChildCount();
+                if (count <= 0) {
+                    return true;
+                }
+                rv.setTag(R.id.m3_initial_animated_tag, Boolean.TRUE);
+                if (!areAnimationsEnabled(rv.getContext())) {
+                    return true;
+                }
+                float slidePx = SLIDE_OFFSET_DP * rv.getResources().getDisplayMetrics().density;
+                int limit = Math.min(count, MAX_STAGGER_ITEMS);
+                for (int i = 0; i < limit; i++) {
+                    animateEnterStaggered(rv.getChildAt(i), i, 0f, slidePx);
+                }
+                return true;
+            }
+        });
+    }
+
+    private static void animateEnterInternal(
+            @Nullable View view,
+            float startTranslationX,
+            float startTranslationY,
+            long durationMs,
+            long startDelayMs) {
         if (view == null) {
             return;
         }
@@ -173,35 +246,169 @@ public final class M3Motion {
                 .alpha(1f)
                 .translationX(0f)
                 .translationY(0f)
-                .setDuration(DURATION_ENTER_MS)
-                .setInterpolator(EMPHASIZED_DECELERATE_INTERPOLATOR)
+                .setStartDelay(startDelayMs)
+                .setDuration(durationMs)
+                .setInterpolator(emphasizedDecelerate())
                 .start();
     }
 
     /**
-     * Cancels running focus color/scale animators on recycled or unbound card views.
+     * Smooth exit fade + optional slide using the fast tier and accelerate curve.
+     */
+    public static void animateExit(
+            @Nullable View view,
+            float endTranslationX,
+            float endTranslationY,
+            @Nullable Runnable onEnd) {
+        if (view == null) {
+            if (onEnd != null) {
+                onEnd.run();
+            }
+            return;
+        }
+        view.animate().cancel();
+        if (!areAnimationsEnabled(view.getContext()) || !ViewCompat.isAttachedToWindow(view)) {
+            view.setAlpha(1f);
+            view.setTranslationX(0f);
+            view.setTranslationY(0f);
+            if (onEnd != null) {
+                onEnd.run();
+            }
+            return;
+        }
+        view.animate()
+                .alpha(0f)
+                .translationX(endTranslationX)
+                .translationY(endTranslationY)
+                .setDuration(DURATION_FAST_MS)
+                .setInterpolator(accelerate())
+                .withEndAction(() -> {
+                    view.setAlpha(1f);
+                    view.setTranslationX(0f);
+                    view.setTranslationY(0f);
+                    if (onEnd != null) {
+                        onEnd.run();
+                    }
+                })
+                .start();
+    }
+
+    /**
+     * Subtle fade + scale reveal for icon state changes (e.g. toggles, checkmarks).
+     */
+    public static void animateIconReveal(@Nullable View view) {
+        if (view == null) {
+            return;
+        }
+        view.animate().cancel();
+        if (!areAnimationsEnabled(view.getContext()) || !ViewCompat.isAttachedToWindow(view)) {
+            view.setAlpha(1f);
+            view.setScaleX(1f);
+            view.setScaleY(1f);
+            return;
+        }
+        view.setAlpha(0f);
+        view.setScaleX(0.84f);
+        view.setScaleY(0.84f);
+        view.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(DURATION_FAST_MS)
+                .setInterpolator(standard())
+                .start();
+    }
+
+    /**
+     * Subtle crossfade/scale refresh when an in-place text value (like a setting pill) changes.
+     */
+    public static void animateTextSwap(@Nullable TextView textView, @Nullable CharSequence newText) {
+        if (textView == null) {
+            return;
+        }
+        if (android.text.TextUtils.equals(textView.getText(), newText)) {
+            return;
+        }
+        textView.setText(newText);
+        textView.animate().cancel();
+        if (!areAnimationsEnabled(textView.getContext()) || !ViewCompat.isAttachedToWindow(textView)) {
+            textView.setAlpha(1f);
+            textView.setScaleX(1f);
+            textView.setScaleY(1f);
+            return;
+        }
+        textView.setAlpha(0.45f);
+        textView.setScaleX(0.94f);
+        textView.setScaleY(0.94f);
+        textView.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(DURATION_FAST_MS)
+                .setInterpolator(standard())
+                .start();
+    }
+
+    /**
+     * Smooth image alpha reveal for newly loaded thumbnails.
+     */
+    public static void animateFadeIn(@Nullable View view, long durationMs) {
+        if (view == null) {
+            return;
+        }
+        view.animate().cancel();
+        if (!areAnimationsEnabled(view.getContext()) || !ViewCompat.isAttachedToWindow(view)) {
+            view.setAlpha(1f);
+            return;
+        }
+        view.setAlpha(0f);
+        view.animate()
+                .alpha(1f)
+                .setDuration(durationMs)
+                .setInterpolator(emphasizedDecelerate())
+                .start();
+    }
+
+    /**
+     * Cancels running focus color/scale/elevation/corner animators on recycled or unbound views.
      */
     public static void cancelFocusAnimations(@Nullable View view) {
         if (view == null) {
             return;
         }
         view.animate().cancel();
-        Object animObj = view.getTag(R.id.m3_focus_color_animator);
-        if (animObj instanceof ValueAnimator) {
-            ((ValueAnimator) animObj).cancel();
-            view.setTag(R.id.m3_focus_color_animator, null);
-        }
-        Object elevAnimObj = view.getTag(R.id.m3_elevation_animator);
-        if (elevAnimObj instanceof ValueAnimator) {
-            ((ValueAnimator) elevAnimObj).cancel();
-            view.setTag(R.id.m3_elevation_animator, null);
-        }
+        cancelTagAnimator(view, R.id.m3_focus_color_animator);
+        cancelTagAnimator(view, R.id.m3_elevation_animator);
+        cancelTagAnimator(view, R.id.m3_corner_morph_animator);
         view.setTag(R.id.m3_focus_state_tag, null);
     }
 
     /**
-     * Builds an 8-element corner radii array for M3 Expressive segmented grouped list items
-     * (large rounded outer ends, tight inner corners).
+     * Cancels focus animators and resets scale back to resting 1.0x when recycling ViewHolders.
+     */
+    public static void resetOnUnbind(@Nullable View view) {
+        if (view == null) {
+            return;
+        }
+        cancelFocusAnimations(view);
+        view.setScaleX(1.0f);
+        view.setScaleY(1.0f);
+        view.setAlpha(1.0f);
+        view.setTranslationX(0f);
+        view.setTranslationY(0f);
+    }
+
+    private static void cancelTagAnimator(View view, int tagId) {
+        Object animObj = view.getTag(tagId);
+        if (animObj instanceof ValueAnimator) {
+            ((ValueAnimator) animObj).cancel();
+            view.setTag(tagId, null);
+        }
+    }
+
+    /**
+     * Builds an 8-element corner radii array for segmented grouped list items
+     * (rounded outer ends, tight inner corners).
      */
     public static float[] buildSegmentedRadii(
             float outerRadiusPx,
@@ -214,7 +421,7 @@ public final class M3Motion {
     }
 
     /**
-     * Animates corner radius smoothly using M3 Fast Spatial physics for state-driven shape morphing.
+     * Animates corner radius smoothly using the fast tier and standard easing.
      */
     public static void animateCornerMorph(
             @Nullable View view,
@@ -224,27 +431,37 @@ public final class M3Motion {
         if (view == null || drawable == null) {
             return;
         }
+        cancelTagAnimator(view, R.id.m3_corner_morph_animator);
         if (Math.abs(fromRadiusPx - toRadiusPx) < 0.5f
                 || !areAnimationsEnabled(view.getContext())
                 || !ViewCompat.isAttachedToWindow(view)) {
-            drawable.setCornerRadius(toRadiusPx);
+            drawable.setCornerRadius(Math.max(0f, toRadiusPx));
             return;
         }
         ValueAnimator anim = ValueAnimator.ofFloat(fromRadiusPx, toRadiusPx);
-        anim.setDuration(DURATION_FAST_SPATIAL_MS);
-        anim.setInterpolator(FAST_SPATIAL_INTERPOLATOR);
+        anim.setDuration(DURATION_FAST_MS);
+        anim.setInterpolator(standard());
         anim.addUpdateListener(a -> {
-            float r = (float) a.getAnimatedValue();
-            drawable.setCornerRadius(Math.max(0f, r));
+            float r = Math.max(0f, (float) a.getAnimatedValue());
+            drawable.setCornerRadius(r);
             if (view instanceof FrameLayout && ((FrameLayout) view).getForeground() instanceof GradientDrawable) {
-                ((GradientDrawable) ((FrameLayout) view).getForeground()).setCornerRadius(Math.max(0f, r));
+                ((GradientDrawable) ((FrameLayout) view).getForeground()).setCornerRadius(r);
             }
         });
+        anim.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                if (view.getTag(R.id.m3_corner_morph_animator) == animation) {
+                    view.setTag(R.id.m3_corner_morph_animator, null);
+                }
+            }
+        });
+        view.setTag(R.id.m3_corner_morph_animator, anim);
         anim.start();
     }
 
     /**
-     * Animates tactile Z elevation using M3 Fast Effects (API 21+, no-op on older platforms).
+     * Animates tactile Z elevation using the fast tier (API 21+, no-op on older platforms).
      */
     public static void animateFocusElevation(@Nullable View view, boolean focused, float baseDp, float focusedDp) {
         if (view == null || VERSION.SDK_INT < 21) {
@@ -252,10 +469,7 @@ public final class M3Motion {
         }
         float density = view.getResources().getDisplayMetrics().density;
         float targetPx = (focused ? focusedDp : baseDp) * density;
-        Object prevElev = view.getTag(R.id.m3_elevation_animator);
-        if (prevElev instanceof ValueAnimator) {
-            ((ValueAnimator) prevElev).cancel();
-        }
+        cancelTagAnimator(view, R.id.m3_elevation_animator);
         if (!areAnimationsEnabled(view.getContext()) || !ViewCompat.isAttachedToWindow(view)) {
             view.setElevation(targetPx);
             return;
@@ -266,8 +480,8 @@ public final class M3Motion {
             return;
         }
         ValueAnimator elevAnim = ValueAnimator.ofFloat(startPx, targetPx);
-        elevAnim.setDuration(DURATION_FAST_EFFECTS_MS);
-        elevAnim.setInterpolator(FAST_EFFECTS_INTERPOLATOR);
+        elevAnim.setDuration(DURATION_FAST_MS);
+        elevAnim.setInterpolator(standard());
         elevAnim.addUpdateListener(a -> view.setElevation((float) a.getAnimatedValue()));
         view.setTag(R.id.m3_elevation_animator, elevAnim);
         elevAnim.start();
@@ -289,7 +503,8 @@ public final class M3Motion {
 
     /**
      * Smoothly animates a card's fill color, focus ring foreground, and arbitrary per-frame callback
-     * using M3 Fast Effects (no overshoot). Snaps immediately on initial bind or when detached.
+     * using the fast tier and standard easing. Snaps immediately on initial bind or when detached.
+     * Pass {@code cornerRadiusPx < 0} when corner radius is driven separately (e.g. via {@link #animateCornerMorph}).
      */
     public static void applyCardFocusTransition(
             @Nullable View view,
@@ -328,7 +543,7 @@ public final class M3Motion {
 
         if (cornerRadiiPx != null) {
             view.setTag(R.id.m3_segmented_radii_tag, cornerRadiiPx);
-        } else {
+        } else if (cornerRadiusPx >= 0f) {
             Object tagRadii = view.getTag(R.id.m3_segmented_radii_tag);
             if (tagRadii instanceof float[]) {
                 cornerRadiiPx = (float[]) tagRadii;
@@ -336,11 +551,7 @@ public final class M3Motion {
         }
         final float[] resolvedRadii = cornerRadiiPx;
 
-        Object prevAnim = view.getTag(R.id.m3_focus_color_animator);
-        if (prevAnim instanceof ValueAnimator) {
-            ((ValueAnimator) prevAnim).cancel();
-            view.setTag(R.id.m3_focus_color_animator, null);
-        }
+        cancelTagAnimator(view, R.id.m3_focus_color_animator);
 
         Boolean prevState = (Boolean) view.getTag(R.id.m3_focus_state_tag);
         view.setTag(R.id.m3_focus_state_tag, focused);
@@ -359,8 +570,8 @@ public final class M3Motion {
         }
 
         ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
-        animator.setDuration(DURATION_FAST_EFFECTS_MS);
-        animator.setInterpolator(FAST_EFFECTS_INTERPOLATOR);
+        animator.setDuration(DURATION_FAST_MS);
+        animator.setInterpolator(standard());
         animator.addUpdateListener(anim -> {
             float t = (float) anim.getAnimatedValue();
             int fill = ColorUtils.blendARGB(fromFillColor, toFillColor, t);
@@ -429,7 +640,7 @@ public final class M3Motion {
         }
         GradientDrawable drawable = new GradientDrawable();
         drawable.setShape(GradientDrawable.RECTANGLE);
-        applyShapeRadii(drawable, cornerRadiusPx, cornerRadiiPx);
+        applyShapeRadii(drawable, Math.max(0f, cornerRadiusPx), cornerRadiiPx);
         return drawable;
     }
 

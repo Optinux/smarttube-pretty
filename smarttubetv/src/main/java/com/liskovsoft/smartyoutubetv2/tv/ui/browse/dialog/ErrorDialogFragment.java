@@ -63,7 +63,7 @@ public class ErrorDialogFragment extends ErrorSupportFragment implements BrowseS
         setDialogContent();
         if (!mEnteredOnce && getView() != null) {
             mEnteredOnce = true;
-            M3Motion.animateEnter(getView(), 0f, 12f * getResources().getDisplayMetrics().density);
+            M3Motion.animateEnter(getView(), 0f, M3Motion.SLIDE_OFFSET_DP * getResources().getDisplayMetrics().density);
         }
     }
 
@@ -154,7 +154,7 @@ public class ErrorDialogFragment extends ErrorSupportFragment implements BrowseS
                 (fraction, currentFill) -> button.setTextColor(
                         ColorUtils.blendARGB(initiallyFocused ? defaultText : focusedText,
                                 initiallyFocused ? focusedText : defaultText, fraction)));
-        M3Motion.animateFocusScale(button, initiallyFocused, 1.05f);
+        M3Motion.animateFocusScale(button, initiallyFocused, M3Motion.FOCUS_SCALE_CARD);
 
         button.setOnFocusChangeListener((v, hasFocus) -> {
             int fromText = hasFocus ? defaultText : focusedText;
@@ -171,8 +171,9 @@ public class ErrorDialogFragment extends ErrorSupportFragment implements BrowseS
                     pillRadius,
                     (fraction, currentFill) -> button.setTextColor(
                             ColorUtils.blendARGB(fromText, toText, fraction)));
-            M3Motion.animateFocusScale(v, hasFocus, 1.05f);
+            M3Motion.animateFocusScale(v, hasFocus, M3Motion.FOCUS_SCALE_CARD);
         });
+        M3Motion.attachPressFeedback(button, M3Motion.FOCUS_SCALE_CARD);
     }
 
     @Override

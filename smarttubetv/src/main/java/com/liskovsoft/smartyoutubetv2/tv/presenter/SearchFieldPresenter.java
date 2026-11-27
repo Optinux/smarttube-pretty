@@ -90,7 +90,7 @@ public class SearchFieldPresenter extends Presenter {
                     hasFocus ? focusStrokePx : 0,
                     pillRadius,
                     null);
-            M3Motion.animateFocusScale(editField, hasFocus, 1.015f);
+            M3Motion.animateFocusScale(editField, hasFocus, M3Motion.FOCUS_SCALE_SUBTLE);
         });
 
         contentView.setOnFocusChangeListener((v, hasFocus) -> {
@@ -140,7 +140,7 @@ public class SearchFieldPresenter extends Presenter {
     public void onUnbindViewHolder(ViewHolder viewHolder) {
         EditText editField = viewHolder.view.findViewById(R.id.simple_edit_value);
         if (editField != null) {
-            M3Motion.cancelFocusAnimations(editField);
+            M3Motion.resetOnUnbind(editField);
             if (editField.getTag() instanceof TextWatcher) {
                 editField.removeTextChangedListener((TextWatcher) editField.getTag());
                 editField.setTag(null);

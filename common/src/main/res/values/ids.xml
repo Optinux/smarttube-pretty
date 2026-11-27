@@ -30,5 +30,8 @@
     <item name="m3_segmented_radii_tag" type="id"/>
     <item name="m3_shelf_chip_bar" type="id"/>
     <item name="m3_focus_listener_attached" type="id"/>
+    <item name="m3_prev_focus_listener_tag" type="id"/>
+    <item name="m3_corner_morph_animator" type="id"/>
+    <item name="m3_initial_animated_tag" type="id"/>
     <item name="global_date" type="id"/>
 </resources>

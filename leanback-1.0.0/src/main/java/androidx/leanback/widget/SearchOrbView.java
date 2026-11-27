@@ -31,10 +31,7 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
-import android.view.animation.OvershootInterpolator;
-import android.view.animation.PathInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
@@ -42,6 +39,8 @@ import androidx.annotation.ColorInt;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
 import androidx.leanback.R;
+
+import com.liskovsoft.sharedutils.motion.MotionSpec;
 
 /**
  * <p>A widget that draws a search affordance, represented by a round background and an icon.</p>
@@ -164,6 +163,7 @@ public class SearchOrbView extends FrameLayout implements View.OnClickListener {
 
     void setSearchOrbZ(float fraction) {
         ViewCompat.setZ(mSearchOrbView, mUnfocusedZ + fraction * (mFocusedZ - mUnfocusedZ));
+        updateOrbStroke(fraction);
     }
 
     public SearchOrbView(Context context) {
@@ -199,12 +199,8 @@ public class SearchOrbView extends FrameLayout implements View.OnClickListener {
         mUnfocusedStrokePx = Math.max(1, Math.round(1f * density));
         mFocusedStrokePx = Math.max(2, Math.round(2f * density));
         mFocusedStrokeColor = resolveM3OutlineColor(context);
-        mSpatialInterpolator = Build.VERSION.SDK_INT >= 21
-                ? new PathInterpolator(0.42f, 1.67f, 0.21f, 0.90f)
-                : new OvershootInterpolator(0.75f);
-        mEffectsInterpolator = Build.VERSION.SDK_INT >= 21
-                ? new PathInterpolator(0.31f, 0.94f, 0.34f, 1.00f)
-                : new DecelerateInterpolator();
+        mSpatialInterpolator = MotionSpec.standard();
+        mEffectsInterpolator = MotionSpec.standard();
 
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.lbSearchOrbView,
                 defStyleAttr, 0);
@@ -398,8 +394,8 @@ public class SearchOrbView extends FrameLayout implements View.OnClickListener {
             return;
         }
         final int targetColor = mColorAnimationEnabled ? mColors.brightColor : mColors.color;
-        updateOrbStroke(mColorAnimationEnabled);
         if (!mAttachedToWindow || !areAnimationsEnabled(getContext())) {
+            updateOrbStroke(mColorAnimationEnabled ? 1f : 0f);
             setOrbViewColor(targetColor);
             return;
         }
@@ -409,23 +405,25 @@ public class SearchOrbView extends FrameLayout implements View.OnClickListener {
             return;
         }
         mColorAnimator = ValueAnimator.ofObject(mColorEvaluator, startColor, targetColor);
-        mColorAnimator.setDuration(150);
+        mColorAnimator.setDuration(MotionSpec.DURATION_FAST_MS);
         mColorAnimator.setInterpolator(mEffectsInterpolator);
         mColorAnimator.addUpdateListener(mUpdateListener);
         mColorAnimator.start();
     }
 
-    private void updateOrbStroke(boolean focused) {
+    private void updateOrbStroke(float fraction) {
         if (mSearchOrbView != null && mSearchOrbView.getBackground() instanceof GradientDrawable && mColors != null) {
             GradientDrawable bg = (GradientDrawable) mSearchOrbView.getBackground();
-            if (!focused) {
+            float clamped = Math.max(0f, Math.min(1f, fraction));
+            int alpha = Math.round(230f * clamped);
+            if (alpha <= 0) {
                 bg.setStroke(0, Color.TRANSPARENT);
                 return;
             }
             int baseStrokeColor = mFocusedStrokeColor != 0
                     ? mFocusedStrokeColor
                     : (mColors.iconColor != Color.TRANSPARENT ? mColors.iconColor : Color.WHITE);
-            bg.setStroke(mFocusedStrokePx, ColorUtils.setAlphaComponent(baseStrokeColor, 230));
+            bg.setStroke(mFocusedStrokePx, ColorUtils.setAlphaComponent(baseStrokeColor, alpha));
         }
     }
 
@@ -444,19 +442,7 @@ public class SearchOrbView extends FrameLayout implements View.OnClickListener {
     }
 
     private static boolean areAnimationsEnabled(Context context) {
-        if (Build.VERSION.SDK_INT >= 26 && !ValueAnimator.areAnimatorsEnabled()) {
-            return false;
-        }
-        if (context != null && Build.VERSION.SDK_INT >= 17) {
-            try {
-                return Settings.Global.getFloat(
-                        context.getContentResolver(),
-                        Settings.Global.ANIMATOR_DURATION_SCALE,
-                        1.0f) > 0f;
-            } catch (Exception ignored) {
-            }
-        }
-        return true;
+        return MotionSpec.areAnimationsEnabled(context);
     }
 
     void setOrbViewColor(int color) {

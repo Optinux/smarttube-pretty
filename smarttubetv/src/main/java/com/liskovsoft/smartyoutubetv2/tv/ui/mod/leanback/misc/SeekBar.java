@@ -209,8 +209,8 @@ public final class SeekBar extends View {
             return;
         }
         mFocusAnimator = ValueAnimator.ofFloat(mFocusFraction, target);
-        mFocusAnimator.setDuration(M3Motion.DURATION_FAST_SPATIAL_MS);
-        mFocusAnimator.setInterpolator(M3Motion.fastSpatial());
+        mFocusAnimator.setDuration(M3Motion.DURATION_FAST_MS);
+        mFocusAnimator.setInterpolator(M3Motion.standard());
         mFocusAnimator.addUpdateListener(animation -> {
             mFocusFraction = (float) animation.getAnimatedValue();
             calculate();

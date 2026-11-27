@@ -33,17 +33,12 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.DecelerateInterpolator;
-import android.view.animation.PathInterpolator;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.fragment.app.Fragment;
 import androidx.leanback.R;
-import androidx.leanback.animation.LogAccelerateInterpolator;
-import androidx.leanback.animation.LogDecelerateInterpolator;
 import androidx.leanback.media.PlaybackGlueHost;
 import androidx.leanback.widget.ArrayObjectAdapter;
 import androidx.leanback.widget.BaseOnItemViewClickedListener;
@@ -62,6 +57,8 @@ import androidx.leanback.widget.RowPresenter;
 import androidx.leanback.widget.SparseArrayObjectAdapter;
 import androidx.leanback.widget.VerticalGridView;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.liskovsoft.sharedutils.motion.MotionSpec;
 
 /**
  * A fragment for displaying playback controls and related content.
@@ -550,12 +547,8 @@ public class PlaybackSupportFragment extends Fragment {
         mBgFadeOutAnimator.addListener(mFadeListener);
     }
 
-    private TimeInterpolator mLogDecelerateInterpolator = Build.VERSION.SDK_INT >= 21
-            ? new PathInterpolator(0.05f, 0.70f, 0.10f, 1.00f)
-            : new DecelerateInterpolator(1.8f);
-    private TimeInterpolator mLogAccelerateInterpolator = Build.VERSION.SDK_INT >= 21
-            ? new PathInterpolator(0.30f, 0.00f, 0.80f, 0.15f)
-            : new AccelerateInterpolator();
+    private TimeInterpolator mLogDecelerateInterpolator = MotionSpec.emphasizedDecelerate();
+    private TimeInterpolator mLogAccelerateInterpolator = MotionSpec.accelerate();
 
     private void loadControlRowAnimator() {
         final AnimatorUpdateListener updateListener = new AnimatorUpdateListener() {

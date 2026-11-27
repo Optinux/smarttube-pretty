@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <integer name="lb_playback_bg_fade_in_ms">200</integer>
-    <integer name="lb_playback_bg_fade_out_ms">160</integer>
-    <integer name="lb_playback_controls_fade_in_ms">180</integer>
-    <integer name="lb_playback_controls_fade_out_ms">140</integer>
-    <integer name="lb_playback_description_fade_in_ms">180</integer>
-    <integer name="lb_playback_description_fade_out_ms">140</integer>
-    <integer name="lb_playback_rows_fade_delay_ms">40</integer>
-    <integer name="lb_playback_rows_fade_in_ms">160</integer>
-    <integer name="lb_playback_rows_fade_out_ms">140</integer>
+    <!-- Leanback playback overlay fades routed to sharedutils MotionSpec XML tokens -->
+    <integer name="lb_playback_bg_fade_in_ms">@integer/m3_motion_standard_ms</integer>
+    <integer name="lb_playback_bg_fade_out_ms">@integer/m3_motion_fast_ms</integer>
+    <integer name="lb_playback_controls_fade_in_ms">@integer/m3_motion_standard_ms</integer>
+    <integer name="lb_playback_controls_fade_out_ms">@integer/m3_motion_fast_ms</integer>
+    <integer name="lb_playback_description_fade_in_ms">@integer/m3_motion_standard_ms</integer>
+    <integer name="lb_playback_description_fade_out_ms">@integer/m3_motion_fast_ms</integer>
+    <integer name="lb_playback_rows_fade_delay_ms">0</integer>
+    <integer name="lb_playback_rows_fade_in_ms">@integer/m3_motion_standard_ms</integer>
+    <integer name="lb_playback_rows_fade_out_ms">@integer/m3_motion_fast_ms</integer>
 </resources>

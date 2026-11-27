@@ -675,7 +675,11 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         RailEntry entry = mRailEntries.get(mSelectedRailPosition);
         mDetailContainer.removeAllViews();
         if (animate && mDetailScroll != null) {
-            mDetailScroll.scrollTo(0, 0);
+            if (M3Motion.areAnimationsEnabled(getContext())) {
+                mDetailScroll.smoothScrollTo(0, 0);
+            } else {
+                mDetailScroll.scrollTo(0, 0);
+            }
         }
 
         if (entry.type == RailEntry.TYPE_QUICK_CONTROLS) {
@@ -1033,8 +1037,12 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
 
     private void markNeedsRestart() {
         mNeedsRestart = true;
-        if (mRestartBanner != null) {
+        if (mRestartBanner != null && mRestartBanner.getVisibility() != View.VISIBLE) {
             mRestartBanner.setVisibility(View.VISIBLE);
+            if (getContext() != null) {
+                float slidePx = M3Motion.SLIDE_OFFSET_COMPACT_DP * getResources().getDisplayMetrics().density;
+                M3Motion.animateEnter(mRestartBanner, 0f, slidePx);
+            }
         }
     }
 
@@ -1095,6 +1103,7 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
 
         final int requestToken = mDetailRequestToken;
         final boolean[] deliveredSync = {false};
+        final boolean[] asyncPlaceholderShown = {false};
         final TextView[] headerSubtitle = new TextView[1];
 
         AppDialogPresenter dialogPresenter = AppDialogPresenter.instance(ctx);
@@ -1125,6 +1134,10 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
                             refreshRailAndHeaderSummary(item, headerSubtitle[0]);
                         }
                     });
+            if (asyncPlaceholderShown[0]) {
+                float slidePx = M3Motion.SLIDE_OFFSET_COMPACT_DP * getResources().getDisplayMetrics().density;
+                M3Motion.animateEnter(mDetailContainer, slidePx, 0f);
+            }
             if (restoreFocus) {
                 focusDetailPane();
             }
@@ -1133,6 +1146,7 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         item.onClick.run();
 
         if (!deliveredSync[0] && isAdded() && getContext() != null && mDetailContainer != null && requestToken == mDetailRequestToken) {
+            asyncPlaceholderShown[0] = true;
             InlineOptionsRenderer.renderCategoryHeader(ctx, mDetailContainer, item, null, headerSubtitle);
             InlineOptionsRenderer.addInfoMessage(ctx, mDetailContainer, getString(R.string.settings_loading_options));
         }
@@ -1203,7 +1217,7 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
         String password = GeneralData.instance(getContext()).getSettingsPassword();
         if (password == null) {
             mPasswordUnlocked = true;
-            renderSelectedDetail(false);
+            renderSelectedDetail(true);
             if (focusAfterUnlock) {
                 focusDetailPane();
             }
@@ -1216,7 +1230,7 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
                 newValue -> {
                     if (Utils.passwordMatch(password, newValue)) {
                         mPasswordUnlocked = true;
-                        renderSelectedDetail(false);
+                        renderSelectedDetail(true);
                         if (focusAfterUnlock) {
                             focusDetailPane();
                         }
@@ -1423,7 +1437,7 @@ public class SettingsGridFragment extends Fragment implements SettingsSection, B
                                 M3Motion.setImageTint(icon, tColor);
                                 M3Motion.setImageTint(chevron, sColor);
                             });
-                    M3Motion.animateFocusScale(v, focused, 1.015f);
+                    M3Motion.animateFocusScale(v, focused, M3Motion.FOCUS_SCALE_SUBTLE);
                 });
 
                 int firstFocusablePos = findFirstFocusableRailPosition();

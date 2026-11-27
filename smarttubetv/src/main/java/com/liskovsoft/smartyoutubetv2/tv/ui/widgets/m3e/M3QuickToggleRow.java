@@ -138,8 +138,9 @@ public class M3QuickToggleRow extends LinearLayout {
 
         setOnFocusChangeListener((v, hasFocus) -> {
             applyVisualState(hasFocus, true);
-            M3Motion.animateFocusScale(this, hasFocus, 1.012f);
+            M3Motion.animateFocusScale(this, hasFocus, M3Motion.FOCUS_SCALE_SUBTLE);
         });
+        M3Motion.attachPressFeedback(this, M3Motion.FOCUS_SCALE_SUBTLE);
     }
 
     public void setSegmentedPosition(boolean isFirst, boolean isLast) {
@@ -181,8 +182,13 @@ public class M3QuickToggleRow extends LinearLayout {
     public void bindValuePill(CharSequence text) {
         mSwitch.setVisibility(GONE);
         mTrailingIcon.setVisibility(GONE);
+        boolean wasVisible = mValuePill.getVisibility() == VISIBLE;
         mValuePill.setVisibility(VISIBLE);
-        mValuePill.setText(text);
+        if (wasVisible) {
+            M3Motion.animateTextSwap(mValuePill, text);
+        } else {
+            mValuePill.setText(text);
+        }
         float pillRadius = getResources().getDimension(R.dimen.m3_pill_corner_radius);
         mValuePill.setBackground(ViewUtil.createRoundedDrawable(mPrimaryContainer, 0, 0, pillRadius));
         mValuePill.setTextColor(mOnPrimaryContainer);
@@ -193,10 +199,14 @@ public class M3QuickToggleRow extends LinearLayout {
         mValuePill.setVisibility(GONE);
         mTrailingAccentTint = accentTint;
         if (resId > 0) {
+            boolean wasHidden = mTrailingIcon.getVisibility() != VISIBLE;
             mTrailingIcon.setImageDrawable(ContextCompat.getDrawable(getContext(), resId));
             mTrailingIcon.setVisibility(VISIBLE);
             int restingColor = mTrailingAccentTint ? mPrimary : mOnSurfaceVariant;
             M3Motion.setImageTint(mTrailingIcon, hasFocus() ? mOnSecondaryContainer : restingColor);
+            if (wasHidden) {
+                M3Motion.animateIconReveal(mTrailingIcon);
+            }
         } else {
             mTrailingIcon.setVisibility(GONE);
         }

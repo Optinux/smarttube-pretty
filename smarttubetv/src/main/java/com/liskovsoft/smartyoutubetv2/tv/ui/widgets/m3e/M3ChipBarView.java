@@ -205,7 +205,7 @@ public class M3ChipBarView extends HorizontalScrollView {
 
             chip.setOnFocusChangeListener((v, hasFocus) -> {
                 updateChipVisual(index, hasFocus, true);
-                M3Motion.animateFocusScale(chip, hasFocus, 1.04f);
+                M3Motion.animateFocusScale(chip, hasFocus, M3Motion.FOCUS_SCALE_DEFAULT);
                 if (hasFocus) {
                     smoothEnsureVisible(chip);
                 }
@@ -233,9 +233,19 @@ public class M3ChipBarView extends HorizontalScrollView {
             return;
         }
         if (left < scrollX) {
-            smoothScrollTo(Math.max(0, left - 24), 0);
+            int targetX = Math.max(0, left - 24);
+            if (M3Motion.areAnimationsEnabled(getContext())) {
+                smoothScrollTo(targetX, 0);
+            } else {
+                scrollTo(targetX, 0);
+            }
         } else if (right > scrollX + width) {
-            smoothScrollTo(right - width + 24, 0);
+            int targetX = right - width + 24;
+            if (M3Motion.areAnimationsEnabled(getContext())) {
+                smoothScrollTo(targetX, 0);
+            } else {
+                scrollTo(targetX, 0);
+            }
         }
     }
 
@@ -271,6 +281,17 @@ public class M3ChipBarView extends HorizontalScrollView {
             label.setTypeface(Typeface.create(selected || focused ? "sans-serif-medium" : "sans-serif", Typeface.NORMAL));
         }
 
+        if (animate) {
+            // Reset focus tag so selection changes on an already-focused chip animate smoothly too.
+            chip.setTag(R.id.m3_focus_state_tag, !focused);
+        }
+        float prevRadius = chip.getBackground() instanceof GradientDrawable && animate
+                ? (selected ? mPillRadiusPx : mSelectedRadiusPx)
+                : radius;
+        if (animate && chip.getBackground() instanceof GradientDrawable) {
+            M3Motion.animateCornerMorph(chip, (GradientDrawable) chip.getBackground(), prevRadius, radius);
+        }
+
         M3Motion.applyCardFocusTransition(
                 chip,
                 focused,
@@ -280,7 +301,7 @@ public class M3ChipBarView extends HorizontalScrollView {
                 toStroke,
                 fromStrokePx,
                 toStrokePx,
-                radius,
+                animate && chip.getBackground() instanceof GradientDrawable ? -1f : radius,
                 (fraction, currentFill) -> {
                     if (label != null) {
                         label.setTextColor(ColorUtils.blendARGB(fromText, toText, fraction));

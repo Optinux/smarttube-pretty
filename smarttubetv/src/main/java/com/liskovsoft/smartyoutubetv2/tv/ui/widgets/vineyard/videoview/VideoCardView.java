@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.leanback.widget.BaseCardView;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.vineyard.NetworkUtil;
 
 public class VideoCardView extends BaseCardView {
@@ -196,11 +197,10 @@ public class VideoCardView extends BaseCardView {
 
     private void fadeIn() {
         ImageView mImageView = mPreviewCard.getImageView();
-        mImageView.setAlpha(0f);
         if (mAttachedToWindow) {
-            int duration =
-                    mImageView.getResources().getInteger(android.R.integer.config_shortAnimTime);
-            mImageView.animate().alpha(1f).setDuration(duration);
+            M3Motion.animateFadeIn(mImageView, M3Motion.DURATION_FAST_MS);
+        } else {
+            mImageView.setAlpha(0f);
         }
     }
 

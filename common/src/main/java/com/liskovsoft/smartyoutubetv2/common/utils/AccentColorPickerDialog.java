@@ -1,6 +1,5 @@
 package com.liskovsoft.smartyoutubetv2.common.utils;
 
-import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -8,15 +7,10 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.os.Build;
-import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.animation.DecelerateInterpolator;
-import android.view.animation.Interpolator;
-import android.view.animation.OvershootInterpolator;
-import android.view.animation.PathInterpolator;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
@@ -28,6 +22,7 @@ import androidx.core.graphics.ColorUtils;
 
 import com.liskovsoft.sharedutils.helpers.KeyHelpers;
 import com.liskovsoft.sharedutils.helpers.MessageHelpers;
+import com.liskovsoft.sharedutils.motion.MotionSpec;
 import com.liskovsoft.smartyoutubetv2.common.R;
 import com.liskovsoft.smartyoutubetv2.common.utils.ThemePaletteHelper.M3Palette;
 
@@ -178,13 +173,10 @@ public final class AccentColorPickerDialog {
             states.addState(new int[]{}, normal);
             btn.setBackground(states);
 
-            Interpolator spatial = Build.VERSION.SDK_INT >= 21
-                    ? new PathInterpolator(0.42f, 1.67f, 0.21f, 0.90f)
-                    : new OvershootInterpolator(0.75f);
             btn.setOnFocusChangeListener((v, hasFocus) -> {
-                float targetScale = hasFocus ? 1.16f : 1.0f;
+                float targetScale = hasFocus ? MotionSpec.FOCUS_SCALE_ICON : 1.0f;
                 v.animate().cancel();
-                if (!areAnimationsEnabled(v.getContext())) {
+                if (!MotionSpec.areAnimationsEnabled(v.getContext())) {
                     v.setScaleX(targetScale);
                     v.setScaleY(targetScale);
                     return;
@@ -192,8 +184,8 @@ public final class AccentColorPickerDialog {
                 v.animate()
                         .scaleX(targetScale)
                         .scaleY(targetScale)
-                        .setDuration(180L)
-                        .setInterpolator(spatial)
+                        .setDuration(MotionSpec.DURATION_FAST_MS)
+                        .setInterpolator(MotionSpec.standard())
                         .start();
             });
 
@@ -278,15 +270,16 @@ public final class AccentColorPickerDialog {
         try {
             dialog.show();
             ThemePaletteHelper.applyDialogWindowSurface(context, dialog);
-            if (contentView != null && areAnimationsEnabled(context)) {
-                Interpolator decelerate = Build.VERSION.SDK_INT >= 21
-                        ? new PathInterpolator(0.05f, 0.70f, 0.10f, 1.00f)
-                        : new DecelerateInterpolator(1.8f);
+            if (contentView != null && MotionSpec.areAnimationsEnabled(context)) {
                 contentView.setAlpha(0f);
+                contentView.setScaleX(MotionSpec.DIALOG_ENTER_SCALE);
+                contentView.setScaleY(MotionSpec.DIALOG_ENTER_SCALE);
                 contentView.animate()
                         .alpha(1f)
-                        .setDuration(180L)
-                        .setInterpolator(decelerate)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(MotionSpec.DURATION_STANDARD_MS)
+                        .setInterpolator(MotionSpec.emphasizedDecelerate())
                         .start();
             }
         } catch (RuntimeException e) {
@@ -309,22 +302,6 @@ public final class AccentColorPickerDialog {
             }
             dialog.dismiss();
         });
-    }
-
-    private static boolean areAnimationsEnabled(Context context) {
-        if (Build.VERSION.SDK_INT >= 26 && !ValueAnimator.areAnimatorsEnabled()) {
-            return false;
-        }
-        if (context != null && Build.VERSION.SDK_INT >= 17) {
-            try {
-                return Settings.Global.getFloat(
-                        context.getContentResolver(),
-                        Settings.Global.ANIMATOR_DURATION_SCALE,
-                        1.0f) > 0f;
-            } catch (Exception ignored) {
-            }
-        }
-        return true;
     }
 
     private static Integer parseHexColor(String input) {

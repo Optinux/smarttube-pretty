@@ -387,6 +387,8 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             }
         }
 
+        M3Motion.animateInitialVisibleChildren(getVerticalGridView());
+
         restorePosition();
     }
 

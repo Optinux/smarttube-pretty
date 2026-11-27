@@ -65,6 +65,7 @@ public class ChatPreferenceDialogFragment extends LeanbackPreferenceDialogFragme
                     .load(url)
                     .apply(ViewUtil.glideOptions())
                     .circleCrop() // resize image
+                    .transition(ViewUtil.glideCrossFade(view.getContext()))
                     .into(imageView));
         messagesList.setAdapter(adapter);
 

@@ -231,21 +231,26 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
         final FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
         final Fragment prevFragment =
                 getChildFragmentManager().findFragmentByTag(PREFERENCE_FRAGMENT_TAG);
+        final boolean animationsEnabled = M3Motion.areAnimationsEnabled(getActivity());
         if (prevFragment != null) {
+            if (animationsEnabled) {
+                transaction.setCustomAnimations(
+                        R.animator.m3_shared_axis_x_enter,
+                        R.animator.m3_shared_axis_x_exit,
+                        R.animator.m3_shared_axis_x_enter,
+                        R.animator.m3_shared_axis_x_exit);
+            }
             transaction
-                    .setCustomAnimations(
-                            R.animator.m3_shared_axis_x_enter,
-                            R.animator.m3_shared_axis_x_exit,
-                            R.animator.m3_shared_axis_x_enter,
-                            R.animator.m3_shared_axis_x_exit)
                     .addToBackStack(null)
                     .replace(R.id.settings_preference_fragment_container, fragment,
                             PREFERENCE_FRAGMENT_TAG);
         } else {
+            if (animationsEnabled) {
+                transaction.setCustomAnimations(
+                        R.animator.m3_side_sheet_enter,
+                        R.animator.m3_side_sheet_exit);
+            }
             transaction
-                    .setCustomAnimations(
-                            R.animator.m3_side_sheet_enter,
-                            R.animator.m3_side_sheet_exit)
                     .add(R.id.settings_preference_fragment_container, fragment,
                             PREFERENCE_FRAGMENT_TAG);
         }
@@ -435,7 +440,7 @@ public class AppDialogFragment extends LeanbackSettingsFragment implements AppDi
                                     outerItemRadius,
                                     null,
                                     null);
-                            M3Motion.animateFocusScale(v, hasFocus, 1.012f);
+                            M3Motion.animateFocusScale(v, hasFocus, M3Motion.FOCUS_SCALE_SUBTLE);
                         });
                     }
                     tintCompoundButtons(child, buttonTint);

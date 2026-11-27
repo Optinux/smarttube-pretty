@@ -118,6 +118,7 @@ public class AppDialogActivity extends MotherActivity {
 
         // Destroy dialog when BACK is pressed. NoHistory isn't reliable if combined with singleInstance
         finishReally();
+        ViewManager.applyDialogExitTransition(this);
     }
 
     @Override

@@ -100,15 +100,15 @@
     <!-- Material 3 Expressive rounded card corners -->
     <dimen name="lb_rounded_rect_corner_radius">16dp</dimen>
 
-    <!-- Expressive focus zoom factors (refined for clean M3 lift without clipping) -->
-    <item name="lb_focus_zoom_factor_small" type="fraction">106%</item>
-    <item name="lb_search_orb_focused_zoom" type="fraction">112%</item>
+    <!-- Focus zoom & transition tokens routed to central motion system -->
+    <item name="lb_focus_zoom_factor_small" type="fraction">104%</item>
+    <item name="lb_search_orb_focused_zoom" type="fraction">108%</item>
     <item format="float" name="lb_browse_header_select_scale" type="dimen">1.04</item>
-    <item format="integer" name="lb_browse_header_select_duration" type="dimen">180</item>
-    <integer name="lb_browse_headers_transition_delay">60</integer>
-    <integer name="lb_browse_headers_transition_duration">220</integer>
-    <integer name="lb_browse_rows_anim_duration">200</integer>
-    <integer name="lb_search_orb_scale_duration_ms">180</integer>
+    <item format="integer" name="lb_browse_header_select_duration" type="dimen">@integer/m3_motion_fast_ms</item>
+    <integer name="lb_browse_headers_transition_delay">0</integer>
+    <integer name="lb_browse_headers_transition_duration">@integer/m3_motion_standard_ms</integer>
+    <integer name="lb_browse_rows_anim_duration">@integer/m3_motion_standard_ms</integer>
+    <integer name="lb_search_orb_scale_duration_ms">@integer/m3_motion_fast_ms</integer>
 
     <!-- Space between cards -->
     <dimen name="grid_item_horizontal_spacing">18dp</dimen>

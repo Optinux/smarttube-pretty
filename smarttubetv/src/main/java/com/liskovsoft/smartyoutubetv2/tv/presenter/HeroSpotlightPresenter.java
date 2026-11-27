@@ -71,7 +71,6 @@ import java.util.List;
  */
 public class HeroSpotlightPresenter extends RowPresenter {
     // Centralized tone extraction, surface blend & scrim curve tuning parameters
-    private static final long TONE_TRANSITION_DURATION_MS = 300L;
     private static final float TONE_EDGE_STRIP_FRACTION = 0.22f;
     private static final float TONE_MIN_SATURATION = 0.06f;
     private static final float TONE_MAX_SATURATION = 0.34f;
@@ -772,7 +771,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
 
         private void applyCardFocusHighlight(boolean focused) {
             M3Motion.animateFocusScale(mCard, focused, mFocusedScale);
-            M3Motion.animateFocusElevation(mCard, focused, 2f, 6f);
+            M3Motion.animateFocusElevation(mCard, focused, M3Motion.ELEVATION_REST_DP, M3Motion.ELEVATION_FOCUSED_DP);
             M3Motion.applyCardFocusTransition(
                     mCard,
                     focused,
@@ -853,8 +852,8 @@ public class HeroSpotlightPresenter extends RowPresenter {
             }
             final int startTone = mCurrentTone;
             mToneAnimator = ValueAnimator.ofFloat(0f, 1f);
-            mToneAnimator.setDuration(TONE_TRANSITION_DURATION_MS);
-            mToneAnimator.setInterpolator(M3Motion.defaultEffects());
+            mToneAnimator.setDuration(M3Motion.DURATION_SLOW_MS);
+            mToneAnimator.setInterpolator(M3Motion.standard());
             mToneAnimator.addUpdateListener(anim -> {
                 float t = (float) anim.getAnimatedValue();
                 applyToneImmediate(ColorUtils.blendARGB(startTone, targetTone, t));
@@ -1070,10 +1069,10 @@ public class HeroSpotlightPresenter extends RowPresenter {
             }
 
             if (animate) {
-                float density = ctx.getResources().getDisplayMetrics().density;
-                M3Motion.animateEnter(mTitle, 10f * density, 0f);
-                M3Motion.animateEnter(mChannel, 10f * density, 0f);
-                M3Motion.animateEnter(mStats, 10f * density, 0f);
+                float slidePx = M3Motion.SLIDE_OFFSET_DP * ctx.getResources().getDisplayMetrics().density;
+                M3Motion.animateEnter(mTitle, slidePx, 0f);
+                M3Motion.animateEnter(mChannel, slidePx, 0f);
+                M3Motion.animateEnter(mStats, slidePx, 0f);
             }
 
             // Apply cached swatch immediately if available; otherwise load bitmap & sample swatch
@@ -1133,9 +1132,11 @@ public class HeroSpotlightPresenter extends RowPresenter {
                                 return false;
                             }
                         })
+                        .transition(ViewUtil.glideCrossFade(ctx, M3Motion.DURATION_SLOW_MS))
                         .error(Glide.with(ctx)
                                 .load(video.getCardImageUrl())
                                 .apply(ViewUtil.glideOptions().centerCrop())
+                                .transition(ViewUtil.glideCrossFade(ctx, M3Motion.DURATION_SLOW_MS))
                                 .error(R.drawable.card_placeholder))
                         .into(mArtwork);
             }
@@ -1311,6 +1312,9 @@ public class HeroSpotlightPresenter extends RowPresenter {
                     }
                 });
                 mDotsContainer.addView(dotView, lp);
+                if (active) {
+                    M3Motion.animateFadeIn(dotView, M3Motion.DURATION_FAST_MS);
+                }
             }
         }
     }

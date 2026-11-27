@@ -6,6 +6,7 @@ import android.view.KeyEvent;
 
 import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.SearchPresenter;
+import com.liskovsoft.smartyoutubetv2.common.app.views.ViewManager;
 import com.liskovsoft.smartyoutubetv2.common.autoframerate.ModeSyncManager;
 import com.liskovsoft.smartyoutubetv2.common.misc.GlobalKeyTranslator;
 import com.liskovsoft.smartyoutubetv2.common.misc.MotherActivity;
@@ -130,6 +131,7 @@ public abstract class LeanbackActivity extends MotherActivity {
         // Mandatory line. Fix un-proper view order (especially for playback view).
         getViewManager().startParentView(this);
         super.finishReally();
+        ViewManager.applyBackTransition(this);
     }
 
     private void finishTheApp() {

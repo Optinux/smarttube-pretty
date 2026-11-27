@@ -198,8 +198,8 @@ public class ComplexImageView extends RelativeLayout {
             mPreviewContainer.setAlpha(0f);
             mPreviewContainer.animate()
                     .alpha(1f)
-                    .setDuration(M3Motion.DURATION_FAST_EFFECTS_MS)
-                    .setInterpolator(M3Motion.fastEffects())
+                    .setDuration(M3Motion.DURATION_FAST_MS)
+                    .setInterpolator(M3Motion.emphasizedDecelerate())
                     .start();
         } else {
             mPreviewContainer.setAlpha(1f);

@@ -201,7 +201,7 @@ public class ThumbsBar extends LinearLayout {
                     child.setBackground(ViewUtil.createRoundedDrawable(
                             Color.TRANSPARENT, mHeroBorderColor, mHeroBorderWidthPx, mCornerRadiusPx));
                 }
-                animateThumbState(child, 1.04f, 1.0f);
+                animateThumbState(child, com.liskovsoft.smartyoutubetv2.tv.util.M3Motion.FOCUS_SCALE_DEFAULT, 1.0f);
                 if (VERSION.SDK_INT >= 21) {
                     child.setElevation(mHeroElevationPx);
                 }
@@ -234,8 +234,8 @@ public class ThumbsBar extends LinearLayout {
                 .scaleX(targetScale)
                 .scaleY(targetScale)
                 .alpha(targetAlpha)
-                .setDuration(com.liskovsoft.smartyoutubetv2.tv.util.M3Motion.DURATION_FAST_EFFECTS_MS)
-                .setInterpolator(com.liskovsoft.smartyoutubetv2.tv.util.M3Motion.fastEffects())
+                .setDuration(com.liskovsoft.smartyoutubetv2.tv.util.M3Motion.DURATION_FAST_MS)
+                .setInterpolator(com.liskovsoft.smartyoutubetv2.tv.util.M3Motion.standard())
                 .start();
     }
 

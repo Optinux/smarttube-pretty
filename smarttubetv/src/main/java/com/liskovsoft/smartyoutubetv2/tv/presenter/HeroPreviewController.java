@@ -64,7 +64,6 @@ final class HeroPreviewController implements Player.EventListener, VideoListener
 
     private static final String TAG = HeroPreviewController.class.getSimpleName();
     static final long AUTO_ADVANCE_DURATION_MS = 10_000L;
-    private static final long CROSSFADE_DURATION_MS = 350L;
     private static final long LOAD_TIMEOUT_MS = 8_000L;
     private static final long BUFFER_STALL_TIMEOUT_MS = 1_200L;
     private static final long TIMER_TICK_MS = 100L;
@@ -546,8 +545,8 @@ final class HeroPreviewController implements Player.EventListener, VideoListener
         }
         mPlayerView.animate()
                 .alpha(1f)
-                .setDuration(CROSSFADE_DURATION_MS)
-                .setInterpolator(M3Motion.defaultEffects())
+                .setDuration(M3Motion.DURATION_SLOW_MS)
+                .setInterpolator(M3Motion.emphasizedDecelerate())
                 .start();
     }
 
@@ -563,8 +562,8 @@ final class HeroPreviewController implements Player.EventListener, VideoListener
         }
         mPlayerView.animate()
                 .alpha(0f)
-                .setDuration(CROSSFADE_DURATION_MS)
-                .setInterpolator(M3Motion.fastEffects())
+                .setDuration(M3Motion.DURATION_STANDARD_MS)
+                .setInterpolator(M3Motion.accelerate())
                 .start();
     }
 

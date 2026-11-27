@@ -28,6 +28,7 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class IconHeaderItemPresenter extends RowHeaderPresenter {
@@ -101,6 +102,7 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
                         .load(mIconUrl)
                         .apply(ViewUtil.glideOptions().circleCrop().error(mDefaultIcon))
                         .listener(mErrorListener)
+                        .transition(ViewUtil.glideCrossFade(rootView.getContext()))
                         .into(iconView);
 
                 //ViewUtil.makeMonochrome(iconView);
@@ -122,7 +124,15 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
 
     @Override
     public void onUnbindViewHolder(Presenter.ViewHolder viewHolder) {
-        // NOP
+        if (viewHolder != null && viewHolder.view != null) {
+            M3Motion.resetOnUnbind(viewHolder.view);
+            ImageView iconView = viewHolder.view.findViewById(R.id.header_icon);
+            if (iconView != null) {
+                Glide.with(viewHolder.view.getContext()).clear(iconView);
+                iconView.setScaleX(1.0f);
+                iconView.setScaleY(1.0f);
+            }
+        }
     }
 
     // TODO: This is a temporary fix. Remove me when leanback onCreateViewHolder no longer sets the
@@ -146,8 +156,8 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
             GradientDrawable pill = (GradientDrawable) bg;
             int fillAlpha = Math.round(Color.alpha(mSecondaryContainerColor) * level);
             pill.setColor(ColorUtils.setAlphaComponent(mSecondaryContainerColor, fillAlpha));
-            int strokeAlpha = Math.round(255 * Math.max(0f, (level - 0.5f) * 2f));
-            pill.setStroke(level > 0.5f ? mFocusStrokeWidthPx : 0,
+            int strokeAlpha = Math.round(255 * level);
+            pill.setStroke(strokeAlpha > 0 ? mFocusStrokeWidthPx : 0,
                     ColorUtils.setAlphaComponent(mOutlineColor, strokeAlpha));
         }
 

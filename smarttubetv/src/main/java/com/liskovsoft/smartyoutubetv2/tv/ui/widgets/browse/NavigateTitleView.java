@@ -58,7 +58,6 @@ import static androidx.leanback.widget.TitleViewAdapter.SEARCH_VIEW_VISIBLE;
  * https://stackoverflow.com/questions/40802470/add-button-to-browsefragment
  */
 public class NavigateTitleView extends TitleView implements OnDataChange, AccountChangeListener {
-    private static final long SETTINGS_TRANSITION_DURATION_MS = 240L;
     private LongClickSearchOrbView mAccountView;
     private SearchOrbView mLanguageView;
     private SearchOrbView mExitPip;
@@ -349,10 +348,10 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
         }
 
         float startProgress = mSettingsProgress;
-        long duration = Math.max(80L, Math.round(SETTINGS_TRANSITION_DURATION_MS * Math.abs(targetProgress - startProgress)));
+        long duration = M3Motion.scaledDuration(M3Motion.DURATION_STANDARD_MS, targetProgress - startProgress);
         ValueAnimator animator = ValueAnimator.ofFloat(startProgress, targetProgress);
         animator.setDuration(duration);
-        animator.setInterpolator(M3Motion.emphasizedDecelerate());
+        animator.setInterpolator(inSettings ? M3Motion.emphasizedDecelerate() : M3Motion.accelerate());
         animator.addUpdateListener(anim -> {
             mSettingsProgress = (float) anim.getAnimatedValue();
             applySettingsProgress(mSettingsProgress);

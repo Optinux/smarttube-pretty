@@ -244,7 +244,7 @@ public class LeanbackListPreferenceDialogFragment extends LeanbackPreferenceDial
             implements ViewHolder.OnItemClickListener {
 
         private final CharSequence[] mEntries;
-        private final CharSequence[] mEntryValues;
+        protected final CharSequence[] mEntryValues;
         protected CharSequence mSelectedValue;
 
         public AdapterSingle(CharSequence[] entries, CharSequence[] entryValues,
@@ -362,7 +362,7 @@ public class LeanbackListPreferenceDialogFragment extends LeanbackPreferenceDial
                 }
             }
 
-            notifyDataSetChanged();
+            notifyItemChanged(index);
         }
     }
 
