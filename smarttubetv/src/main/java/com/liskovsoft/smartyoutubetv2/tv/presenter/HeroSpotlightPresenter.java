@@ -352,7 +352,9 @@ public class HeroSpotlightPresenter extends RowPresenter {
             updateDynamicHeroGeometry();
         };
 
-        private final Runnable mMediaWidthRunnable = () -> {
+        private final Runnable mMediaWidthRunnable = this::applyPendingMediaWidth;
+
+        private void applyPendingMediaWidth() {
             mMediaWidthUpdatePosted = false;
             if (!ViewCompat.isAttachedToWindow(mMediaContainer) || mPendingMediaWidth <= 0) {
                 return;
@@ -362,7 +364,7 @@ public class HeroSpotlightPresenter extends RowPresenter {
                 mediaLp.width = mPendingMediaWidth;
                 mMediaContainer.setLayoutParams(mediaLp);
             }
-        };
+        }
 
         @SuppressLint("ClickableViewAccessibility")
         HeroViewHolder(View itemView) {
