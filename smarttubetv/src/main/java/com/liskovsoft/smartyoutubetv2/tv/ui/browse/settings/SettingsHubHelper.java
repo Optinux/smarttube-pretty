@@ -194,7 +194,8 @@ final class SettingsHubHelper {
         if (res == R.drawable.settings_block) {
             SponsorBlockData sb = SponsorBlockData.instance(ctx);
             String state = sb.isSponsorBlockEnabled() ? ctx.getString(R.string.settings_enabled) : ctx.getString(R.string.settings_disabled);
-            String count = sb.getEnabledCategories().size() + " categories";
+            int enabledCount = sb.getEnabledCategories().size();
+            String count = ctx.getResources().getQuantityString(R.plurals.settings_categories_count, enabledCount, enabledCount);
             return Arrays.asList(state, count);
         }
         if (res == R.drawable.settings_dearrow) {
@@ -211,46 +212,35 @@ final class SettingsHubHelper {
             return "";
         }
         int res = item.imageResId;
+        int descRes = 0;
         if (res == R.drawable.settings_account) {
-            return "Switch Google/YouTube accounts, sign in with TV code, or protect profiles with a settings PIN.";
+            descRes = R.string.settings_desc_account;
+        } else if (res == R.drawable.settings_cast) {
+            descRes = R.string.settings_desc_cast;
+        } else if (res == R.drawable.settings_language) {
+            descRes = R.string.settings_desc_language;
+        } else if (res == R.drawable.settings_app) {
+            descRes = R.string.settings_desc_app;
+        } else if (res == R.drawable.settings_main_ui) {
+            descRes = R.string.settings_desc_main_ui;
+        } else if (res == R.drawable.settings_player) {
+            descRes = R.string.settings_desc_player;
+        } else if (res == R.drawable.settings_afr) {
+            descRes = R.string.settings_desc_afr;
+        } else if (res == R.drawable.settings_subtitles) {
+            descRes = R.string.settings_desc_subtitles;
+        } else if (res == R.drawable.settings_search) {
+            descRes = R.string.settings_desc_search;
+        } else if (res == R.drawable.settings_block) {
+            descRes = R.string.settings_desc_block;
+        } else if (res == R.drawable.settings_dearrow) {
+            descRes = R.string.settings_desc_dearrow;
+        } else if (res == R.drawable.settings_backup) {
+            descRes = R.string.settings_desc_backup;
+        } else if (res == R.drawable.settings_about) {
+            descRes = R.string.settings_desc_about;
         }
-        if (res == R.drawable.settings_cast) {
-            return "Link mobile phones and browsers to cast videos directly to this TV screen.";
-        }
-        if (res == R.drawable.settings_language) {
-            return "Choose app interface language, content region, and localized feed preferences.";
-        }
-        if (res == R.drawable.settings_app) {
-            return "Configure startup section, pinned sidebar items, content filters, remote key remapping, and background playback.";
-        }
-        if (res == R.drawable.settings_main_ui) {
-            return "Personalize Material 3 Expressive color schemes, accent colors, video card previews, grid density, and UI scale.";
-        }
-        if (res == R.drawable.settings_player) {
-            return "Fine-tune default video codecs and resolution presets, playback speed, buffering, seek steps, and player controls.";
-        }
-        if (res == R.drawable.settings_afr) {
-            return "Automatically match HDMI display refresh rate to video framerate (24Hz, 50Hz, 60Hz) for judder-free playback.";
-        }
-        if (res == R.drawable.settings_subtitles) {
-            return "Customize caption styles, typography scale, vertical position, and preferred subtitle languages.";
-        }
-        if (res == R.drawable.settings_search) {
-            return "Manage voice recognition engine, search history, and instant query suggestions.";
-        }
-        if (res == R.drawable.settings_block) {
-            return "Automatically skip or highlight sponsors, intros, outros, and self-promotions via SponsorBlock.";
-        }
-        if (res == R.drawable.settings_dearrow) {
-            return "Replace sensational clickbait titles and thumbnails with community-curated summaries.";
-        }
-        if (res == R.drawable.settings_backup) {
-            return "Back up and restore your preferences, pinned sections, and settings across devices.";
-        }
-        if (res == R.drawable.settings_about) {
-            return "View app build version, diagnostic info, and open-source details.";
-        }
-        return "";
+        return descRes != 0 ? ctx.getString(descRes) : "";
     }
 
     private static String getAppVersion(Context ctx) {

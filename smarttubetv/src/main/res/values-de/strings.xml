@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- M3 Expressive Home Spotlight & Settings Hub -->
+    <string name="hero_all_shelves">Oben</string>
+    <string name="hero_page_indicator">Element %1$d von %2$d</string>
+    <string name="settings_hub_title">Einstellungen</string>
+    <string name="settings_quick_controls">Schnelleinstellungen</string>
+    <string name="settings_quick_controls_subtitle">Design, Akzent &amp; Direktschalter</string>
+    <string name="settings_group_account">Konto &amp; Sprache</string>
+    <string name="settings_group_appearance">Darstellung &amp; Navigation</string>
+    <string name="settings_group_playback">Wiedergabe &amp; Medien</string>
+    <string name="settings_group_extensions">Erweiterungen &amp; System</string>
+    <string name="settings_open_category">%1$s öffnen</string>
+    <string name="settings_preview_label">Live-Designvorschau</string>
+    <string name="settings_preview_title">Expressive TV-Oberfläche</string>
+    <string name="settings_preview_subtitle">Oberflächentöne, Eckenformen &amp; Akzentkontrast</string>
+    <string name="settings_apply_restart_hint">App neu starten, um Layout- und Designänderungen zu übernehmen</string>
+    <string name="settings_restart_now">App neu starten</string>
+    <string name="settings_switch_account">Konto wechseln</string>
+    <string name="settings_pick_accent">Eigene Akzentfarbe wählen</string>
+    <string name="settings_cycle_scheme">Farbschema</string>
+    <string name="settings_rounded_corners">Abgerundete Kartenecken</string>
+    <string name="settings_not_signed_in">Gastmodus</string>
+    <string name="settings_enabled">Aktiviert</string>
+    <string name="settings_disabled">Deaktiviert</string>
+    <string name="settings_active">Aktiv</string>
+    <string name="settings_off">Aus</string>
+    <string name="settings_locked_title">Geschützte Einstellungen</string>
+    <string name="settings_locked_message">Geben Sie das Passwort für die Einstellungen ein, um diese Optionen anzuzeigen und zu bearbeiten.</string>
+    <string name="settings_unlock">Entsperren</string>
+    <string name="settings_loading_options">Optionen werden geladen…</string>
+    <string name="settings_empty_options">Keine Optionen verfügbar.</string>
+    <string name="settings_none_selected">Keine</string>
+    <string name="settings_selected_count">%1$d / %2$d</string>
+    <plurals name="settings_categories_count">
+        <item quantity="one">%1$d Kategorie</item>
+        <item quantity="other">%1$d Kategorien</item>
+    </plurals>
+    <string name="settings_desc_account">Google-/YouTube-Konten wechseln, per TV-Code anmelden oder Profile mit einer Einstellungs-PIN schützen.</string>
+    <string name="settings_desc_cast">Smartphones und Browser verknüpfen, um Videos direkt auf diesen TV-Bildschirm zu übertragen.</string>
+    <string name="settings_desc_language">Sprache der App-Oberfläche, Inhaltsregion und lokalisierte Feed-Einstellungen wählen.</string>
+    <string name="settings_desc_app">Startbereich, angeheftete Seitenleisteneinträge, Inhaltsfilter, Tastenbelegung und Hintergrundwiedergabe einrichten.</string>
+    <string name="settings_desc_main_ui">Material-3-Expressive-Farbschemata, Akzentfarben, Videokartenvorschau, Rasterdichte und Anzeigegröße anpassen.</string>
+    <string name="settings_desc_player">Standard-Videocodecs, Auflösungsprofile, Wiedergabegeschwindigkeit, Pufferung, Sprungintervalle und Player-Steuerung anpassen.</string>
+    <string name="settings_desc_afr">HDMI-Bildwiederholrate automatisch an die Video-Bildrate (24Hz, 50Hz, 60Hz) anpassen für ruckelfreie Wiedergabe.</string>
+    <string name="settings_desc_subtitles">Untertitelstil, Schriftgröße, vertikale Position und bevorzugte Untertitelsprachen anpassen.</string>
+    <string name="settings_desc_search">Spracherkennung, Suchverlauf und direkte Suchvorschläge verwalten.</string>
+    <string name="settings_desc_block">Sponsoren, Intros, Outros und Eigenwerbung über SponsorBlock automatisch überspringen oder hervorheben.</string>
+    <string name="settings_desc_dearrow">Reißerische Clickbait-Titel und -Vorschaubilder durch von der Community gepflegte Zusammenfassungen ersetzen.</string>
+    <string name="settings_desc_backup">Einstellungen, angeheftete Bereiche und Konfigurationen geräteübergreifend sichern und wiederherstellen.</string>
+    <string name="settings_desc_about">App-Build-Version, Diagnoseinformationen und Open-Source-Hinweise anzeigen.</string>
+</resources>

@@ -151,4 +151,21 @@
     <string name="settings_empty_options">No options available.</string>
     <string name="settings_none_selected">None</string>
     <string name="settings_selected_count">%1$d / %2$d</string>
+    <plurals name="settings_categories_count">
+        <item quantity="one">%1$d category</item>
+        <item quantity="other">%1$d categories</item>
+    </plurals>
+    <string name="settings_desc_account">Switch Google/YouTube accounts, sign in with TV code, or protect profiles with a settings PIN.</string>
+    <string name="settings_desc_cast">Link mobile phones and browsers to cast videos directly to this TV screen.</string>
+    <string name="settings_desc_language">Choose app interface language, content region, and localized feed preferences.</string>
+    <string name="settings_desc_app">Configure startup section, pinned sidebar items, content filters, remote key remapping, and background playback.</string>
+    <string name="settings_desc_main_ui">Personalize Material 3 Expressive color schemes, accent colors, video card previews, grid density, and UI scale.</string>
+    <string name="settings_desc_player">Fine-tune default video codecs and resolution presets, playback speed, buffering, seek steps, and player controls.</string>
+    <string name="settings_desc_afr">Automatically match HDMI display refresh rate to video framerate (24Hz, 50Hz, 60Hz) for judder-free playback.</string>
+    <string name="settings_desc_subtitles">Customize caption styles, typography scale, vertical position, and preferred subtitle languages.</string>
+    <string name="settings_desc_search">Manage voice recognition engine, search history, and instant query suggestions.</string>
+    <string name="settings_desc_block">Automatically skip or highlight sponsors, intros, outros, and self-promotions via SponsorBlock.</string>
+    <string name="settings_desc_dearrow">Replace sensational clickbait titles and thumbnails with community-curated summaries.</string>
+    <string name="settings_desc_backup">Back up and restore your preferences, pinned sections, and settings across devices.</string>
+    <string name="settings_desc_about">View app build version, diagnostic info, and open-source details.</string>
 </resources>
