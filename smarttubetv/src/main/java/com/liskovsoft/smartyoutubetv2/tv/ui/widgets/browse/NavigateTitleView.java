@@ -39,6 +39,7 @@ import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.tooltips.TooltipCompatHandler;
+import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.m3e.M3ClockView;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.search.LongClickSearchOrbView;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.time.DateTimeView;
 import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
@@ -64,7 +65,7 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
     private TextView mPipTitle;
     private int mSearchVisibility = View.INVISIBLE;
     private int mBrandingVisibility = View.INVISIBLE;
-    private View mGlobalClockContainer;
+    private M3ClockView mGlobalClockContainer;
     private DateTimeView mGlobalClock;
     private DateTimeView mGlobalDate;
     private View mTitleBadgeView;
@@ -185,10 +186,11 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
         }
 
         if (mIsGlobalClockEnabled) {
-            mGlobalClock.setVisibility(mBrandingVisibility);
-            mGlobalDate.setVisibility(mBrandingVisibility);
             if (mGlobalClockContainer != null) {
                 mGlobalClockContainer.setVisibility(mBrandingVisibility);
+            } else {
+                mGlobalClock.setVisibility(mBrandingVisibility);
+                mGlobalDate.setVisibility(mBrandingVisibility);
             }
         }
 
@@ -235,12 +237,17 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
         TooltipCompatHandler.setTooltipText(mExitPip, getContext().getString(R.string.return_to_background_video));
 
         mGlobalClockContainer = findViewById(R.id.global_clock_container);
-        mGlobalClock = findViewById(R.id.global_time);
-        mGlobalClock.showDate(false);
+        if (mGlobalClockContainer != null) {
+            mGlobalClock = mGlobalClockContainer.getTimeView();
+            mGlobalDate = mGlobalClockContainer.getDateView();
+        } else {
+            mGlobalClock = findViewById(R.id.global_time);
+            mGlobalClock.showDate(false);
 
-        mGlobalDate = findViewById(R.id.global_date);
-        mGlobalDate.showTime(false);
-        mGlobalDate.showDate(true);
+            mGlobalDate = findViewById(R.id.global_date);
+            mGlobalDate.showTime(false);
+            mGlobalDate.showDate(true);
+        }
 
         mTitleBadgeView = findViewById(R.id.title_badge);
         mTitleTextView = findViewById(R.id.title_text);
@@ -274,8 +281,12 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
         mPipTitle.setTextColor(onSurface);
         mPipTitle.setBackground(ViewUtil.createRoundedDrawable(surfaceContainerHigh, outlineVariant, hairlinePx, pillRadius));
         mPipTitle.setPaddingRelative(padH, padV, padH, padV);
-        mGlobalClock.setTextColor(onSurface);
-        mGlobalDate.setTextColor(onSurfaceVariant);
+        if (mGlobalClockContainer != null) {
+            mGlobalClockContainer.refreshThemeColors();
+        } else {
+            mGlobalClock.setTextColor(onSurface);
+            mGlobalDate.setTextColor(onSurfaceVariant);
+        }
 
         updateButtonsVisibility();
     }
@@ -291,10 +302,13 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
         mSearchOrbView.setVisibility(mIsSearchOrbEnabled ? View.VISIBLE : View.GONE);
         mAccountView.setVisibility(mIsAccountViewEnabled ? View.VISIBLE : View.GONE);
         mLanguageView.setVisibility(mIsLanguageViewEnabled ? View.VISIBLE : View.GONE);
-        mGlobalClock.setVisibility(mIsGlobalClockEnabled ? View.VISIBLE : View.GONE);
-        mGlobalDate.setVisibility(mIsGlobalClockEnabled ? View.VISIBLE : View.GONE);
+        int clockVisibility = mIsGlobalClockEnabled ? View.VISIBLE : View.GONE;
         if (mGlobalClockContainer != null) {
-            mGlobalClockContainer.setVisibility(mIsGlobalClockEnabled ? View.VISIBLE : View.GONE);
+            mGlobalClockContainer.refreshThemeColors();
+            mGlobalClockContainer.setVisibility(clockVisibility);
+        } else {
+            mGlobalClock.setVisibility(clockVisibility);
+            mGlobalDate.setVisibility(clockVisibility);
         }
 
         applySettingsProgress(mSettingsProgress);

@@ -16,6 +16,7 @@ package com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.tooltips;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,12 +25,14 @@ import android.view.accessibility.AccessibilityEvent;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.view.ViewCompat;
 import androidx.leanback.R;
 import androidx.leanback.widget.Action;
 import androidx.leanback.widget.PlaybackControlsRow;
 import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.PresenterSelector;
 import com.liskovsoft.smartyoutubetv2.tv.ui.playback.actions.PaddingAction;
+import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.m3e.PlayPauseMorphDrawable;
 import com.liskovsoft.smartyoutubetv2.tv.util.M3Motion;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
@@ -193,7 +196,29 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
             Action action = (Action) item;
             ActionViewHolder vh = (ActionViewHolder) viewHolder;
 
-            vh.mIcon.setImageDrawable(action.getIcon());
+            if (action instanceof PlaybackControlsRow.PlayPauseAction) {
+                Drawable currentDrawable = vh.mIcon.getDrawable();
+                boolean isNew = !(currentDrawable instanceof PlayPauseMorphDrawable);
+                PlayPauseMorphDrawable morphDrawable;
+                if (isNew) {
+                    morphDrawable = new PlayPauseMorphDrawable(vh.mIcon.getContext());
+                    vh.mIcon.setImageDrawable(morphDrawable);
+                } else {
+                    morphDrawable = (PlayPauseMorphDrawable) currentDrawable;
+                }
+                boolean showPause = ((PlaybackControlsRow.PlayPauseAction) action).getIndex()
+                        == PlaybackControlsRow.PlayPauseAction.INDEX_PAUSE;
+                boolean animate = !isNew
+                        && ViewCompat.isAttachedToWindow(vh.mIcon)
+                        && vh.mIcon.isShown();
+                morphDrawable.setShowPause(showPause, animate);
+            } else {
+                Drawable prevDrawable = vh.mIcon.getDrawable();
+                if (prevDrawable instanceof PlayPauseMorphDrawable) {
+                    ((PlayPauseMorphDrawable) prevDrawable).cancelAnimation();
+                }
+                vh.mIcon.setImageDrawable(action.getIcon());
+            }
             int actionPadding = 0;
             if (action instanceof PaddingAction) {
                 actionPadding = ((PaddingAction) action).getPadding();
@@ -241,6 +266,10 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
             vh.view.setScaleX(1.0f);
             vh.view.setScaleY(1.0f);
             M3Motion.cancelFocusAnimations(vh.mFocusableView);
+            Drawable prevDrawable = vh.mIcon.getDrawable();
+            if (prevDrawable instanceof PlayPauseMorphDrawable) {
+                ((PlayPauseMorphDrawable) prevDrawable).cancelAnimation();
+            }
             vh.mIcon.setImageDrawable(null);
             vh.mIcon.setPadding(0, 0, 0, 0);
             vh.mIcon.clearColorFilter();

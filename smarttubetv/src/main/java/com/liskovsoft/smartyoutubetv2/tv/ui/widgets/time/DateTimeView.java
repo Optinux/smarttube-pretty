@@ -74,6 +74,13 @@ public class DateTimeView extends TextView implements TickleListener {
     }
 
     @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+
+        updateListener();
+    }
+
+    @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
 

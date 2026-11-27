@@ -1,51 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!-- Title Logo with embedded clock -->
+<!-- Title Logo with embedded M3 Expressive clock -->
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:layout_gravity="center_vertical|end"
               android:orientation="horizontal">
-    <!-- Global clock -->
-    <LinearLayout android:id="@+id/global_clock_container"
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:layout_gravity="center_vertical"
-                  android:gravity="center_horizontal"
-                  android:orientation="vertical">
-        <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.time.DateTimeView
-            android:id="@+id/global_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-medium"
-            android:fontFeatureSettings="tnum"
-            android:textSize="@dimen/pip_title_size"
-            android:textColor="?attr/m3OnSurface"
-            android:shadowColor="#66000000"
-            android:shadowDx="0"
-            android:shadowDy="1"
-            android:shadowRadius="1.2"
-            style="?attr/browseTitleTextStyle"
-            tools:targetApi="21"
-            android:visibility="gone" />
-        <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.time.DateTimeView
-            android:id="@+id/global_date"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-medium"
-            android:fontFeatureSettings="tnum"
-            android:textSize="@dimen/pip_title_date_size"
-            android:textColor="?attr/m3OnSurfaceVariant"
-            android:shadowColor="#66000000"
-            android:shadowDx="0"
-            android:shadowDy="1"
-            android:shadowRadius="1.2"
-            style="?attr/browseTitleTextStyle"
-            tools:targetApi="21"
-            android:visibility="gone" />
-    </LinearLayout>
+    <!-- Global M3 Expressive clock -->
+    <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.m3e.M3ClockView
+        android:id="@+id/global_clock_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:visibility="gone" />
 
     <FrameLayout android:layout_width="wrap_content"
                  android:layout_height="wrap_content"

@@ -30,4 +30,5 @@
     <item name="m3_segmented_radii_tag" type="id"/>
     <item name="m3_shelf_chip_bar" type="id"/>
     <item name="m3_focus_listener_attached" type="id"/>
+    <item name="global_date" type="id"/>
 </resources>
